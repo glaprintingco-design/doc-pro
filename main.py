@@ -7,27 +7,48 @@ from pypdf import PdfReader, PdfWriter
 from pypdf.generic import NameObject, BooleanObject, NumberObject
 
 # ==========================================
-# 0. CONFIGURATION LOADER
+# 0. CONFIGURATION LOADER (WEB & LOCAL)
 # ==========================================
+import streamlit as st
+
 def load_configuration():
+    # 1. INTENTAR CARGAR DESDE STREAMLIT SECRETS (NUBE)
+    try:
+        if hasattr(st, "secrets") and len(st.secrets) > 0:
+            return {
+                "api_keys": {
+                    "nyc_open_data_key": st.secrets.get("nyc_open_data_key", ""),
+                    "nyc_socrata_token": st.secrets.get("nyc_socrata_token", "")
+                },
+                "fire_alarm_company": st.secrets.get("fire_alarm_company", {}),
+                "architect_applicant": st.secrets.get("architect_applicant", {}),
+                "electrical_contractor": st.secrets.get("electrical_contractor", {}),
+                "technical_defaults": st.secrets.get("technical_defaults", {}),
+                "central_station": st.secrets.get("central_station", {})
+            }
+    except Exception:
+        pass 
+
+    # 2. INTENTAR CARGAR DESDE ARCHIVO LOCAL (FALLBACK)
     if getattr(sys, 'frozen', False):
         base_path = os.path.dirname(sys.executable)
     else:
         base_path = os.path.dirname(os.path.abspath(__file__))
+    
     json_path = os.path.join(base_path, "config.json")
     
-    if not os.path.exists(json_path):
-        # Fallback silencioso o error controlado
-        return {}
-    try:
-        with open(json_path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except:
-        return {}
+    if os.path.exists(json_path):
+        try:
+            with open(json_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return {}
+    
+    return {}
 
 CONFIG_DATA = load_configuration()
 
-# Cargar API Keys de forma segura (con fallbacks vacíos para no romper si faltan)
+# Cargar variables globales desde el diccionario unificado
 API_KEY_NYC = CONFIG_DATA.get("api_keys", {}).get("nyc_open_data_key", "")
 APP_TOKEN_SOCRATA = CONFIG_DATA.get("api_keys", {}).get("nyc_socrata_token", "")
 
