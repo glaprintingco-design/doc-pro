@@ -1,0 +1,15 @@
+# Configuración personal y llaves API
+config.json
+license.key
+*.pyc
+__pycache__/
+
+# Archivos generados
+TM1_*.pdf
+A433_*.pdf
+B45_*.pdf
+REPORT_*.txt
+
+# Entornos virtuales
+venv/
+.env
