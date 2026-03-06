@@ -355,12 +355,14 @@ with tabs[0]:
         # --- 1. SELECCIÓN DE FORMULARIOS (Colócalo antes del botón) ---
         st.subheader("📝 Select Forms to Generate")
         col_a, col_b = st.columns(2)
+
         with col_a:
-            gen_tm1 = st.checkbox("TM-1 Application", value=True)
-            gen_a433 = st.checkbox("A-433 Device List", value=True)
+            # Agregamos el parámetro key para evitar el error de ID duplicado
+            gen_tm1 = st.checkbox("TM-1 Application", value=True, key="chk_gen_tm1")
+            gen_a433 = st.checkbox("A-433 Device List", value=True, key="chk_gen_a433")
         with col_b:
-            gen_b45 = st.checkbox("B-45 Inspection Request", value=True)
-            gen_report = st.checkbox("Audit Report", value=True)
+            gen_b45 = st.checkbox("B-45 Inspection Request", value=True, key="chk_gen_b45")
+            gen_report = st.checkbox("Audit Report", value=True, key="chk_gen_report")
 
         st.divider()
 
