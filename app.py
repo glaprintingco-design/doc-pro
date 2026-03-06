@@ -319,8 +319,72 @@ with tabs[0]:
             elif not st.session_state.device_list:
                 st.error("Device list is empty.")
             else:
-                with st.spinner("Fetching NYC data and filling PDFs..."):
+                with st.spinner("Sincronizando perfil y generando formularios..."):
                     try:
+                        # --- MAPEO TOTAL: SUPABASE -> MAIN.PY ---
+                        # 1. Fire Alarm Company (Para TM-1, A-433 y B-45)
+                        main.COMPANY.update({
+                            "Company Name": profile.get("company_name", ""),
+                            "Address": profile.get("company_address", ""),
+                            "City": profile.get("company_city", ""),
+                            "State": profile.get("company_state", "NY"),
+                            "Zip": profile.get("company_zip", ""),
+                            "Phone": profile.get("company_phone", ""),
+                            "Email": profile.get("company_email", ""),
+                            "First Name": profile.get("company_first_name", ""),
+                            "Last Name": profile.get("company_last_name", ""),
+                            "Reg No": profile.get("company_reg_no", ""),
+                            "COF S97": profile.get("company_cof_s97", ""),
+                            "Expiration": profile.get("company_expiration", "")
+                        })
+
+                        # 2. Architect / Applicant (Para TM-1 y A-433)
+                        main.ARCHITECT.update({
+                            "Company Name": profile.get("arch_name", ""),
+                            "Address": profile.get("arch_address", ""),
+                            "City": profile.get("arch_city", ""),
+                            "State": profile.get("arch_state", ""),
+                            "Zip": profile.get("arch_zip", ""),
+                            "Phone": profile.get("arch_phone", ""),
+                            "Email": profile.get("arch_email", ""),
+                            "First Name": profile.get("arch_first_name", ""),
+                            "Last Name": profile.get("arch_last_name", ""),
+                            "License No": profile.get("arch_license", ""),
+                            "Role": profile.get("arch_role", "PE")
+                        })
+
+                        # 3. Electrical Contractor (Para A-433)
+                        main.ELECTRICIAN.update({
+                            "Company Name": profile.get("elec_name", ""),
+                            "Address": profile.get("elec_address", ""),
+                            "City": profile.get("elec_city", ""),
+                            "State": profile.get("elec_state", ""),
+                            "Zip": profile.get("elec_zip", ""),
+                            "Phone": profile.get("elec_phone", ""),
+                            "First Name": profile.get("elec_first_name", ""),
+                            "Last Name": profile.get("elec_last_name", ""),
+                            "License No": profile.get("elec_license", ""),
+                            "Expiration": profile.get("elec_expiration", "")
+                        })
+
+                        # 4. Technical Defaults (Para A-433)
+                        main.TECH_DEFAULTS.update({
+                            "Manufacturer": profile.get("tech_manufacturer", ""),
+                            "Approval": profile.get("tech_approval", ""),
+                            "WireGauge": profile.get("tech_wire_gauge", ""),
+                            "WireType": profile.get("tech_wire_type", "")
+                        })
+
+                        # 5. Central Station (Para A-433)
+                        main.CENTRAL_STATION.update({
+                            "Company Name": profile.get("cs_name", ""),
+                            "CS Code": profile.get("cs_code", ""),
+                            "Address": profile.get("cs_address", ""),
+                            "City": profile.get("cs_city", ""),
+                            "State": profile.get("cs_state", ""),
+                            "Zip": profile.get("cs_zip", ""),
+                            "Phone": profile.get("cs_phone", "")
+                        })
                         info = main.obtener_datos_completos(bin_number)
                         if info:
                             job_specs = {"job_desc": job_desc, "devices": st.session_state.device_list}
