@@ -73,12 +73,6 @@ def login_ui():
     with st.sidebar:
         st.header("🔑 User Access")
         
-        # Mostrar estado de configuración
-        with st.expander("🔧 Connection Status", expanded=False):
-            st.text(f"URL: {SUPABASE_URL[:30]}...")
-            st.text(f"Key: {SUPABASE_KEY[:20]}...{SUPABASE_KEY[-10:]}")
-            st.text(f"Key Length: {len(SUPABASE_KEY)} chars")
-        
         choice = st.radio("Action", ["Login", "Sign Up"])
         email = st.text_input("Email Address")
         password = st.text_input("Password", type="password")
