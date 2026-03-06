@@ -125,7 +125,7 @@ MASTER_DEVICE_LIST = {
     "Control": [
         "Fire Door Holder", "Fire Shutter Release", "FIre Damper Control", "Fire Damper",
         "Smoke Damper", "Damper", "Shutter", "Exhaust Damper", "Release", "Elevator Recall",
-        "HVAC Shut Down", "Fire Suppression Release", "Access Control Release", "Fire Door Release",
+        "HVAC Shut Down", "Fire Suppression Release","Isolation Module", "Access Control Release", "Fire Door Release",
         "Automatic Smoke Exhaust", "BMS Signal", "Release Control Activation", "Auxillary Relay Operation",
         "Fossil Fuel Shutdown", "Natural Gas Shutdown"
     ],
