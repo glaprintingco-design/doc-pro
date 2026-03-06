@@ -5,22 +5,39 @@ import os
 import zipfile
 from io import BytesIO
 
-# --- 1. DATABASE CONNECTION ---
-# Replace these with Streamlit Secrets in production for better security
-SUPABASE_URL = "https://uhhiqkymipbcepqzwtvg.supabase.co"
-SUPABASE_KEY = "sb_publishable_mvqOWXc5s4b3_IMe4gGexw_sU3B2DRL"
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-# --- 2. PAGE CONFIGURATION ---
+# --- 1. CONFIGURACIÓN Y CONEXIÓN (CONSOLIDADA) ---
 st.set_page_config(page_title="Fire Form Pro", layout="wide", page_icon="🔥")
 
-# --- 3. SESSION STATE INITIALIZATION ---
+# Uso de Secrets para seguridad (Configura esto en el panel de Streamlit Cloud)
+SUPABASE_URL = st.secrets.get("SUPABASE_URL", "https://uhhiqkymipbcepqzwtvg.supabase.co")
+SUPABASE_KEY = st.secrets.get("SUPABASE_KEY", "sb_publishable_mvqOWXc5s4b3_IMe4gGexw_sU3B2DRL")
+
+if "supabase" not in st.session_state:
+    st.session_state.supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+supabase = st.session_state.supabase
+
+# --- 2. ESTADO DE SESIÓN ---
 if "user" not in st.session_state:
     st.session_state.user = None
 if "device_list" not in st.session_state:
     st.session_state.device_list = []
 
-# --- 4. AUTHENTICATION LOGIC ---
+# --- 3. FUNCIONES DE APOYO ---
+def logout():
+    st.session_state.user = None
+    supabase.auth.sign_out()
+    st.rerun()
+
+def fetch_user_profile(user_id):
+    try:
+        response = supabase.table("profiles").select("*").eq("id", user_id).execute()
+        return response.data[0] if response.data else {}
+    except Exception as e:
+        st.error(f"Error loading profile: {e}")
+        return {}
+
+# --- 4. LÓGICA DE AUTENTICACIÓN ---
 def login_ui():
     with st.sidebar:
         st.header("🔑 User Access")
@@ -33,24 +50,18 @@ def login_ui():
                 try:
                     res = supabase.auth.sign_in_with_password({"email": email, "password": password})
                     st.session_state.user = res.user
-                    st.success("Welcome back!")
                     st.rerun()
-                except Exception as e:
+                except:
                     st.error("Invalid credentials.")
         else:
             if st.button("Create Account", use_container_width=True):
                 try:
-                    res = supabase.auth.sign_up({"email": email, "password": password})
-                    st.info("Check your email for a confirmation link!")
+                    supabase.auth.sign_up({"email": email, "password": password})
+                    st.info("Check your email for confirmation!")
                 except Exception as e:
                     st.error(f"Error: {e}")
 
-def logout():
-    st.session_state.user = None
-    supabase.auth.sign_out()
-    st.rerun()
-
-# --- 5. MAIN APP LOGIC ---
+# --- 5. CONTROL DE ACCESO ---
 if not st.session_state.user:
     login_ui()
     st.title("Fire Form Pro")
@@ -59,33 +70,11 @@ if not st.session_state.user:
     st.warning("Please log in from the sidebar to access the generator.")
     st.stop()
 
-# --- 6. LOGGED IN UI ---
+# --- 6. APP PRINCIPAL (USUARIO LOGUEADO) ---
+profile = fetch_user_profile(st.session_state.user.id)
 st.sidebar.success(f"Logged in as: {st.session_state.user.email}")
 if st.sidebar.button("Logout"):
     logout()
-
-# Función para obtener los datos del perfil desde Supabase
-def fetch_user_profile(user_id):
-    try:
-        response = supabase.table("profiles").select("*").eq("id", user_id).execute()
-        if response.data:
-            return response.data[0]
-    except Exception as e:
-        st.error(f"Error loading profile: {e}")
-    return {}
-
-# Cargar los datos actuales del usuario logueado
-profile = fetch_user_profile(st.session_state.user.id)
-
-# --- 1. DATABASE CONNECTION (PERSISTENT) ---
-SUPABASE_URL = "https://uhhiqkymipbcepqzwtvg.supabase.co"
-SUPABASE_KEY = "sb_publishable_mvqOWXc5s4b3_IMe4gGexw_sU3B2DRL"
-
-# Usamos session_state para que el cliente no se resetee y pierda el token
-if "supabase" not in st.session_state:
-    st.session_state.supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-supabase = st.session_state.supabase
 
 
 # Tabs for organization
