@@ -12,19 +12,16 @@ from pypdf.generic import NameObject, BooleanObject, NumberObject
 import streamlit as st
 
 def load_configuration():
-    # 1. INTENTAR CARGAR DESDE STREAMLIT SECRETS (NUBE)
     try:
         if hasattr(st, "secrets") and len(st.secrets) > 0:
+            # Usamos dict() para crear una copia editable y evitar el error de "Read Only"
             return {
-                "api_keys": {
-                    "nyc_open_data_key": st.secrets.get("nyc_open_data_key", ""),
-                    "nyc_socrata_token": st.secrets.get("nyc_socrata_token", "")
-                },
-                "fire_alarm_company": st.secrets.get("fire_alarm_company", {}),
-                "architect_applicant": st.secrets.get("architect_applicant", {}),
-                "electrical_contractor": st.secrets.get("electrical_contractor", {}),
-                "technical_defaults": st.secrets.get("technical_defaults", {}),
-                "central_station": st.secrets.get("central_station", {})
+                "api_keys": dict(st.secrets.get("api_keys", {})),
+                "fire_alarm_company": dict(st.secrets.get("fire_alarm_company", {})),
+                "architect_applicant": dict(st.secrets.get("architect_applicant", {})),
+                "electrical_contractor": dict(st.secrets.get("electrical_contractor", {})),
+                "technical_defaults": dict(st.secrets.get("technical_defaults", {})),
+                "central_station": dict(st.secrets.get("central_station", {}))
             }
     except Exception:
         pass 
