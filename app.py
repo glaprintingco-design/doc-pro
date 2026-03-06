@@ -284,14 +284,6 @@ with tabs[0]:
         job_desc = st.text_area("TM-1 Job Description", value="Installation of Fire Alarm System.")
 
         st.divider()
-        st.subheader("2. Select Forms to Generate")
-        gen_tm1 = st.checkbox("TM-1 Application", value=True)
-        gen_a433 = st.checkbox("A-433 Device List", value=True)
-        gen_b45 = st.checkbox("B-45 Inspection Request", value=True)
-        gen_report = st.checkbox("Audit Report", value=True)
-        # -----------------------------------------------
-
-        st.divider()
         
         # Section: Add Devices
         st.markdown(
