@@ -77,7 +77,15 @@ def fetch_user_profile(user_id):
 # Cargar los datos actuales del usuario logueado
 profile = fetch_user_profile(st.session_state.user.id)
 
+# --- 1. DATABASE CONNECTION (PERSISTENT) ---
+SUPABASE_URL = "https://uhhiqkymipbcepqzwtvg.supabase.co"
+SUPABASE_KEY = "sb_publishable_mvqOWXc5s4b3_IMe4gGexw_sU3B2DRL"
 
+# Usamos session_state para que el cliente no se resetee y pierda el token
+if "supabase" not in st.session_state:
+    st.session_state.supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+supabase = st.session_state.supabase
 
 
 # Tabs for organization
@@ -251,5 +259,3 @@ with tabs[0]:
                             st.error("Could not retrieve data for this BIN.")
                     except Exception as e:
                         st.error(f"Critical Error: {e}")
-
-
