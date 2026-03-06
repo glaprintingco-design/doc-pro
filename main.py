@@ -256,48 +256,82 @@ def buscar_co_dob_now(bin_number, headers_soc):
 
 def obtener_datos_completos(bin_number):
     print(f"📡 1. Fetching master data for BIN: {bin_number}...")
+    
+    # Estructura base de datos
     info = {
-        "bin": bin_number, "house": "", "street": "", "borough": "", "zip": "", "block": "", "lot": "", "bbl_full": "", "tax_class": "",
-        "stories": "", "height": "", "occupancy_group": "", "construction_class": "", "landmarked": "No", "flood_zone": "No", 
-        "owner_first": "", "owner_last": "", "owner_business": "", "owner_address": "", "owner_phone": "", "owner_email": "",
-        "owner_city": "", "owner_state": "NY", "owner_zip": "", "has_digital_co": False
+        "bin": bin_number, "house": "", "street": "", "borough": "", "zip": "", 
+        "block": "", "lot": "", "bbl_full": "", "tax_class": "",
+        "stories": "", "height": "", "occupancy_group": "", "construction_class": "", 
+        "landmarked": "No", "flood_zone": "No", 
+        "owner_first": "", "owner_last": "", "owner_business": "", "owner_address": "", 
+        "owner_phone": "", "owner_email": "", "owner_city": "", "owner_state": "NY", 
+        "owner_zip": "", "has_digital_co": False
     }
-    headers = {"X-App-Token": APP_TOKEN_SOCRATA}
-    try:
-        r = requests.get("https://api.nyc.gov/geoclient/v2/bin", params={"bin": bin_number}, headers={"Ocp-Apim-Subscription-Key": API_KEY_NYC})
-        if r.status_code == 200:
-            d = r.json().get('bin', {})
-            info.update({
-                "house": d.get("giLowHouseNumber1"), "street": d.get("giStreetName1"),
-                "borough": d.get("firstBoroughName"), "block": d.get("bblTaxBlock"),
-                "lot": d.get("bblTaxLot"), "bbl_full": d.get("bbl"),
-                "tax_class": d.get("rpadBuildingClassificationCode", "")
-            })
-            print(f"   ✅ [Geoclient] Address OK | Tax Class: {info['tax_class']}")
-    except: pass
 
+    headers_socrata = {"X-App-Token": APP_TOKEN_SOCRATA}
+    
+    # --- NIVEL 1: GEOCLIENT (Dirección Oficial) ---
+    try:
+        # Importante: API_KEY_NYC debe ser inyectada desde app.py usando st.secrets
+        url_geo = "https://api.nyc.gov/geoclient/v2/bin"
+        r_geo = requests.get(url_geo, params={"bin": bin_number}, 
+                             headers={"Ocp-Apim-Subscription-Key": API_KEY_NYC}, timeout=10)
+        
+        if r_geo.status_code == 200:
+            d = r_geo.json().get('bin', {})
+            # Usamos .strip() para evitar espacios que rompan el PDF
+            info["house"] = (d.get("giLowHouseNumber1") or d.get("houseNumber", "")).strip()
+            info["street"] = (d.get("giStreetName1") or d.get("streetName", "")).strip()
+            info["borough"] = d.get("firstBoroughName", "").strip()
+            info["block"] = d.get("bblTaxBlock", "").strip()
+            info["lot"] = d.get("bblTaxLot", "").strip()
+            info["bbl_full"] = d.get("bbl", "").strip()
+            info["tax_class"] = d.get("rpadBuildingClassificationCode", "").strip()
+            print(f"   ✅ [Geoclient] Address Found: {info['house']} {info['street']}")
+        else:
+            print(f"   ⚠️ [Geoclient] Error {r_geo.status_code}: Verify NYC API Key.")
+            
+    except Exception as e:
+        print(f"   ❌ [Geoclient] Connection failed: {e}")
+
+    # --- NIVEL 2: PLUTO / SOCRATA (Respaldo de Dirección y ZIP) ---
     if info["bbl_full"]:
         try:
-            r = requests.get("https://data.cityofnewyork.us/resource/64uk-42ks.json", params={"bbl": info["bbl_full"]}, headers=headers)
-            if r.status_code == 200 and r.json():
-                pluto = r.json()[0]
-                info["zip"] = str(pluto.get("zipcode", "")) 
+            r_pluto = requests.get("https://data.cityofnewyork.us/resource/64uk-42ks.json", 
+                                 params={"bbl": info["bbl_full"]}, headers=headers_socrata, timeout=10)
+            if r_pluto.status_code == 200 and r_pluto.json():
+                pluto = r_pluto.json()[0]
+                info["zip"] = str(pluto.get("zipcode", "")).strip()
                 if pluto.get("pfirm15_flag") == "1": info["flood_zone"] = "Yes"
                 info["owner_business_backup"] = pluto.get("ownername", "").strip()
-                if not info["tax_class"]: info["tax_class"] = pluto.get("bldgclass", "")
-        except: pass
+                if not info["tax_class"]: info["tax_class"] = pluto.get("bldgclass", "").strip()
+                
+                # FALLBACK: Si Geoclient falló, intentamos reconstruir la dirección desde PLUTO
+                if not info["house"] and pluto.get("address"):
+                    addr_raw = pluto.get("address").split(" ", 1)
+                    info["house"] = addr_raw[0]
+                    info["street"] = addr_raw[1] if len(addr_raw) > 1 else ""
+                    print(f"   🔄 [PLUTO] Address recovered via BBL: {info['house']} {info['street']}")
+        except Exception as e:
+            print(f"   ⚠️ [PLUTO] Fallback failed: {e}")
 
-    dob_now_info = consultar_dob_now(bin_number, headers)
+    # --- CONSULTAS DE DOB NOW (Dueños y C.O.) ---
+    dob_now_info = consultar_dob_now(bin_number, headers_socrata)
     if dob_now_info: info.update(dob_now_info)
-    if buscar_co_dob_now(bin_number, headers): info["has_digital_co"] = True
+    if buscar_co_dob_now(bin_number, headers_socrata): info["has_digital_co"] = True
 
-    print(f"   📡 [BIS] Scanning technical history...")
+    # --- NIVEL 3: ESCANEO HISTÓRICO BIS (Para Altura, Pisos y Dueños antiguos) ---
+    print(f"   📡 [BIS] Scanning job history...")
     try:
-        r = requests.get("https://data.cityofnewyork.us/resource/ic3t-wcy2.json", params={"bin__": bin_number, "$order": "latest_action_date DESC", "$limit": 50}, headers=headers)
-        if r.status_code == 200:
-            jobs = r.json()
-            raw_h = "0"; raw_s = "0"; raw_c = ""; raw_o = ""; desc = ""
+        r_bis = requests.get("https://data.cityofnewyork.us/resource/ic3t-wcy2.json", 
+                           params={"bin__": bin_number, "$order": "latest_action_date DESC", "$limit": 50}, 
+                           headers=headers_socrata, timeout=10)
+        if r_bis.status_code == 200:
+            jobs = r_bis.json()
+            raw_h, raw_s, raw_c, raw_o, desc = "0", "0", "", "", ""
+            
             for job in jobs:
+                # Si aún no tenemos dueño, lo buscamos en el historial
                 if not info["owner_business"] and not info["owner_last"]:
                     bn = str(job.get("owner_s_business_name") or "").strip()
                     if bn:
@@ -306,10 +340,12 @@ def obtener_datos_completos(bin_number):
                         info["owner_last"] = str(job.get("owner_s_last_name") or "").strip()
                         info["owner_phone"] = str(job.get("owner_sphone__") or "").replace("-","")
                         oh = job.get("owner_s_house_number", ""); os = job.get("owner_s_street_name", "")
+                        # Si no hay dirección de dueño, usamos la de la propiedad
                         info["owner_address"] = f"{oh} {os}" if oh else f"{info['house']} {info['street']}"
                         info["owner_city"] = job.get("owner_s_city", info["borough"])
                         info["owner_zip"] = job.get("owner_s_zip", info["zip"])
 
+                # Datos técnicos
                 if raw_h == "0": raw_h = str(job.get("existing_height") or "0")
                 if raw_s == "0": raw_s = str(job.get("existingno_of_stories") or "0")
                 if not raw_c: raw_c = job.get("existing_construction_class", "")
@@ -317,16 +353,22 @@ def obtener_datos_completos(bin_number):
                 desc += " " + str(job.get("job_description") or "")
                 if info["landmarked"] == "No" and job.get("landmarked") in ["Y", "YES"]: info["landmarked"] = "Yes"
 
-            info["height"] = raw_h; info["stories"] = raw_s
+            info["height"], info["stories"] = raw_h, raw_s
+            
+            # Traducción inteligente (Asegúrate de tener esta función en main.py)
             trad = traducir_datos(raw_o, raw_c, desc, info["tax_class"])
-            info["occupancy_group"] = trad["occ"]; info["construction_class"] = trad["const"]
-            info["raw_occupancy"] = raw_o; info["raw_construction_class"] = raw_c
-            info["debug_nota_occ"] = trad["nota"]; info["debug_nota_const"] = trad["nota"]
-    except: pass
+            info["occupancy_group"] = trad["occ"]
+            info["construction_class"] = trad["const"]
+            info["raw_occupancy"], info["raw_construction_class"] = raw_o, raw_c
+            info["debug_nota_occ"] = info["debug_nota_const"] = trad["nota"]
+    except Exception as e:
+        print(f"   ⚠️ [BIS] History scan error: {e}")
 
-    if not info["owner_business"]: info["owner_business"] = info.get("owner_business_backup", "")
+    # Limpieza final
+    if not info["owner_business"]: 
+        info["owner_business"] = info.get("owner_business_backup", "")
+        
     return info
-
 # ==========================================
 # 3. GENERADOR TM-1
 # ==========================================
