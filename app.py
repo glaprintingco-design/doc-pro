@@ -16,11 +16,7 @@ main.APP_TOKEN_SOCRATA = st.secrets.get("SOCRATA_TOKEN", "")
 SUPABASE_URL = st.secrets.get("SUPABASE_URL", "https://uhhiqkymipbcepqzwtvg.supabase.co")
 SUPABASE_KEY = st.secrets.get("SUPABASE_KEY", "sb_publishable_mvqOWXc5s4b3_IMe4gGexw_sU3B2DRL")
 
-if "supabase" not in st.session_state:
-    st.session_state.supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-supabase = st.session_state.supabase
-
+# ============================================
 # FIX 2: INICIALIZACIÓN CON RECUPERACIÓN DE SESIÓN
 # ============================================
 if "supabase" not in st.session_state:
@@ -191,49 +187,71 @@ with tabs[1]:
     with st.expander("🏢 Fire Alarm Company Data", expanded=True):
         col1, col2 = st.columns(2)
         with col1:
-            c_name = st.text_input("Company Name", value=profile.get("company_name", ""))
-            c_addr = st.text_input("Address", value=profile.get("company_address", ""))
-            c_city = st.text_input("City", value=profile.get("company_city", ""))
-            c_zip  = st.text_input("Zip Code", value=profile.get("company_zip", ""))
-        with col2:
-            c_reg  = st.text_input("Reg No", value=profile.get("company_reg_no", ""))
-            c_cof  = st.text_input("COF S97", value=profile.get("company_cof_s97", ""))
-            c_exp  = st.text_input("Exp. Date", value=profile.get("company_expiration", ""))
+            c_name  = st.text_input("Company Name", value=profile.get("company_name", ""))
+            c_addr  = st.text_input("Address", value=profile.get("company_address", ""))
+            c_city  = st.text_input("City", value=profile.get("company_city", ""))
+            c_state = st.text_input("State", value=profile.get("company_state", ""))
+            c_zip   = st.text_input("Zip Code", value=profile.get("company_zip", ""))
             c_phone = st.text_input("Phone", value=profile.get("company_phone", ""))
+        with col2:
+            c_email = st.text_input("Email", value=profile.get("company_email", ""))
+            c_first = st.text_input("First Name", value=profile.get("company_first_name", ""))
+            c_last  = st.text_input("Last Name", value=profile.get("company_last_name", ""))
+            c_reg   = st.text_input("Reg No", value=profile.get("company_reg_no", ""))
+            c_cof   = st.text_input("COF S97", value=profile.get("company_cof_s97", ""))
+            c_exp   = st.text_input("Exp. Date", value=profile.get("company_expiration", ""))
 
     # --- 2. SECCIÓN: ARCHITECT / APPLICANT ---
     with st.expander("📐 Architect / Applicant Information"):
         col1, col2 = st.columns(2)
         with col1:
-            a_name = st.text_input("Architect Co. Name", value=profile.get("arch_name", ""))
-            a_first = st.text_input("Arch. First Name", value=profile.get("arch_first_name", ""))
-            a_last = st.text_input("Arch. Last Name", value=profile.get("arch_last_name", ""))
+            a_name    = st.text_input("Architect Co. Name", value=profile.get("arch_name", ""))
+            a_addr    = st.text_input("Address", value=profile.get("arch_address", ""))
+            a_city    = st.text_input("City", value=profile.get("arch_city", ""))
+            a_state   = st.text_input("State", value=profile.get("arch_state", ""))
+            a_zip     = st.text_input("Zip Code", value=profile.get("arch_zip", ""))
+            a_phone   = st.text_input("Phone", value=profile.get("arch_phone", ""))
         with col2:
+            a_email   = st.text_input("Email", value=profile.get("arch_email", ""))
+            a_first   = st.text_input("First Name", value=profile.get("arch_first_name", ""))
+            a_last    = st.text_input("Last Name", value=profile.get("arch_last_name", ""))
             a_license = st.text_input("License No", value=profile.get("arch_license", ""))
-            a_email = st.text_input("Arch. Email", value=profile.get("arch_email", ""))
-            a_role = st.selectbox("Role", ["PE", "RA"], index=0 if profile.get("arch_role") == "PE" else 1)
+            a_role    = st.selectbox("Role", ["PE", "RA"], index=0 if profile.get("arch_role") == "PE" else 1)
 
     # --- 3. SECCIÓN: ELECTRICAL CONTRACTOR ---
     with st.expander("⚡ Electrical Contractor Information"):
         col1, col2 = st.columns(2)
         with col1:
-            e_name = st.text_input("Electrician Co. Name", value=profile.get("elec_name", ""))
-            e_first = st.text_input("Elec. First Name", value=profile.get("elec_first_name", ""))
+            e_name    = st.text_input("Electrician Co. Name", value=profile.get("elec_name", ""))
+            e_addr    = st.text_input("Address", value=profile.get("elec_address", ""))
+            e_city    = st.text_input("City", value=profile.get("elec_city", ""))
+            e_state   = st.text_input("State", value=profile.get("elec_state", ""))
+            e_zip     = st.text_input("Zip Code", value=profile.get("elec_zip", ""))
+            e_phone   = st.text_input("Phone", value=profile.get("elec_phone", ""))
         with col2:
-            e_license = st.text_input("Elec. License No", value=profile.get("elec_license", ""))
-            e_exp = st.text_input("Elec. Expiration", value=profile.get("elec_expiration", ""))
+            e_email   = st.text_input("Email", value=profile.get("elec_email", ""))
+            e_first   = st.text_input("First Name", value=profile.get("elec_first_name", ""))
+            e_last    = st.text_input("Last Name", value=profile.get("elec_last_name", ""))
+            e_license = st.text_input("License No", value=profile.get("elec_license", ""))
+            e_exp     = st.text_input("Expiration", value=profile.get("elec_expiration", ""))
 
     # --- 4. SECCIÓN: TECHNICAL DEFAULTS & CENTRAL STATION ---
     col1, col2 = st.columns(2)
     with col1:
         with st.expander("🛠️ Technical Defaults"):
-            t_man = st.text_input("Default Manufacturer", value=profile.get("tech_manufacturer", ""))
-            t_appr = st.text_input("BSA/MEA/COA Approval", value=profile.get("tech_approval", ""))
-            t_wire = st.text_input("Wire Type", value=profile.get("tech_wire_type", ""))
+            t_man   = st.text_input("Default Manufacturer", value=profile.get("tech_manufacturer", ""))
+            t_appr  = st.text_input("BSA/MEA/COA Approval", value=profile.get("tech_approval", ""))
+            t_gauge = st.text_input("Wire Gauge", value=profile.get("tech_wire_gauge", ""))
+            t_wire  = st.text_input("Wire Type", value=profile.get("tech_wire_type", ""))
     with col2:
         with st.expander("📡 Central Station"):
-            cs_name = st.text_input("CS Name", value=profile.get("cs_name", ""))
-            cs_code = st.text_input("CS Code", value=profile.get("cs_code", ""))
+            cs_name  = st.text_input("CS Name", value=profile.get("cs_name", ""))
+            cs_code  = st.text_input("CS Code", value=profile.get("cs_code", ""))
+            cs_addr  = st.text_input("CS Address", value=profile.get("cs_address", ""))
+            cs_city  = st.text_input("CS City", value=profile.get("cs_city", ""))
+            cs_state = st.text_input("CS State", value=profile.get("cs_state", ""))
+            cs_zip   = st.text_input("CS Zip", value=profile.get("cs_zip", ""))
+            cs_phone = st.text_input("CS Phone", value=profile.get("cs_phone", ""))
 
     # --- 5. LÓGICA DE GUARDADO COMPLETA ---
     if st.button("💾 Save Profile Permanently", use_container_width=True):
@@ -242,25 +260,32 @@ with tabs[1]:
             "updated_at": "now()",
             # Company
             "company_name": c_name, "company_address": c_addr, "company_city": c_city, 
-            "company_zip": c_zip, "company_reg_no": c_reg, "company_cof_s97": c_cof, 
-            "company_expiration": c_exp, "company_phone": c_phone,
+            "company_state": c_state, "company_zip": c_zip, "company_phone": c_phone,
+            "company_email": c_email, "company_first_name": c_first, "company_last_name": c_last,
+            "company_reg_no": c_reg, "company_cof_s97": c_cof, "company_expiration": c_exp,
             # Architect
-            "arch_name": a_name, "arch_first_name": a_first, "arch_last_name": a_last,
-            "arch_license": a_license, "arch_email": a_email, "arch_role": a_role,
+            "arch_name": a_name, "arch_address": a_addr, "arch_city": a_city, 
+            "arch_state": a_state, "arch_zip": a_zip, "arch_phone": a_phone,
+            "arch_email": a_email, "arch_first_name": a_first, "arch_last_name": a_last,
+            "arch_license": a_license, "arch_role": a_role,
             # Electrician
-            "elec_name": e_name, "elec_first_name": e_first, "elec_license": e_license,
-            "elec_expiration": e_exp,
+            "elec_name": e_name, "elec_address": e_addr, "elec_city": e_city, 
+            "elec_state": e_state, "elec_zip": e_zip, "elec_phone": e_phone,
+            "elec_email": e_email, "elec_first_name": e_first, "elec_last_name": e_last,
+            "elec_license": e_license, "elec_expiration": e_exp,
             # Tech
-            "tech_manufacturer": t_man, "tech_approval": t_appr, "tech_wire_type": t_wire,
+            "tech_manufacturer": t_man, "tech_approval": t_appr, 
+            "tech_wire_gauge": t_gauge, "tech_wire_type": t_wire,
             # CS
-            "cs_name": cs_name, "cs_code": cs_code
+            "cs_name": cs_name, "cs_code": cs_code, "cs_address": cs_addr, 
+            "cs_city": cs_city, "cs_state": cs_state, "cs_zip": cs_zip, "cs_phone": cs_phone
         }
         
         try:
             supabase.table("profiles").upsert(full_update).execute()
             st.success("✅ Complete Profile saved successfully!")
             
-            # Actualizamos main.py para usar estos datos de inmediato en el generador
+            # Actualizamos main.py temporalmente
             main.COMPANY.update({"Company Name": c_name, "Reg No": c_reg, "COF S97": c_cof})
             main.ARCHITECT.update({"Company Name": a_name, "License No": a_license, "Role": a_role})
             main.ELECTRICIAN.update({"Company Name": e_name, "License No": e_license})
@@ -310,8 +335,6 @@ with tabs[0]:
                 st.subheader("📋 Project Device List")
                 
                 if st.session_state.device_list:
-                    # Usamos data_editor para permitir edición y borrado fila por fila
-                    # num_rows="dynamic" permite al usuario borrar filas seleccionándolas
                     edited_list = st.data_editor(
                         st.session_state.device_list,
                         num_rows="dynamic", 
@@ -330,12 +353,10 @@ with tabs[0]:
                         key="device_editor"
                     )
 
-                    # Sincronizamos los cambios: si el usuario editó algo, actualizamos el state
                     if edited_list != st.session_state.device_list:
                         st.session_state.device_list = edited_list
                         st.rerun()
 
-                    # Botón de pánico (solo si realmente quieren limpiar todo)
                     if st.button("🗑️ Clear Entire List", use_container_width=True):
                         st.session_state.device_list = []
                         st.rerun()
@@ -344,12 +365,11 @@ with tabs[0]:
 
         st.divider()
 
-        # --- 1. SELECCIÓN DE FORMULARIOS (Colócalo antes del botón) ---
+        # --- 1. SELECCIÓN DE FORMULARIOS ---
         st.subheader("📝 Select Forms to Generate")
         col_a, col_b = st.columns(2)
 
         with col_a:
-            # Agregamos el parámetro key para evitar el error de ID duplicado
             gen_tm1 = st.checkbox("TM-1 Application", value=True, key="chk_gen_tm1")
             gen_a433 = st.checkbox("A-433 Device List", value=True, key="chk_gen_a433")
         with col_b:
@@ -368,7 +388,6 @@ with tabs[0]:
                 with st.spinner("Sincronizando perfil y generando formularios..."):
                     try:
                         # --- MAPEO TOTAL: SUPABASE -> MAIN.PY ---
-                        # 1. Fire Alarm Company
                         main.COMPANY.update({
                             "Company Name": profile.get("company_name", ""),
                             "Address": profile.get("company_address", ""),
@@ -384,7 +403,6 @@ with tabs[0]:
                             "Expiration": profile.get("company_expiration", "")
                         })
 
-                        # 2. Architect / Applicant
                         main.ARCHITECT.update({
                             "Company Name": profile.get("arch_name", ""),
                             "Address": profile.get("arch_address", ""),
@@ -399,7 +417,6 @@ with tabs[0]:
                             "Role": profile.get("arch_role", "PE")
                         })
 
-                        # 3. Electrical Contractor
                         main.ELECTRICIAN.update({
                             "Company Name": profile.get("elec_name", ""),
                             "Address": profile.get("elec_address", ""),
@@ -407,13 +424,13 @@ with tabs[0]:
                             "State": profile.get("elec_state", ""),
                             "Zip": profile.get("elec_zip", ""),
                             "Phone": profile.get("elec_phone", ""),
+                            "Email": profile.get("elec_email", ""),
                             "First Name": profile.get("elec_first_name", ""),
                             "Last Name": profile.get("elec_last_name", ""),
                             "License No": profile.get("elec_license", ""),
                             "Expiration": profile.get("elec_expiration", "")
                         })
 
-                        # 4. Technical Defaults
                         main.TECH_DEFAULTS.update({
                             "Manufacturer": profile.get("tech_manufacturer", ""),
                             "Approval": profile.get("tech_approval", ""),
@@ -421,7 +438,6 @@ with tabs[0]:
                             "WireType": profile.get("tech_wire_type", "")
                         })
 
-                        # 5. Central Station
                         main.CENTRAL_STATION.update({
                             "Company Name": profile.get("cs_name", ""),
                             "CS Code": profile.get("cs_code", ""),
@@ -440,7 +456,6 @@ with tabs[0]:
                             
                             generated_files = []
 
-                            # Generación condicional basada en checkboxes
                             if gen_tm1:
                                 main.generar_tm1(full_data, "tm-1-application-for-plan-examination-doc-review.pdf", f"TM1_{bin_number}.pdf")
                                 generated_files.append(f"TM1_{bin_number}.pdf")
@@ -457,13 +472,12 @@ with tabs[0]:
                                 main.generar_reporte_auditoria(full_data, f"REPORT_{bin_number}.txt")
                                 generated_files.append(f"REPORT_{bin_number}.txt")
 
-                            # Empaquetado en ZIP
                             zip_buffer = BytesIO()
                             with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
                                 for file_name in generated_files:
                                     if os.path.exists(file_name):
                                         zip_file.write(file_name)
-                                        os.remove(file_name) # Borrar archivo temporal después de añadir al ZIP
+                                        os.remove(file_name) 
 
                             st.success(f"✅ {len(generated_files)} documents generated successfully!")
                             st.download_button(
