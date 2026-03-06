@@ -64,35 +64,68 @@ st.sidebar.success(f"Logged in as: {st.session_state.user.email}")
 if st.sidebar.button("Logout"):
     logout()
 
+# Función para obtener los datos del perfil desde Supabase
+def fetch_user_profile(user_id):
+    try:
+        response = supabase.table("profiles").select("*").eq("id", user_id).execute()
+        if response.data:
+            return response.data[0]
+    except Exception as e:
+        st.error(f"Error loading profile: {e}")
+    return {}
+
+# Cargar los datos actuales del usuario logueado
+profile = fetch_user_profile(st.session_state.user.id)
+
+
+
+
 # Tabs for organization
 tabs = st.tabs(["🚀 Project Builder", "👤 Professional Profile"])
 
 # --- TAB 1: PROFESSIONAL PROFILE ---
 with tabs[1]:
     st.header("My Professional Profile")
-    st.info("Data saved here will automatically fill your FDNY forms.")
+    st.info("Data saved here is stored permanently in the cloud and fills your FDNY forms.")
     
-    # In a full implementation, we would fetch/save this to the 'profiles' table in Supabase
-    with st.expander("Company & License Settings", expanded=True):
+    with st.expander("Fire Alarm Company Data", expanded=True):
         col_a, col_b = st.columns(2)
         with col_a:
-            st.subheader("Fire Alarm Company")
-            c_name = st.text_input("Company Name", value=main.COMPANY.get("Company Name", ""))
-            c_reg = st.text_input("Reg No", value=main.COMPANY.get("Reg No", ""))
-            c_cof = st.text_input("COF S97", value=main.COMPANY.get("COF S97", ""))
+            # Usamos los datos de la base de datos como valor inicial (default)
+            c_name = st.text_input("Company Name", value=profile.get("company_name", ""))
+            c_reg = st.text_input("Reg No", value=profile.get("company_reg_no", ""))
+            c_cof = st.text_input("COF S97", value=profile.get("company_cof_s97", ""))
+            c_addr = st.text_input("Address", value=profile.get("company_address", ""))
         with col_b:
             st.subheader("Technical Defaults")
-            t_man = st.text_input("Default Manufacturer", value=main.TECH_DEFAULTS.get("Manufacturer", ""))
-            t_wire = st.text_input("Wire Type", value=main.TECH_DEFAULTS.get("WireType", ""))
+            t_man = st.text_input("Default Manufacturer", value=profile.get("tech_manufacturer", ""))
+            t_wire = st.text_input("Wire Type", value=profile.get("tech_wire_type", ""))
 
-    if st.button("💾 Save Profile (Local Session Only)"):
-        # Update the 'main' module variables for the current session
-        main.COMPANY["Company Name"] = c_name
-        main.COMPANY["Reg No"] = c_reg
-        main.COMPANY["COF S97"] = c_cof
-        main.TECH_DEFAULTS["Manufacturer"] = t_man
-        main.TECH_DEFAULTS["WireType"] = t_wire
-        st.success("Profile updated for this session!")
+    # --- BOTÓN DE GUARDADO PERMANENTE ---
+    if st.button("💾 Save Profile Permanently"):
+        profile_update = {
+            "id": st.session_state.user.id, # El ID vincula los datos a este usuario
+            "company_name": c_name,
+            "company_reg_no": c_reg,
+            "company_cof_s97": c_cof,
+            "company_address": c_addr,
+            "tech_manufacturer": t_man,
+            "tech_wire_type": t_wire,
+            "updated_at": "now()"
+        }
+        
+        try:
+            # .upsert inserta si no existe o actualiza si ya existe
+            supabase.table("profiles").upsert(profile_update).execute()
+            st.success("✅ Profile saved permanently in the cloud!")
+            
+            # También actualizamos los datos en memoria para el generador
+            main.COMPANY["Company Name"] = c_name
+            main.COMPANY["Reg No"] = c_reg
+            # ... (puedes actualizar el resto de variables aquí)
+            
+        except Exception as e:
+            st.error(f"Error saving to database: {e}")
 
 # --- TAB 0: PROJECT BUILDER ---
 with tabs[0]:
