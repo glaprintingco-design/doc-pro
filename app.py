@@ -88,41 +88,84 @@ with tabs[1]:
     st.header("My Professional Profile")
     st.info("Data saved here is stored permanently in the cloud and fills your FDNY forms.")
     
-    with st.expander("Fire Alarm Company Data", expanded=True):
-        col_a, col_b = st.columns(2)
-        with col_a:
-            # Usamos los datos de la base de datos como valor inicial (default)
+    # --- 1. SECCIÓN: FIRE ALARM COMPANY ---
+    with st.expander("🏢 Fire Alarm Company Data", expanded=True):
+        col1, col2 = st.columns(2)
+        with col1:
             c_name = st.text_input("Company Name", value=profile.get("company_name", ""))
-            c_reg = st.text_input("Reg No", value=profile.get("company_reg_no", ""))
-            c_cof = st.text_input("COF S97", value=profile.get("company_cof_s97", ""))
             c_addr = st.text_input("Address", value=profile.get("company_address", ""))
-        with col_b:
-            st.subheader("Technical Defaults")
-            t_man = st.text_input("Default Manufacturer", value=profile.get("tech_manufacturer", ""))
-            t_wire = st.text_input("Wire Type", value=profile.get("tech_wire_type", ""))
+            c_city = st.text_input("City", value=profile.get("company_city", ""))
+            c_zip  = st.text_input("Zip Code", value=profile.get("company_zip", ""))
+        with col2:
+            c_reg  = st.text_input("Reg No", value=profile.get("company_reg_no", ""))
+            c_cof  = st.text_input("COF S97", value=profile.get("company_cof_s97", ""))
+            c_exp  = st.text_input("Exp. Date", value=profile.get("company_expiration", ""))
+            c_phone = st.text_input("Phone", value=profile.get("company_phone", ""))
 
-    # --- BOTÓN DE GUARDADO PERMANENTE ---
-    if st.button("💾 Save Profile Permanently"):
-        profile_update = {
-            "id": st.session_state.user.id, # El ID vincula los datos a este usuario
-            "company_name": c_name,
-            "company_reg_no": c_reg,
-            "company_cof_s97": c_cof,
-            "company_address": c_addr,
-            "tech_manufacturer": t_man,
-            "tech_wire_type": t_wire,
-            "updated_at": "now()"
+    # --- 2. SECCIÓN: ARCHITECT / APPLICANT ---
+    with st.expander("📐 Architect / Applicant Information"):
+        col1, col2 = st.columns(2)
+        with col1:
+            a_name = st.text_input("Architect Co. Name", value=profile.get("arch_name", ""))
+            a_first = st.text_input("Arch. First Name", value=profile.get("arch_first_name", ""))
+            a_last = st.text_input("Arch. Last Name", value=profile.get("arch_last_name", ""))
+        with col2:
+            a_license = st.text_input("License No", value=profile.get("arch_license", ""))
+            a_email = st.text_input("Arch. Email", value=profile.get("arch_email", ""))
+            a_role = st.selectbox("Role", ["PE", "RA"], index=0 if profile.get("arch_role") == "PE" else 1)
+
+    # --- 3. SECCIÓN: ELECTRICAL CONTRACTOR ---
+    with st.expander("⚡ Electrical Contractor Information"):
+        col1, col2 = st.columns(2)
+        with col1:
+            e_name = st.text_input("Electrician Co. Name", value=profile.get("elec_name", ""))
+            e_first = st.text_input("Elec. First Name", value=profile.get("elec_first_name", ""))
+        with col2:
+            e_license = st.text_input("Elec. License No", value=profile.get("elec_license", ""))
+            e_exp = st.text_input("Elec. Expiration", value=profile.get("elec_expiration", ""))
+
+    # --- 4. SECCIÓN: TECHNICAL DEFAULTS & CENTRAL STATION ---
+    col1, col2 = st.columns(2)
+    with col1:
+        with st.expander("🛠️ Technical Defaults"):
+            t_man = st.text_input("Default Manufacturer", value=profile.get("tech_manufacturer", ""))
+            t_appr = st.text_input("BSA/MEA/COA Approval", value=profile.get("tech_approval", ""))
+            t_wire = st.text_input("Wire Type", value=profile.get("tech_wire_type", ""))
+    with col2:
+        with st.expander("📡 Central Station"):
+            cs_name = st.text_input("CS Name", value=profile.get("cs_name", ""))
+            cs_code = st.text_input("CS Code", value=profile.get("cs_code", ""))
+
+    # --- 5. LÓGICA DE GUARDADO COMPLETA ---
+    if st.button("💾 Save Profile Permanently", use_container_width=True):
+        full_update = {
+            "id": st.session_state.user.id,
+            "updated_at": "now()",
+            # Company
+            "company_name": c_name, "company_address": c_addr, "company_city": c_city, 
+            "company_zip": c_zip, "company_reg_no": c_reg, "company_cof_s97": c_cof, 
+            "company_expiration": c_exp, "company_phone": c_phone,
+            # Architect
+            "arch_name": a_name, "arch_first_name": a_first, "arch_last_name": a_last,
+            "arch_license": a_license, "arch_email": a_email, "arch_role": a_role,
+            # Electrician
+            "elec_name": e_name, "elec_first_name": e_first, "elec_license": e_license,
+            "elec_expiration": e_exp,
+            # Tech
+            "tech_manufacturer": t_man, "tech_approval": t_appr, "tech_wire_type": t_wire,
+            # CS
+            "cs_name": cs_name, "cs_code": cs_code
         }
         
         try:
-            # .upsert inserta si no existe o actualiza si ya existe
-            supabase.table("profiles").upsert(profile_update).execute()
-            st.success("✅ Profile saved permanently in the cloud!")
+            supabase.table("profiles").upsert(full_update).execute()
+            st.success("✅ Complete Profile saved successfully!")
             
-            # También actualizamos los datos en memoria para el generador
-            main.COMPANY["Company Name"] = c_name
-            main.COMPANY["Reg No"] = c_reg
-            # ... (puedes actualizar el resto de variables aquí)
+            # Actualizamos main.py para usar estos datos de inmediato en el generador
+            main.COMPANY.update({"Company Name": c_name, "Reg No": c_reg, "COF S97": c_cof})
+            main.ARCHITECT.update({"Company Name": a_name, "License No": a_license, "Role": a_role})
+            main.ELECTRICIAN.update({"Company Name": e_name, "License No": e_license})
+            main.TECH_DEFAULTS.update({"Manufacturer": t_man, "WireType": t_wire})
             
         except Exception as e:
             st.error(f"Error saving to database: {e}")
