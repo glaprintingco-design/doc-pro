@@ -49,7 +49,7 @@ def logout():
     st.session_state.user = None
     supabase.auth.sign_out()
     st.rerun()
-st.write(f"Tu ID actual es: {st.session_state.user.id}")
+
 # --- 5. MAIN APP LOGIC ---
 if not st.session_state.user:
     login_ui()
@@ -251,4 +251,5 @@ with tabs[0]:
                             st.error("Could not retrieve data for this BIN.")
                     except Exception as e:
                         st.error(f"Critical Error: {e}")
+
 
