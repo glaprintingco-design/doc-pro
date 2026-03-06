@@ -5,14 +5,14 @@ import zipfile
 from io import BytesIO
 
 # --- PAGE CONFIGURATION ---
-st.set_page_config(page_title="FDNY Auto-Filer Pro 2026", layout="wide")
+st.set_page_config(page_title="Fire Form Pro", layout="wide")
 
 # --- ADD LOGO ---
 # This assumes you have a file named 'logo.png' in your GitHub repository
 if os.path.exists("logo.png"):
     st.image("logo.png", width=200)
 
-st.title("🚀 FDNY Auto-Filer Pro v1.0")
+st.title("Fire Form Pro")
 st.markdown("Automated form generation for the NYC Fire Alarm Industry.")
 
 # --- SIDEBAR (SETTINGS) ---
@@ -107,3 +107,4 @@ with col2:
                         st.error("Could not retrieve data for this BIN.")
                 except Exception as e:
                     st.error(f"Critical Error: {e}")
+
