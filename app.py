@@ -6,7 +6,7 @@ import zipfile
 from io import BytesIO
 
 # ── PAGE CONFIG ────────────────────────────────────────────────────────────────
-st.set_page_config(page_title="Fire Form Pro", layout="wide", page_icon="🔥")
+st.set_page_config(page_title="Fire Form Pro", layout="wide", page_icon="🔥", initial_sidebar_state="expanded")
 
 main.API_KEY_NYC       = st.secrets.get("NYC_API_KEY", "")
 main.APP_TOKEN_SOCRATA = st.secrets.get("SOCRATA_TOKEN", "")
@@ -107,8 +107,30 @@ html, body, [data-testid="stAppViewContainer"],
     color: {T['text']} !important;
     font-family: 'Inter', sans-serif !important;
 }}
-[data-testid="stHeader"], [data-testid="stToolbar"],
+[data-testid="stHeader"] {{ display: none !important; }}
 [data-testid="stDecoration"] {{ display: none !important; }}
+
+/* Always show sidebar collapse/expand toggle */
+[data-testid="stSidebarCollapseButton"] {{
+    display: flex !important;
+    background: {T["orange"]} !important;
+    border-radius: 50% !important;
+    color: white !important;
+    box-shadow: 0 2px 8px rgba(255,107,53,0.4) !important;
+}}
+[data-testid="stSidebarCollapseButton"]:hover {{
+    transform: scale(1.1) !important;
+}}
+
+/* Sidebar nav arrow — always visible and styled */
+button[data-testid="collapsedControl"] {{
+    display: flex !important;
+    background: {T["orange"]} !important;
+    border-radius: 0 8px 8px 0 !important;
+    color: white !important;
+    width: 28px !important;
+    box-shadow: 3px 0 12px rgba(255,107,53,0.35) !important;
+}}
 
 /* ── MAIN PADDING ── */
 .main .block-container {{
@@ -610,10 +632,59 @@ if not st.session_state.user:
             <div style='color:{T['orange']};font-size:0.82rem;font-weight:500;
                 background:{T['orange_bg']};border:1px solid {T['border2']};
                 padding:0.4rem 1rem;border-radius:20px;'>
-                Sign in from the sidebar to get started →
+                ← Open the sidebar to sign in
             </div>
         </div>
     """, unsafe_allow_html=True)
+    # Visible fallback: show login form inline if sidebar may be collapsed
+    st.markdown(f"""
+        <div style='max-width:360px;margin:0 auto 2rem auto;
+            background:{T['surface']};border:1px solid {T['border']};
+            border-radius:14px;padding:1.75rem;'>
+            <div style='font-size:0.95rem;font-weight:600;color:{T['text']};
+                margin-bottom:1.25rem;text-align:center;'>Sign in to your account</div>
+    """, unsafe_allow_html=True)
+    with st.container():
+        login_email    = st.text_input("Email", key="main_email", placeholder="you@example.com")
+        login_password = st.text_input("Password", type="password", key="main_pass")
+        col_a, col_b   = st.columns(2)
+        with col_a:
+            if st.button("Sign In", use_container_width=True, type="primary", key="main_signin"):
+                if login_email and login_password:
+                    with st.spinner("Signing in…"):
+                        try:
+                            r = supabase.auth.sign_in_with_password({
+                                "email": login_email.strip(), "password": login_password})
+                            if r.user:
+                                st.session_state.user = r.user; st.rerun()
+                            else: st.error("Login failed.")
+                        except Exception as e:
+                            msg = str(e)
+                            if "Invalid login credentials" in msg: st.error("Invalid email or password.")
+                            elif "Email not confirmed" in msg:     st.warning("Please confirm your email.")
+                            else: st.error(msg)
+                else: st.error("Please enter email and password.")
+        with col_b:
+            if st.button("Sign Up", use_container_width=True, key="main_signup"):
+                if login_email and login_password:
+                    if len(login_password) < 6:
+                        st.error("Password must be ≥ 6 characters.")
+                    else:
+                        with st.spinner("Creating account…"):
+                            try:
+                                r = supabase.auth.sign_up({
+                                    "email": login_email.strip(), "password": login_password})
+                                if r.user:
+                                    st.success("Account created! Check your email to confirm.")
+                                    try: supabase.table("profiles").insert({"id": r.user.id, "email": login_email}).execute()
+                                    except Exception: pass
+                                else: st.error("Sign-up returned no user.")
+                            except Exception as e:
+                                msg = str(e)
+                                if "already registered" in msg.lower(): st.warning("Email already registered.")
+                                else: st.error(msg)
+                else: st.error("Please enter email and password.")
+    st.markdown("</div>", unsafe_allow_html=True)
     st.stop()
 
 
