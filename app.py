@@ -8,6 +8,10 @@ from io import BytesIO
 # --- 1. CONFIGURACIÓN Y CONEXIÓN (CONSOLIDADA) ---
 st.set_page_config(page_title="Fire Form Pro", layout="wide", page_icon="🔥")
 
+import main
+main.API_KEY_NYC = st.secrets.get("NYC_API_KEY", "")
+main.APP_TOKEN_SOCRATA = st.secrets.get("SOCRATA_TOKEN", "")
+
 # Uso de Secrets para seguridad (Configura esto en el panel de Streamlit Cloud)
 SUPABASE_URL = st.secrets.get("SUPABASE_URL", "https://uhhiqkymipbcepqzwtvg.supabase.co")
 SUPABASE_KEY = st.secrets.get("SUPABASE_KEY", "sb_publishable_mvqOWXc5s4b3_IMe4gGexw_sU3B2DRL")
