@@ -17,16 +17,45 @@ if "supabase" not in st.session_state:
 
 supabase = st.session_state.supabase
 
-# --- 2. ESTADO DE SESIÓN ---
+# FIX 2: INICIALIZACIÓN CON RECUPERACIÓN DE SESIÓN
+# ============================================
+if "supabase" not in st.session_state:
+    try:
+        st.session_state.supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+        st.sidebar.success("✅ Supabase connected")
+    except Exception as e:
+        st.error(f"❌ Failed to connect to Supabase: {e}")
+        st.stop()
+
+supabase = st.session_state.supabase
+
+# ============================================
+# FIX 3: RECUPERAR SESIÓN EXISTENTE
+# ============================================
 if "user" not in st.session_state:
     st.session_state.user = None
+    
+    # Intentar recuperar sesión activa
+    try:
+        session = supabase.auth.get_session()
+        if session and session.user:
+            st.session_state.user = session.user
+            st.sidebar.success(f"🔄 Session restored: {session.user.email}")
+    except Exception as e:
+        # No hay sesión activa, está bien
+        pass
+
 if "device_list" not in st.session_state:
     st.session_state.device_list = []
 
 # --- 3. FUNCIONES DE APOYO ---
 def logout():
+    try:
+        supabase.auth.sign_out()
+    except:
+        pass
     st.session_state.user = None
-    supabase.auth.sign_out()
+    st.session_state.device_list = []
     st.rerun()
 
 def fetch_user_profile(user_id):
@@ -37,29 +66,104 @@ def fetch_user_profile(user_id):
         st.error(f"Error loading profile: {e}")
         return {}
 
-# --- 4. LÓGICA DE AUTENTICACIÓN ---
+# ============================================
+# FIX 4: MEJOR UI DE AUTENTICACIÓN CON DEBUGGING
+# ============================================
 def login_ui():
     with st.sidebar:
         st.header("🔑 User Access")
+        
+        # Mostrar estado de configuración
+        with st.expander("🔧 Connection Status", expanded=False):
+            st.text(f"URL: {SUPABASE_URL[:30]}...")
+            st.text(f"Key: {SUPABASE_KEY[:20]}...{SUPABASE_KEY[-10:]}")
+            st.text(f"Key Length: {len(SUPABASE_KEY)} chars")
+        
         choice = st.radio("Action", ["Login", "Sign Up"])
         email = st.text_input("Email Address")
         password = st.text_input("Password", type="password")
         
         if choice == "Login":
             if st.button("Sign In", use_container_width=True):
-                try:
-                    res = supabase.auth.sign_in_with_password({"email": email, "password": password})
-                    st.session_state.user = res.user
-                    st.rerun()
-                except:
-                    st.error("Invalid credentials.")
-        else:
+                if not email or not password:
+                    st.error("Please enter both email and password")
+                    return
+                
+                with st.spinner("Authenticating..."):
+                    try:
+                        # Intentar login con mejor manejo de errores
+                        response = supabase.auth.sign_in_with_password({
+                            "email": email.strip(),
+                            "password": password
+                        })
+                        
+                        if response.user:
+                            st.session_state.user = response.user
+                            st.success(f"✅ Welcome back, {email}!")
+                            st.rerun()
+                        else:
+                            st.error("❌ Login failed: No user returned")
+                            
+                    except Exception as e:
+                        error_msg = str(e)
+                        st.error(f"❌ Login Error: {error_msg}")
+                        
+                        # Mensajes de ayuda específicos
+                        if "Invalid login credentials" in error_msg:
+                            st.warning("⚠️ Invalid email or password. Please try again.")
+                            st.info("💡 If you forgot your password, use the Sign Up tab to reset it.")
+                        elif "Email not confirmed" in error_msg:
+                            st.warning("⚠️ Please check your email and confirm your account first.")
+                        elif "rate limit" in error_msg.lower():
+                            st.warning("⚠️ Too many attempts. Please wait a moment and try again.")
+                        else:
+                            st.info(f"🔍 Debug info: Check your Supabase Authentication settings")
+                            with st.expander("Show full error"):
+                                st.code(error_msg)
+        
+        else:  # Sign Up
             if st.button("Create Account", use_container_width=True):
-                try:
-                    supabase.auth.sign_up({"email": email, "password": password})
-                    st.info("Check your email for confirmation!")
-                except Exception as e:
-                    st.error(f"Error: {e}")
+                if not email or not password:
+                    st.error("Please enter both email and password")
+                    return
+                
+                if len(password) < 6:
+                    st.error("Password must be at least 6 characters")
+                    return
+                
+                with st.spinner("Creating account..."):
+                    try:
+                        response = supabase.auth.sign_up({
+                            "email": email.strip(),
+                            "password": password
+                        })
+                        
+                        if response.user:
+                            st.success("✅ Account created successfully!")
+                            st.info("📧 Please check your email to confirm your account before logging in.")
+                            
+                            # Crear perfil automáticamente
+                            try:
+                                supabase.table("profiles").insert({
+                                    "id": response.user.id,
+                                    "email": email
+                                }).execute()
+                            except Exception as profile_error:
+                                st.warning(f"Profile creation note: {profile_error}")
+                        else:
+                            st.error("Sign up completed but no user data returned")
+                            
+                    except Exception as e:
+                        error_msg = str(e)
+                        st.error(f"❌ Sign Up Error: {error_msg}")
+                        
+                        if "already registered" in error_msg.lower():
+                            st.warning("⚠️ This email is already registered. Please use the Login tab.")
+                        elif "valid email" in error_msg.lower():
+                            st.warning("⚠️ Please enter a valid email address.")
+                        else:
+                            with st.expander("Show full error"):
+                                st.code(error_msg)
 
 # --- 5. CONTROL DE ACCESO ---
 if not st.session_state.user:
@@ -73,9 +177,9 @@ if not st.session_state.user:
 # --- 6. APP PRINCIPAL (USUARIO LOGUEADO) ---
 profile = fetch_user_profile(st.session_state.user.id)
 st.sidebar.success(f"Logged in as: {st.session_state.user.email}")
-if st.sidebar.button("Logout"):
-    logout()
 
+if st.sidebar.button("Logout", use_container_width=True):
+    logout()
 
 # Tabs for organization
 tabs = st.tabs(["🚀 Project Builder", "👤 Professional Profile"])
