@@ -285,7 +285,12 @@ with tabs[0]:
 
         st.divider()
         
-        st.subheader("2. A-433 Add Devices")<span style='color:gray; font-size:14px;'>Optional</span>
+        # Section: Add Devices
+        st.markdown(
+            "<h3>2. A-433 Add Devices <span style='color:gray; font-size:14px;'>Optional</span></h3>",
+            unsafe_allow_html=True
+        )
+
         floor = st.selectbox("Floor Location", main.FULL_FLOOR_LIST)
         category = st.selectbox("Category", list(main.MASTER_DEVICE_LIST.keys()))
         
