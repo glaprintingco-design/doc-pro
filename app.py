@@ -5,98 +5,54 @@ import os
 import zipfile
 from io import BytesIO
 
-# --- 1. CONFIGURACIÓN Y CONEXIÓN ---
+# --- 1. CONFIGURACIÓN Y CONEXIÓN (CONSOLIDADA) ---
 st.set_page_config(page_title="Fire Form Pro", layout="wide", page_icon="🔥")
 
-# Credenciales desde Secrets
+import main
 main.API_KEY_NYC = st.secrets.get("NYC_API_KEY", "")
 main.APP_TOKEN_SOCRATA = st.secrets.get("SOCRATA_TOKEN", "")
-SUPABASE_URL = st.secrets.get("SUPABASE_URL", "")
-SUPABASE_KEY = st.secrets.get("SUPABASE_KEY", "")
 
+# Uso de Secrets para seguridad
+SUPABASE_URL = st.secrets.get("SUPABASE_URL", "https://uhhiqkymipbcepqzwtvg.supabase.co")
+SUPABASE_KEY = st.secrets.get("SUPABASE_KEY", "sb_publishable_mvqOWXc5s4b3_IMe4gGexw_sU3B2DRL")
+
+# ============================================
+# INICIALIZACIÓN CON RECUPERACIÓN DE SESIÓN
+# ============================================
 if "supabase" not in st.session_state:
     try:
         st.session_state.supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+        st.sidebar.success("✅ Supabase connected")
     except Exception as e:
-        st.error(f"❌ Connection Error: {e}")
+        st.error(f"❌ Failed to connect to Supabase: {e}")
         st.stop()
 
 supabase = st.session_state.supabase
 
-# --- 2. GESTIÓN DE SESIÓN ---
+# ============================================
+# RECUPERAR SESIÓN EXISTENTE
+# ============================================
 if "user" not in st.session_state:
     st.session_state.user = None
+    
+    # Intentar recuperar sesión activa
     try:
         session = supabase.auth.get_session()
         if session and session.user:
             st.session_state.user = session.user
-    except:
+            st.sidebar.success(f"🔄 Session restored: {session.user.email}")
+    except Exception as e:
         pass
 
 if "device_list" not in st.session_state:
     st.session_state.device_list = []
 
-# --- 3. FUNCIONES DE APOYO (REFACTORIZADAS) ---
-def sync_data_to_main(profile_data):
-    """Sincroniza los datos del perfil con las variables globales de main.py (EVITA DUPLICADOS)"""
-    main.COMPANY.update({
-        "Company Name": profile_data.get("company_name", ""),
-        "Address": profile_data.get("company_address", ""),
-        "City": profile_data.get("company_city", ""),
-        "State": profile_data.get("company_state", "NY"),
-        "Zip": profile_data.get("company_zip", ""),
-        "Phone": profile_data.get("company_phone", ""),
-        "Email": profile_data.get("company_email", ""),
-        "First Name": profile_data.get("company_first_name", ""),
-        "Last Name": profile_data.get("company_last_name", ""),
-        "Reg No": profile_data.get("company_reg_no", ""),
-        "COF S97": profile_data.get("company_cof_s97", ""),
-        "Expiration": profile_data.get("company_expiration", "")
-    })
-    main.ARCHITECT.update({
-        "Company Name": profile_data.get("arch_name", ""),
-        "License No": profile_data.get("arch_license", ""),
-        "Role": profile_data.get("arch_role", "PE"),
-        "Address": profile_data.get("arch_address", ""),
-        "City": profile_data.get("arch_city", ""),
-        "State": profile_data.get("arch_state", ""),
-        "Zip": profile_data.get("arch_zip", ""),
-        "Phone": profile_data.get("arch_phone", ""),
-        "Email": profile_data.get("arch_email", ""),
-        "First Name": profile_data.get("arch_first_name", ""),
-        "Last Name": profile_data.get("arch_last_name", "")
-    })
-    main.ELECTRICIAN.update({
-        "Company Name": profile_data.get("elec_name", ""),
-        "License No": profile_data.get("elec_license", ""),
-        "Address": profile_data.get("elec_address", ""),
-        "City": profile_data.get("elec_city", ""),
-        "State": profile_data.get("elec_state", ""),
-        "Zip": profile_data.get("elec_zip", ""),
-        "Phone": profile_data.get("elec_phone", ""),
-        "Email": profile_data.get("elec_email", ""),
-        "First Name": profile_data.get("elec_first_name", ""),
-        "Last Name": profile_data.get("elec_last_name", ""),
-        "Expiration": profile_data.get("elec_expiration", "")
-    })
-    main.TECH_DEFAULTS.update({
-        "Manufacturer": profile_data.get("tech_manufacturer", ""),
-        "Approval": profile_data.get("tech_approval", ""),
-        "WireGauge": profile_data.get("tech_wire_gauge", ""),
-        "WireType": profile_data.get("tech_wire_type", "")
-    })
-    main.CENTRAL_STATION.update({
-        "Company Name": profile_data.get("cs_name", ""),
-        "CS Code": profile_data.get("cs_code", ""),
-        "Address": profile_data.get("cs_address", ""),
-        "City": profile_data.get("cs_city", ""),
-        "State": profile_data.get("cs_state", ""),
-        "Zip": profile_data.get("cs_zip", ""),
-        "Phone": profile_data.get("cs_phone", "")
-    })
-
+# --- FUNCIONES DE APOYO ---
 def logout():
-    supabase.auth.sign_out()
+    try:
+        supabase.auth.sign_out()
+    except:
+        pass
     st.session_state.user = None
     st.session_state.device_list = []
     st.rerun()
@@ -105,175 +61,446 @@ def fetch_user_profile(user_id):
     try:
         response = supabase.table("profiles").select("*").eq("id", user_id).execute()
         return response.data[0] if response.data else {}
-    except:
+    except Exception as e:
+        st.error(f"Error loading profile: {e}")
         return {}
 
-# --- 4. UI DE AUTENTICACIÓN ---
+# ============================================
+# UI DE AUTENTICACIÓN
+# ============================================
 def login_ui():
     with st.sidebar:
         st.header("🔑 User Access")
+        
         choice = st.radio("Action", ["Login", "Sign Up"])
         email = st.text_input("Email Address")
         password = st.text_input("Password", type="password")
         
         if choice == "Login":
             if st.button("Sign In", use_container_width=True):
-                try:
-                    res = supabase.auth.sign_in_with_password({"email": email.strip(), "password": password})
-                    if res.user:
-                        st.session_state.user = res.user
-                        st.rerun()
-                except Exception as e:
-                    st.error(f"Error: {e}")
-        else:
+                if not email or not password:
+                    st.error("Please enter both email and password")
+                    return
+                
+                with st.spinner("Authenticating..."):
+                    try:
+                        response = supabase.auth.sign_in_with_password({
+                            "email": email.strip(),
+                            "password": password
+                        })
+                        
+                        if response.user:
+                            st.session_state.user = response.user
+                            st.success(f"✅ Welcome back, {email}!")
+                            st.rerun()
+                        else:
+                            st.error("❌ Login failed: No user returned")
+                            
+                    except Exception as e:
+                        error_msg = str(e)
+                        st.error(f"❌ Login Error: {error_msg}")
+                        
+                        if "Invalid login credentials" in error_msg:
+                            st.warning("⚠️ Invalid email or password. Please try again.")
+                            st.info("💡 If you forgot your password, use the Sign Up tab to reset it.")
+                        elif "Email not confirmed" in error_msg:
+                            st.warning("⚠️ Please check your email and confirm your account first.")
+                        elif "rate limit" in error_msg.lower():
+                            st.warning("⚠️ Too many attempts. Please wait a moment and try again.")
+                        else:
+                            st.info(f"🔍 Debug info: Check your Supabase Authentication settings")
+                            with st.expander("Show full error"):
+                                st.code(error_msg)
+        
+        else:  # Sign Up
             if st.button("Create Account", use_container_width=True):
-                try:
-                    res = supabase.auth.sign_up({"email": email.strip(), "password": password})
-                    if res.user:
-                        supabase.table("profiles").insert({"id": res.user.id, "email": email}).execute()
-                        st.success("Check your email for confirmation!")
-                except Exception as e:
-                    st.error(f"Error: {e}")
+                if not email or not password:
+                    st.error("Please enter both email and password")
+                    return
+                
+                if len(password) < 6:
+                    st.error("Password must be at least 6 characters")
+                    return
+                
+                with st.spinner("Creating account..."):
+                    try:
+                        response = supabase.auth.sign_up({
+                            "email": email.strip(),
+                            "password": password
+                        })
+                        
+                        if response.user:
+                            st.success("✅ Account created successfully!")
+                            st.info("📧 Please check your email to confirm your account before logging in.")
+                            
+                            try:
+                                supabase.table("profiles").insert({
+                                    "id": response.user.id,
+                                    "email": email
+                                }).execute()
+                            except Exception as profile_error:
+                                st.warning(f"Profile creation note: {profile_error}")
+                        else:
+                            st.error("Sign up completed but no user data returned")
+                            
+                    except Exception as e:
+                        error_msg = str(e)
+                        st.error(f"❌ Sign Up Error: {error_msg}")
+                        
+                        if "already registered" in error_msg.lower():
+                            st.warning("⚠️ This email is already registered. Please use the Login tab.")
+                        elif "valid email" in error_msg.lower():
+                            st.warning("⚠️ Please enter a valid email address.")
+                        else:
+                            with st.expander("Show full error"):
+                                st.code(error_msg)
 
+# --- CONTROL DE ACCESO ---
 if not st.session_state.user:
     login_ui()
     st.title("Fire Form Pro")
-    st.warning("Please log in to continue.")
+    if os.path.exists("logo.png"):
+        st.image("logo.png", width=200)
+    st.warning("Please log in from the sidebar to access the generator.")
     st.stop()
 
-# --- 5. APP PRINCIPAL ---
+# --- APP PRINCIPAL (USUARIO LOGUEADO) ---
 profile = fetch_user_profile(st.session_state.user.id)
-st.sidebar.write(f"Logged: {st.session_state.user.email}")
-if st.sidebar.button("Logout"): logout()
+st.sidebar.success(f"Logged in as: {st.session_state.user.email}")
 
+if st.sidebar.button("Logout", use_container_width=True):
+    logout()
+
+# Tabs for organization
 tabs = st.tabs(["🚀 Project Builder", "👤 Professional Profile"])
 
-# --- TAB PROFIL (TAB 1) ---
+# --- TAB 1: PROFESSIONAL PROFILE ---
 with tabs[1]:
     st.header("My Professional Profile")
+    st.info("Data saved here is stored permanently in the cloud and fills your FDNY forms.")
+    
+    # --- 1. SECCIÓN: FIRE ALARM COMPANY ---
     with st.expander("🏢 Fire Alarm Company Data", expanded=True):
         col1, col2 = st.columns(2)
         with col1:
-            c_name = st.text_input("Company Name", profile.get("company_name", ""), key="p_cname")
-            c_addr = st.text_input("Address", profile.get("company_address", ""), key="p_caddr")
-            c_city = st.text_input("City", profile.get("company_city", ""), key="p_ccity")
-            c_state = st.text_input("State", profile.get("company_state", "NY"), key="p_cstate")
-            c_zip = st.text_input("Zip Code", profile.get("company_zip", ""), key="p_czip")
-            c_phone = st.text_input("Phone", profile.get("company_phone", ""), key="p_cphone")
+            c_name  = st.text_input("Company Name", value=profile.get("company_name", ""), key="c_name")
+            c_addr  = st.text_input("Address", value=profile.get("company_address", ""), key="c_addr")
+            c_city  = st.text_input("City", value=profile.get("company_city", ""), key="c_city")
+            c_state = st.text_input("State", value=profile.get("company_state", ""), key="c_state")
+            c_zip   = st.text_input("Zip Code", value=profile.get("company_zip", ""), key="c_zip")
+            c_phone = st.text_input("Phone", value=profile.get("company_phone", ""), key="c_phone")
         with col2:
-            c_email = st.text_input("Company Email (Para TM-1)", profile.get("company_email", ""), key="p_cemail")
-            c_first = st.text_input("First Name", profile.get("company_first_name", ""), key="p_cfirst")
-            c_last = st.text_input("Last Name", profile.get("company_last_name", ""), key="p_clast")
-            c_reg = st.text_input("Reg No", profile.get("company_reg_no", ""), key="p_creg")
-            c_cof = st.text_input("COF S97", profile.get("company_cof_s97", ""), key="p_ccof")
-            c_exp = st.text_input("Exp. Date", profile.get("company_expiration", ""), key="p_cexp")
+            c_email = st.text_input("Email", value=profile.get("company_email", ""), key="c_email")
+            c_first = st.text_input("First Name", value=profile.get("company_first_name", ""), key="c_first")
+            c_last  = st.text_input("Last Name", value=profile.get("company_last_name", ""), key="c_last")
+            c_reg   = st.text_input("Reg No", value=profile.get("company_reg_no", ""), key="c_reg")
+            c_cof   = st.text_input("COF S97", value=profile.get("company_cof_s97", ""), key="c_cof")
+            c_exp   = st.text_input("Exp. Date", value=profile.get("company_expiration", ""), key="c_exp")
 
-    # (Para brevedad, mantén los otros expanders de Arquitecto/Electricista igual pero usa los datos del profile)
-    # Aquí unificamos el guardado
+    # --- 2. SECCIÓN: ARCHITECT / APPLICANT ---
+    with st.expander("📐 Architect / Applicant Information"):
+        col1, col2 = st.columns(2)
+        with col1:
+            a_name    = st.text_input("Architect Co. Name", value=profile.get("arch_name", ""), key="a_name")
+            a_addr    = st.text_input("Address", value=profile.get("arch_address", ""), key="a_addr")
+            a_city    = st.text_input("City", value=profile.get("arch_city", ""), key="a_city")
+            a_state   = st.text_input("State", value=profile.get("arch_state", ""), key="a_state")
+            a_zip     = st.text_input("Zip Code", value=profile.get("arch_zip", ""), key="a_zip")
+            a_phone   = st.text_input("Phone", value=profile.get("arch_phone", ""), key="a_phone")
+        with col2:
+            a_email   = st.text_input("Email", value=profile.get("arch_email", ""), key="a_email")
+            a_first   = st.text_input("First Name", value=profile.get("arch_first_name", ""), key="a_first")
+            a_last    = st.text_input("Last Name", value=profile.get("arch_last_name", ""), key="a_last")
+            a_license = st.text_input("License No", value=profile.get("arch_license", ""), key="a_license")
+            a_role    = st.selectbox("Role", ["PE", "RA"], index=0 if profile.get("arch_role") == "PE" else 1, key="a_role")
+
+    # --- 3. SECCIÓN: ELECTRICAL CONTRACTOR ---
+    with st.expander("⚡ Electrical Contractor Information"):
+        col1, col2 = st.columns(2)
+        with col1:
+            e_name    = st.text_input("Electrician Co. Name", value=profile.get("elec_name", ""), key="e_name")
+            e_addr    = st.text_input("Address", value=profile.get("elec_address", ""), key="e_addr")
+            e_city    = st.text_input("City", value=profile.get("elec_city", ""), key="e_city")
+            e_state   = st.text_input("State", value=profile.get("elec_state", ""), key="e_state")
+            e_zip     = st.text_input("Zip Code", value=profile.get("elec_zip", ""), key="e_zip")
+            e_phone   = st.text_input("Phone", value=profile.get("elec_phone", ""), key="e_phone")
+        with col2:
+            e_email   = st.text_input("Email", value=profile.get("elec_email", ""), key="e_email")
+            e_first   = st.text_input("First Name", value=profile.get("elec_first_name", ""), key="e_first")
+            e_last    = st.text_input("Last Name", value=profile.get("elec_last_name", ""), key="e_last")
+            e_license = st.text_input("License No", value=profile.get("elec_license", ""), key="e_license")
+            e_exp     = st.text_input("Expiration", value=profile.get("elec_expiration", ""), key="e_exp")
+
+    # --- 4. SECCIÓN: TECHNICAL DEFAULTS & CENTRAL STATION ---
+    col1, col2 = st.columns(2)
+    with col1:
+        with st.expander("🛠️ Technical Defaults"):
+            t_man   = st.text_input("Default Manufacturer", value=profile.get("tech_manufacturer", ""), key="t_man")
+            t_appr  = st.text_input("BSA/MEA/COA Approval", value=profile.get("tech_approval", ""), key="t_appr")
+            t_gauge = st.text_input("Wire Gauge", value=profile.get("tech_wire_gauge", ""), key="t_gauge")
+            t_wire  = st.text_input("Wire Type", value=profile.get("tech_wire_type", ""), key="t_wire")
+    with col2:
+        with st.expander("📡 Central Station"):
+            cs_name  = st.text_input("CS Name", value=profile.get("cs_name", ""), key="cs_name")
+            cs_code  = st.text_input("CS Code", value=profile.get("cs_code", ""), key="cs_code")
+            cs_addr  = st.text_input("CS Address", value=profile.get("cs_address", ""), key="cs_addr")
+            cs_city  = st.text_input("CS City", value=profile.get("cs_city", ""), key="cs_city")
+            cs_state = st.text_input("CS State", value=profile.get("cs_state", ""), key="cs_state")
+            cs_zip   = st.text_input("CS Zip", value=profile.get("cs_zip", ""), key="cs_zip")
+            cs_phone = st.text_input("CS Phone", value=profile.get("cs_phone", ""), key="cs_phone")
+
+    # --- 5. LÓGICA DE GUARDADO COMPLETA ---
     if st.button("💾 Save Profile Permanently", use_container_width=True):
-        updated_data = {
+        full_update = {
             "id": st.session_state.user.id,
-            "company_name": c_name, "company_address": c_addr, "company_city": c_city,
+            "updated_at": "now()",
+            # Company (12 fields)
+            "company_name": c_name, "company_address": c_addr, "company_city": c_city, 
             "company_state": c_state, "company_zip": c_zip, "company_phone": c_phone,
             "company_email": c_email, "company_first_name": c_first, "company_last_name": c_last,
-            "company_reg_no": c_reg, "company_cof_s97": c_cof, "company_expiration": c_exp
-            # Agrega aquí el resto de campos (arch, elec, tech, cs) para que se guarden
+            "company_reg_no": c_reg, "company_cof_s97": c_cof, "company_expiration": c_exp,
+            # Architect (11 fields)
+            "arch_name": a_name, "arch_address": a_addr, "arch_city": a_city, 
+            "arch_state": a_state, "arch_zip": a_zip, "arch_phone": a_phone,
+            "arch_email": a_email, "arch_first_name": a_first, "arch_last_name": a_last,
+            "arch_license": a_license, "arch_role": a_role,
+            # Electrician (11 fields)
+            "elec_name": e_name, "elec_address": e_addr, "elec_city": e_city, 
+            "elec_state": e_state, "elec_zip": e_zip, "elec_phone": e_phone,
+            "elec_email": e_email, "elec_first_name": e_first, "elec_last_name": e_last,
+            "elec_license": e_license, "elec_expiration": e_exp,
+            # Tech (4 fields)
+            "tech_manufacturer": t_man, "tech_approval": t_appr, 
+            "tech_wire_gauge": t_gauge, "tech_wire_type": t_wire,
+            # CS (7 fields)
+            "cs_name": cs_name, "cs_code": cs_code, "cs_address": cs_addr, 
+            "cs_city": cs_city, "cs_state": cs_state, "cs_zip": cs_zip, "cs_phone": cs_phone
         }
+        
         try:
-            supabase.table("profiles").upsert(updated_data).execute()
-            sync_data_to_main(updated_data)
-            st.success("✅ Profile saved and synced!")
-        except Exception as e: st.error(f"Error: {e}")
+            supabase.table("profiles").upsert(full_update).execute()
+            st.success("✅ Complete Profile saved successfully!")
+            
+            # Actualizamos main.py temporalmente
+            main.COMPANY.update({
+                "Company Name": c_name, "Reg No": c_reg, "COF S97": c_cof, "Address": c_addr, 
+                "City": c_city, "State": c_state, "Zip": c_zip, "Phone": c_phone, 
+                "Email": c_email, "First Name": c_first, "Last Name": c_last, "Expiration": c_exp
+            })
+            main.ARCHITECT.update({
+                "Company Name": a_name, "License No": a_license, "Role": a_role, "Address": a_addr, 
+                "City": a_city, "State": a_state, "Zip": a_zip, "Phone": a_phone, 
+                "Email": a_email, "First Name": a_first, "Last Name": a_last
+            })
+            main.ELECTRICIAN.update({
+                "Company Name": e_name, "License No": e_license, "Address": e_addr, 
+                "City": e_city, "State": e_state, "Zip": e_zip, "Phone": e_phone, 
+                "Email": e_email, "First Name": e_first, "Last Name": e_last, "Expiration": e_exp
+            })
+            main.TECH_DEFAULTS.update({
+                "Manufacturer": t_man, "WireType": t_wire, "Approval": t_appr, "WireGauge": t_gauge
+            })
+            main.CENTRAL_STATION.update({
+                "Company Name": cs_name, "CS Code": cs_code, "Address": cs_addr, 
+                "City": cs_city, "State": cs_state, "Zip": cs_zip, "Phone": cs_phone
+            })
+            
+        except Exception as e:
+            st.error(f"Error saving to database: {e}")
 
-# --- TAB BUILDER (TAB 0) ---
+# --- TAB 0: PROJECT BUILDER ---
 with tabs[0]:
-    st.title("Fire Form Pro Builder")
+    if os.path.exists("logo.png"):
+        st.image("logo.png", width=150)
+    st.title("Fire Form Pro")
+    st.markdown("Automated form generation for the NYC Fire Alarm Industry.")
+
     col1, col2 = st.columns([1, 2])
 
     with col1:
         st.subheader("1. Project Information")
-        bin_num = st.text_input("Enter Property BIN", placeholder="e.g. 1012345")
-        job_desc = st.text_area("Job Description", "Installation of Fire Alarm System.")
-        
+        bin_number = st.text_input("Enter Property BIN", placeholder="e.g. 1012345")
+        job_desc = st.text_area("TM-1 Job Description", value="Installation of Fire Alarm System.")
+
         st.divider()
-        st.subheader("2. Add Devices")
+        
+        # Section: Add Devices
+        st.markdown(
+            "<h3>2. A-433 Add Devices <span style='color:gray; font-size:14px;'>Optional</span></h3>",
+            unsafe_allow_html=True
+        )
+
         floor = st.selectbox("Floor Location", main.FULL_FLOOR_LIST)
         category = st.selectbox("Category", list(main.MASTER_DEVICE_LIST.keys()))
-        device = st.selectbox("Device Type", main.MASTER_DEVICE_LIST.get(category, []))
+        
+        devices_in_cat = main.MASTER_DEVICE_LIST.get(category, [])
+        device = st.selectbox("Device Type", devices_in_cat)
         qty = st.number_input("Quantity", min_value=1, value=1)
 
-        if st.button("➕ Add Device"):
-            st.session_state.device_list.append({"device": device, "floor": floor, "qty": qty})
-            st.rerun()
+        if st.button("➕ Add to List"):
+            st.session_state.device_list.append({
+                "device": device,
+                "floor": floor,
+                "qty": qty
+            })
+            st.success(f"Added: {device} at {floor}")
 
-    with col2:
-        st.subheader("📋 Project Device List")
-        # MEJORA: La tabla ahora está fuera del IF del botón para que no desaparezca
-        if st.session_state.device_list:
-            edited = st.data_editor(
-                st.session_state.device_list,
-                num_rows="dynamic",
-                use_container_width=True,
-                key="device_editor"
-            )
-            if edited != st.session_state.device_list:
-                st.session_state.device_list = edited
-                st.rerun()
-            
-            if st.button("🗑️ Clear List"):
-                st.session_state.device_list = []
-                st.rerun()
-        else:
-            st.info("List is empty.")
-
-    st.divider()
-    st.subheader("📝 Select Forms")
-    c_tm, c_a433, c_b45, c_rep = st.columns(4)
-    with c_tm: gen_tm1 = st.checkbox("TM-1", True)
-    with c_a433: gen_a433 = st.checkbox("A-433", True)
-    with c_b45: gen_b45 = st.checkbox("B-45", True)
-    with c_rep: gen_rep = st.checkbox("Audit", True)
-
-    if st.button("🔥 GENERATE DOCUMENTS", type="primary", use_container_width=True):
-        if not bin_num:
-            st.error("BIN number is required.")
-        else:
-            with st.spinner("Processing..."):
-                # 1. Sincronizamos el perfil actual con main.py antes de generar
-                sync_data_to_main(profile)
+            with col2:
+                st.subheader("📋 Project Device List")
                 
-                # 2. Obtenemos datos del BIN
-                info = main.obtener_datos_completos(bin_num)
-                if info:
-                    # 3. FIX EMAIL: Inyectamos explícitamente el email del perfil en full_data
-                    # También pasamos 'profile' completo para que main.py tenga acceso a todo
-                    full_data = {
-                        **info, 
-                        **profile, 
-                        "job_desc": job_desc, 
-                        "devices": st.session_state.device_list,
-                        "Email": profile.get("company_email", ""), # Key para main.py
-                        "Filing Representative Email": profile.get("company_email", "") # Key común PDF
-                    }
-                    
-                    files = []
-                    if gen_tm1:
-                        out = f"TM1_{bin_num}.pdf"
-                        main.generar_tm1(full_data, "tm-1-application-for-plan-examination-doc-review.pdf", out)
-                        files.append(out)
-                    if gen_a433:
-                        out = f"A433_{bin_num}.pdf"
-                        main.generar_a433(full_data, "application-a-433-c.pdf", out)
-                        files.append(out)
-                    # ... genera los otros forms igual ...
+                if st.session_state.device_list:
+                    edited_list = st.data_editor(
+                        st.session_state.device_list,
+                        num_rows="dynamic", 
+                        use_container_width=True,
+                        column_config={
+                            "qty": st.column_config.NumberColumn(
+                                "Quantity",
+                                min_value=1,
+                                max_value=999,
+                                step=1,
+                                required=True,
+                            ),
+                            "device": st.column_config.TextColumn("Device Type", disabled=True),
+                            "floor": st.column_config.TextColumn("Floor Location", disabled=True),
+                        },
+                        key="device_editor"
+                    )
 
-                    # Crear ZIP
-                    zip_buf = BytesIO()
-                    with zipfile.ZipFile(zip_buf, "a") as zf:
-                        for f in files:
-                            if os.path.exists(f):
-                                zf.write(f)
-                                os.remove(f)
+                    if edited_list != st.session_state.device_list:
+                        st.session_state.device_list = edited_list
+                        st.rerun()
 
-                    st.success("Ready!")
-                    st.download_button("📥 Download ZIP", zip_buf.getvalue(), f"Forms_{bin_num}.zip")
+                    if st.button("🗑️ Clear Entire List", use_container_width=True):
+                        st.session_state.device_list = []
+                        st.rerun()
+                else:
+                    st.info("No devices added yet. Use the left panel to add them.")
+
+        st.divider()
+
+        # --- 1. SELECCIÓN DE FORMULARIOS ---
+        st.subheader("📝 Select Forms to Generate")
+        col_a, col_b = st.columns(2)
+
+        with col_a:
+            gen_tm1 = st.checkbox("TM-1 Application", value=True, key="chk_gen_tm1")
+            gen_a433 = st.checkbox("A-433 Device List", value=True, key="chk_gen_a433")
+        with col_b:
+            gen_b45 = st.checkbox("B-45 Inspection Request", value=True, key="chk_gen_b45")
+            gen_report = st.checkbox("Audit Report", value=True, key="chk_gen_report")
+
+        st.divider()
+
+        # --- 2. BOTÓN DE GENERACIÓN DINÁMICO ---
+        if st.button("🔥 GENERATE DOCUMENTS", type="primary", use_container_width=True):
+            if not bin_number:
+                st.error("Please enter a BIN number.")
+            elif not (gen_tm1 or gen_a433 or gen_b45 or gen_report):
+                st.warning("⚠️ Please select at least one form to generate.")
+            else:
+                with st.spinner("Sincronizando perfil y generando formularios..."):
+                    try:
+                        # --- MAPEO TOTAL: SUPABASE -> MAIN.PY ---
+                        main.COMPANY.update({
+                            "Company Name": profile.get("company_name", ""),
+                            "Address": profile.get("company_address", ""),
+                            "City": profile.get("company_city", ""),
+                            "State": profile.get("company_state", "NY"),
+                            "Zip": profile.get("company_zip", ""),
+                            "Phone": profile.get("company_phone", ""),
+                            "Email": profile.get("company_email", ""),
+                            "First Name": profile.get("company_first_name", ""),
+                            "Last Name": profile.get("company_last_name", ""),
+                            "Reg No": profile.get("company_reg_no", ""),
+                            "COF S97": profile.get("company_cof_s97", ""),
+                            "Expiration": profile.get("company_expiration", "")
+                        })
+
+                        main.ARCHITECT.update({
+                            "Company Name": profile.get("arch_name", ""),
+                            "Address": profile.get("arch_address", ""),
+                            "City": profile.get("arch_city", ""),
+                            "State": profile.get("arch_state", ""),
+                            "Zip": profile.get("arch_zip", ""),
+                            "Phone": profile.get("arch_phone", ""),
+                            "Email": profile.get("arch_email", ""),
+                            "First Name": profile.get("arch_first_name", ""),
+                            "Last Name": profile.get("arch_last_name", ""),
+                            "License No": profile.get("arch_license", ""),
+                            "Role": profile.get("arch_role", "PE")
+                        })
+
+                        main.ELECTRICIAN.update({
+                            "Company Name": profile.get("elec_name", ""),
+                            "Address": profile.get("elec_address", ""),
+                            "City": profile.get("elec_city", ""),
+                            "State": profile.get("elec_state", ""),
+                            "Zip": profile.get("elec_zip", ""),
+                            "Phone": profile.get("elec_phone", ""),
+                            "Email": profile.get("elec_email", ""),
+                            "First Name": profile.get("elec_first_name", ""),
+                            "Last Name": profile.get("elec_last_name", ""),
+                            "License No": profile.get("elec_license", ""),
+                            "Expiration": profile.get("elec_expiration", "")
+                        })
+
+                        main.TECH_DEFAULTS.update({
+                            "Manufacturer": profile.get("tech_manufacturer", ""),
+                            "Approval": profile.get("tech_approval", ""),
+                            "WireGauge": profile.get("tech_wire_gauge", ""),
+                            "WireType": profile.get("tech_wire_type", "")
+                        })
+
+                        main.CENTRAL_STATION.update({
+                            "Company Name": profile.get("cs_name", ""),
+                            "CS Code": profile.get("cs_code", ""),
+                            "Address": profile.get("cs_address", ""),
+                            "City": profile.get("cs_city", ""),
+                            "State": profile.get("cs_state", ""),
+                            "Zip": profile.get("cs_zip", ""),
+                            "Phone": profile.get("cs_phone", "")
+                        })
+
+                        # --- PROCESO DE GENERACIÓN ---
+                        info = main.obtener_datos_completos(bin_number)
+                        if info:
+                            job_specs = {"job_desc": job_desc, "devices": st.session_state.device_list}
+                            full_data = {**info, **job_specs}
+                            
+                            generated_files = []
+
+                            if gen_tm1:
+                                main.generar_tm1(full_data, "tm-1-application-for-plan-examination-doc-review.pdf", f"TM1_{bin_number}.pdf")
+                                generated_files.append(f"TM1_{bin_number}.pdf")
+                            
+                            if gen_a433:
+                                main.generar_a433(full_data, "application-a-433-c.pdf", f"A433_{bin_number}.pdf")
+                                generated_files.append(f"A433_{bin_number}.pdf")
+                            
+                            if gen_b45:
+                                main.generar_b45(full_data, "b45-inspection-request.pdf", f"B45_{bin_number}.pdf")
+                                generated_files.append(f"B45_{bin_number}.pdf")
+                            
+                            if gen_report:
+                                main.generar_reporte_auditoria(full_data, f"REPORT_{bin_number}.txt")
+                                generated_files.append(f"REPORT_{bin_number}.txt")
+
+                            zip_buffer = BytesIO()
+                            with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
+                                for file_name in generated_files:
+                                    if os.path.exists(file_name):
+                                        zip_file.write(file_name)
+                                        os.remove(file_name) 
+
+                            st.success(f"✅ {len(generated_files)} documents generated successfully!")
+                            st.download_button(
+                                label="📥 Download All Selected Forms (ZIP)",
+                                data=zip_buffer.getvalue(),
+                                file_name=f"FDNY_Forms_{bin_number}.zip",
+                                mime="application/zip"
+                            )
+                        else:
+                            st.error("Could not retrieve data for this BIN.")
+                    except Exception as e:
+                        st.error(f"Critical Error: {e}")
