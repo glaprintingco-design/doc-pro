@@ -26,11 +26,11 @@ col1, col2 = st.columns([1, 2])
 with col1:
     st.subheader("1. Project Information")
     bin_number = st.text_input("Enter Property BIN", placeholder="e.g. 1012345")
-    job_desc = st.text_area("Job Description", value="Installation of Fire Alarm System.")
+    job_desc = st.text_area("TM-1 Job Description", value="Installation of Fire Alarm System.")
 
     st.divider()
     
-    st.subheader("2. Add Devices")
+    st.subheader("2. A-433 Add Devices")
     floor = st.selectbox("Floor Location", main.FULL_FLOOR_LIST)
     category = st.selectbox("Category", list(main.MASTER_DEVICE_LIST.keys()))
     
@@ -107,4 +107,3 @@ with col2:
                         st.error("Could not retrieve data for this BIN.")
                 except Exception as e:
                     st.error(f"Critical Error: {e}")
-
