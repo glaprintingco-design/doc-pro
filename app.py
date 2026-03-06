@@ -4,25 +4,73 @@ import main
 import os
 import zipfile
 from io import BytesIO
+import streamlit.components.v1 as components
+import json
+import hashlib
 
 # --- 1. CONFIGURACIÓN Y CONEXIÓN (CONSOLIDADA) ---
 st.set_page_config(page_title="Fire Form Pro", layout="wide", page_icon="🔥")
 
-# Uso de Secrets para seguridad (Configura esto en el panel de Streamlit Cloud)
+# ============================================
+# SISTEMA DE PERSISTENCIA DE SESIÓN CON LOCALSTORAGE
+# ============================================
+
+def init_session_storage():
+    """Inicializa el sistema de almacenamiento de sesión"""
+    storage_script = """
+    <script>
+    // Comunicación con Streamlit
+    window.addEventListener('message', function(event) {
+        if (event.data.type === 'get_session') {
+            const session = localStorage.getItem('fire_form_session');
+            window.parent.postMessage({
+                type: 'streamlit:setComponentValue',
+                value: session
+            }, '*');
+        }
+    });
+    
+    // Auto-enviar sesión guardada cuando carga la página
+    setTimeout(() => {
+        const session = localStorage.getItem('fire_form_session');
+        if (session) {
+            window.parent.postMessage({
+                type: 'streamlit:setComponentValue',
+                value: session
+            }, '*');
+        }
+    }, 100);
+    </script>
+    """
+    return components.html(storage_script, height=0)
+
+def save_session_to_storage(user_id, email):
+    """Guarda sesión en localStorage del navegador"""
+    session_data = json.dumps({"user_id": user_id, "email": email})
+    save_script = f"""
+    <script>
+    localStorage.setItem('fire_form_session', '{session_data}');
+    </script>
+    """
+    components.html(save_script, height=0)
+
+def clear_session_storage():
+    """Limpia la sesión guardada"""
+    clear_script = """
+    <script>
+    localStorage.removeItem('fire_form_session');
+    </script>
+    """
+    components.html(clear_script, height=0)
+
+# Uso de Secrets para seguridad
 SUPABASE_URL = st.secrets.get("SUPABASE_URL", "https://uhhiqkymipbcepqzwtvg.supabase.co")
 SUPABASE_KEY = st.secrets.get("SUPABASE_KEY", "sb_publishable_mvqOWXc5s4b3_IMe4gGexw_sU3B2DRL")
 
-if "supabase" not in st.session_state:
-    st.session_state.supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-supabase = st.session_state.supabase
-
-# FIX 2: INICIALIZACIÓN CON RECUPERACIÓN DE SESIÓN
-# ============================================
+# Inicializar Supabase
 if "supabase" not in st.session_state:
     try:
         st.session_state.supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-        st.sidebar.success("✅ Supabase connected")
     except Exception as e:
         st.error(f"❌ Failed to connect to Supabase: {e}")
         st.stop()
@@ -30,32 +78,61 @@ if "supabase" not in st.session_state:
 supabase = st.session_state.supabase
 
 # ============================================
-# FIX 3: RECUPERAR SESIÓN EXISTENTE
+# RECUPERACIÓN MEJORADA DE SESIÓN CON LOCALSTORAGE
 # ============================================
 if "user" not in st.session_state:
     st.session_state.user = None
+
+if "session_loaded" not in st.session_state:
+    st.session_state.session_loaded = False
+
+# Intentar cargar sesión guardada desde localStorage
+if not st.session_state.user and not st.session_state.session_loaded:
+    stored_session = init_session_storage()
     
-    # Intentar recuperar sesión activa
-    try:
-        session = supabase.auth.get_session()
-        if session and session.user:
-            st.session_state.user = session.user
-            st.sidebar.success(f"🔄 Session restored: {session.user.email}")
-    except Exception as e:
-        # No hay sesión activa, está bien
-        pass
+    if stored_session:
+        try:
+            session_data = json.loads(stored_session)
+            user_id = session_data.get("user_id")
+            email = session_data.get("email")
+            
+            if user_id and email:
+                # Verificar que la sesión sigue siendo válida
+                response = supabase.table("profiles").select("id").eq("id", user_id).execute()
+                
+                if response.data:
+                    # Crear objeto user
+                    class User:
+                        def __init__(self, user_id, email):
+                            self.id = user_id
+                            self.email = email
+                    
+                    st.session_state.user = User(user_id, email)
+                    st.sidebar.success(f"🔄 Session restored: {email}")
+        except:
+            # Si hay error, limpiar localStorage
+            clear_session_storage()
+    
+    st.session_state.session_loaded = True
 
 if "device_list" not in st.session_state:
     st.session_state.device_list = []
 
 # --- 3. FUNCIONES DE APOYO ---
 def logout():
+    """Cerrar sesión y limpiar todo"""
     try:
         supabase.auth.sign_out()
     except:
         pass
+    
     st.session_state.user = None
     st.session_state.device_list = []
+    st.session_state.session_loaded = False
+    
+    # Limpiar localStorage
+    clear_session_storage()
+    
     st.rerun()
 
 def fetch_user_profile(user_id):
@@ -67,7 +144,7 @@ def fetch_user_profile(user_id):
         return {}
 
 # ============================================
-# FIX 4: MEJOR UI DE AUTENTICACIÓN CON DEBUGGING
+# UI DE AUTENTICACIÓN MEJORADA
 # ============================================
 def login_ui():
     with st.sidebar:
@@ -77,6 +154,9 @@ def login_ui():
         email = st.text_input("Email Address")
         password = st.text_input("Password", type="password")
         
+        # Opción de "Remember Me"
+        remember_me = st.checkbox("Keep me logged in", value=True)
+        
         if choice == "Login":
             if st.button("Sign In", use_container_width=True):
                 if not email or not password:
@@ -85,7 +165,6 @@ def login_ui():
                 
                 with st.spinner("Authenticating..."):
                     try:
-                        # Intentar login con mejor manejo de errores
                         response = supabase.auth.sign_in_with_password({
                             "email": email.strip(),
                             "password": password
@@ -93,6 +172,11 @@ def login_ui():
                         
                         if response.user:
                             st.session_state.user = response.user
+                            
+                            # Guardar sesión si "Remember Me" está activado
+                            if remember_me:
+                                save_session_to_storage(response.user.id, response.user.email)
+                            
                             st.success(f"✅ Welcome back, {email}!")
                             st.rerun()
                         else:
@@ -102,16 +186,13 @@ def login_ui():
                         error_msg = str(e)
                         st.error(f"❌ Login Error: {error_msg}")
                         
-                        # Mensajes de ayuda específicos
                         if "Invalid login credentials" in error_msg:
                             st.warning("⚠️ Invalid email or password. Please try again.")
-                            st.info("💡 If you forgot your password, use the Sign Up tab to reset it.")
                         elif "Email not confirmed" in error_msg:
                             st.warning("⚠️ Please check your email and confirm your account first.")
                         elif "rate limit" in error_msg.lower():
                             st.warning("⚠️ Too many attempts. Please wait a moment and try again.")
                         else:
-                            st.info(f"🔍 Debug info: Check your Supabase Authentication settings")
                             with st.expander("Show full error"):
                                 st.code(error_msg)
         
