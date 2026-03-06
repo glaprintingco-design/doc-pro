@@ -284,6 +284,14 @@ with tabs[0]:
         job_desc = st.text_area("TM-1 Job Description", value="Installation of Fire Alarm System.")
 
         st.divider()
+        st.subheader("2. Select Forms to Generate")
+        gen_tm1 = st.checkbox("TM-1 Application", value=True)
+        gen_a433 = st.checkbox("A-433 Device List", value=True)
+        gen_b45 = st.checkbox("B-45 Inspection Request", value=True)
+        gen_report = st.checkbox("Audit Report", value=True)
+        # -----------------------------------------------
+
+        st.divider()
         
         # Section: Add Devices
         st.markdown(
@@ -306,28 +314,67 @@ with tabs[0]:
             })
             st.success(f"Added: {device} at {floor}")
 
-    with col2:
-        st.subheader("📋 Project Device List")
-        if st.session_state.device_list:
-            st.table(st.session_state.device_list)
-            if st.button("🗑️ Clear List"):
-                st.session_state.device_list = []
-                st.rerun()
-        else:
-            st.info("No devices added yet.")
+            with col2:
+                st.subheader("📋 Project Device List")
+                
+                if st.session_state.device_list:
+                    # Usamos data_editor para permitir edición y borrado fila por fila
+                    # num_rows="dynamic" permite al usuario borrar filas seleccionándolas
+                    edited_list = st.data_editor(
+                        st.session_state.device_list,
+                        num_rows="dynamic", 
+                        use_container_width=True,
+                        column_config={
+                            "qty": st.column_config.NumberColumn(
+                                "Quantity",
+                                min_value=1,
+                                max_value=999,
+                                step=1,
+                                required=True,
+                            ),
+                            "device": st.column_config.TextColumn("Device Type", disabled=True),
+                            "floor": st.column_config.TextColumn("Floor Location", disabled=True),
+                        },
+                        key="device_editor"
+                    )
+
+                    # Sincronizamos los cambios: si el usuario editó algo, actualizamos el state
+                    if edited_list != st.session_state.device_list:
+                        st.session_state.device_list = edited_list
+                        st.rerun()
+
+                    # Botón de pánico (solo si realmente quieren limpiar todo)
+                    if st.button("🗑️ Clear Entire List", use_container_width=True):
+                        st.session_state.device_list = []
+                        st.rerun()
+                else:
+                    st.info("No devices added yet. Use the left panel to add them.")
 
         st.divider()
 
+        # --- 1. SELECCIÓN DE FORMULARIOS (Colócalo antes del botón) ---
+        st.subheader("📝 Select Forms to Generate")
+        col_a, col_b = st.columns(2)
+        with col_a:
+            gen_tm1 = st.checkbox("TM-1 Application", value=True)
+            gen_a433 = st.checkbox("A-433 Device List", value=True)
+        with col_b:
+            gen_b45 = st.checkbox("B-45 Inspection Request", value=True)
+            gen_report = st.checkbox("Audit Report", value=True)
+
+        st.divider()
+
+        # --- 2. BOTÓN DE GENERACIÓN DINÁMICO ---
         if st.button("🔥 GENERATE DOCUMENTS", type="primary", use_container_width=True):
             if not bin_number:
                 st.error("Please enter a BIN number.")
-            elif not st.session_state.device_list:
-                st.error("Device list is empty.")
+            elif not (gen_tm1 or gen_a433 or gen_b45 or gen_report):
+                st.warning("⚠️ Please select at least one form to generate.")
             else:
                 with st.spinner("Sincronizando perfil y generando formularios..."):
                     try:
                         # --- MAPEO TOTAL: SUPABASE -> MAIN.PY ---
-                        # 1. Fire Alarm Company (Para TM-1, A-433 y B-45)
+                        # 1. Fire Alarm Company
                         main.COMPANY.update({
                             "Company Name": profile.get("company_name", ""),
                             "Address": profile.get("company_address", ""),
@@ -343,7 +390,7 @@ with tabs[0]:
                             "Expiration": profile.get("company_expiration", "")
                         })
 
-                        # 2. Architect / Applicant (Para TM-1 y A-433)
+                        # 2. Architect / Applicant
                         main.ARCHITECT.update({
                             "Company Name": profile.get("arch_name", ""),
                             "Address": profile.get("arch_address", ""),
@@ -358,7 +405,7 @@ with tabs[0]:
                             "Role": profile.get("arch_role", "PE")
                         })
 
-                        # 3. Electrical Contractor (Para A-433)
+                        # 3. Electrical Contractor
                         main.ELECTRICIAN.update({
                             "Company Name": profile.get("elec_name", ""),
                             "Address": profile.get("elec_address", ""),
@@ -372,7 +419,7 @@ with tabs[0]:
                             "Expiration": profile.get("elec_expiration", "")
                         })
 
-                        # 4. Technical Defaults (Para A-433)
+                        # 4. Technical Defaults
                         main.TECH_DEFAULTS.update({
                             "Manufacturer": profile.get("tech_manufacturer", ""),
                             "Approval": profile.get("tech_approval", ""),
@@ -380,7 +427,7 @@ with tabs[0]:
                             "WireType": profile.get("tech_wire_type", "")
                         })
 
-                        # 5. Central Station (Para A-433)
+                        # 5. Central Station
                         main.CENTRAL_STATION.update({
                             "Company Name": profile.get("cs_name", ""),
                             "CS Code": profile.get("cs_code", ""),
@@ -390,27 +437,43 @@ with tabs[0]:
                             "Zip": profile.get("cs_zip", ""),
                             "Phone": profile.get("cs_phone", "")
                         })
+
+                        # --- PROCESO DE GENERACIÓN ---
                         info = main.obtener_datos_completos(bin_number)
                         if info:
                             job_specs = {"job_desc": job_desc, "devices": st.session_state.device_list}
                             full_data = {**info, **job_specs}
                             
-                            # Generation logic
-                            main.generar_tm1(full_data, "tm-1-application-for-plan-examination-doc-review.pdf", f"TM1_{bin_number}.pdf")
-                            main.generar_a433(full_data, "application-a-433-c.pdf", f"A433_{bin_number}.pdf")
-                            main.generar_b45(full_data, "b45-inspection-request.pdf", f"B45_{bin_number}.pdf")
-                            main.generar_reporte_auditoria(full_data, f"REPORT_{bin_number}.txt")
+                            generated_files = []
 
+                            # Generación condicional basada en checkboxes
+                            if gen_tm1:
+                                main.generar_tm1(full_data, "tm-1-application-for-plan-examination-doc-review.pdf", f"TM1_{bin_number}.pdf")
+                                generated_files.append(f"TM1_{bin_number}.pdf")
+                            
+                            if gen_a433:
+                                main.generar_a433(full_data, "application-a-433-c.pdf", f"A433_{bin_number}.pdf")
+                                generated_files.append(f"A433_{bin_number}.pdf")
+                            
+                            if gen_b45:
+                                main.generar_b45(full_data, "b45-inspection-request.pdf", f"B45_{bin_number}.pdf")
+                                generated_files.append(f"B45_{bin_number}.pdf")
+                            
+                            if gen_report:
+                                main.generar_reporte_auditoria(full_data, f"REPORT_{bin_number}.txt")
+                                generated_files.append(f"REPORT_{bin_number}.txt")
+
+                            # Empaquetado en ZIP
                             zip_buffer = BytesIO()
                             with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
-                                for file_name in [f"TM1_{bin_number}.pdf", f"A433_{bin_number}.pdf", f"B45_{bin_number}.pdf", f"REPORT_{bin_number}.txt"]:
+                                for file_name in generated_files:
                                     if os.path.exists(file_name):
                                         zip_file.write(file_name)
-                                        os.remove(file_name) 
+                                        os.remove(file_name) # Borrar archivo temporal después de añadir al ZIP
 
-                            st.success("✅ Documents generated successfully!")
+                            st.success(f"✅ {len(generated_files)} documents generated successfully!")
                             st.download_button(
-                                label="📥 Download All Forms (ZIP)",
+                                label="📥 Download All Selected Forms (ZIP)",
                                 data=zip_buffer.getvalue(),
                                 file_name=f"FDNY_Forms_{bin_number}.zip",
                                 mime="application/zip"
