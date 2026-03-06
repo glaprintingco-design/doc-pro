@@ -364,10 +364,14 @@ with tabs[1]:
             t_gauge = st.text_input("Wire Gauge", value=profile.get("tech_wire_gauge", ""), key="t_gauge")
             t_wire = st.text_input("Wire Type", value=profile.get("tech_wire_type", ""), key="t_wire")
     with col2:
-        with st.expander("📡 Central Station"):
-            cs_name = st.text_input("CS Name", value=profile.get("cs_name", ""), key="cs_name")
-            cs_code = st.text_input("CS Code", value=profile.get("cs_code", ""), key="cs_code")
-            cs_phone = st.text_input("CS Phone", value=profile.get("cs_phone", ""), key="cs_phone")
+       with st.expander("📡 Central Station"):
+            cs_name  = st.text_input("CS Name",    value=profile.get("cs_name", ""),    key="cs_name")
+            cs_code  = st.text_input("CS Code",    value=profile.get("cs_code", ""),    key="cs_code")
+            cs_addr  = st.text_input("CS Address", value=profile.get("cs_address", ""), key="cs_addr")
+            cs_city  = st.text_input("CS City",    value=profile.get("cs_city", ""),    key="cs_city")
+            cs_state = st.text_input("CS State",   value=profile.get("cs_state", ""),   key="cs_state")
+            cs_zip   = st.text_input("CS Zip",     value=profile.get("cs_zip", ""),     key="cs_zip")
+            cs_phone = st.text_input("CS Phone",   value=profile.get("cs_phone", ""),   key="cs_phone")
 
     if st.button("💾 GUARDAR PERFIL PERMANENTEMENTE", type="primary", use_container_width=True):
         full_update = {
@@ -385,3 +389,4 @@ with tabs[1]:
             sync_profile_to_main(profile)
             st.success("✅ ¡Perfil guardado con éxito!")
         except Exception as e: st.error(f"Error guardando datos: {e}")
+
