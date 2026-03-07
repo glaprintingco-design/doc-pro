@@ -374,30 +374,33 @@ def obtener_datos_completos(bin_number):
 
 def fix_adobe_visibility(writer, campos):
     """
-    Asegura que Adobe/Nitro regeneren la visualización del texto.
+    Asegura visibilidad en Adobe/Nitro. 
+    Borra /AP solo para texto; mantiene /AP para checkboxes (/On).
     """
-    # 1. Forzamos al lector a generar apariencias nuevas
     if "/AcroForm" not in writer.root_object:
         writer.root_object.update({
             NameObject("/AcroForm"): writer._add_object(DictionaryObject())
         })
-    
     writer.root_object["/AcroForm"].update({
         NameObject("/NeedAppearances"): BooleanObject(True)
     })
 
-    # 2. Limpiamos flujos de apariencia viejos para cada campo mapeado
     for page in writer.pages:
         if "/Annots" in page:
             for annot in page["/Annots"]:
                 obj = annot.get_object()
-                if obj.get("/T") in campos:
-                    # Si existe un flujo de apariencia (/AP), lo borramos
-                    # Esto obliga a Adobe a usar el valor (/V) para crear uno nuevo
-                    if "/AP" in obj:
-                        del obj["/AP"]
-    
-    
+                field_name = obj.get("/T")
+                if field_name in campos:
+                    val = str(campos[field_name])
+                    # SI NO ES UN CHECKMARK (no empieza con /), borramos el /AP
+                    if not val.startswith("/"):
+                        if "/AP" in obj:
+                            del obj["/AP"]
+                    # SI ES UN CHECKMARK, nos aseguramos de que el estado (/AS) sea correcto
+                    else:
+                        obj.update({
+                            NameObject("/AS"): NameObject(val)
+                        })    
 # ==========================================
 # 3. GENERADOR TM-1
 # ==========================================
@@ -539,6 +542,7 @@ def generar_a433(datos, input_pdf, output_pdf):
 
         for i in range(len(writer.pages)): writer.update_page_form_field_values(writer.pages[i], campos)
         with open(output_pdf, "wb") as f: writer.write(f)
+        with open(output_pdf, "wb") as f: writer.write(f)
         print("   ✅ A-433 Generated.")
     except Exception as e: print(f"   ❌ A-433 Error: {e}")
 
@@ -567,6 +571,7 @@ def generar_b45(datos, input_pdf, output_pdf):
                 if obj.get("/T") in ["gp1", "gp2", "gp3", "gp4", "gp5", "inspector"]:
                     flags = obj.get("/Ff", 0)
                     if flags & 1: obj[NameObject("/Ff")] = NumberObject(flags & ~1)
+        with open(output_pdf, "wb") as f: writer.write(f)
         with open(output_pdf, "wb") as f: writer.write(f)
         print("   ✅ B-45 Generated.")
     except Exception as e: print(f"   ❌ B-45 Error: {e}")
