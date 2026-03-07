@@ -210,16 +210,16 @@ st.sidebar.success(f"Logged in as: {st.session_state.user.email}")
 if st.sidebar.button("Logout", use_container_width=True):
     logout()
 
-tabs = st.tabs(["🚀 Project Builder", "👤 Professional Profile"])
+tabs = st.tabs(["Project Builder", "👤 Profile Information"])
 
 # ============================================================
 # TAB 1: PROFESSIONAL PROFILE
 # ============================================================
 with tabs[1]:
-    st.header("My Professional Profile")
+    st.header("Profile Information")
     st.info("Data saved here is stored permanently in the cloud and fills your FDNY forms.")
 
-    with st.expander("🏢 Fire Alarm Company Data", expanded=True):
+    with st.expander("🏢 FA Company / Expeditor Information", expanded=True):
         col1, col2 = st.columns(2)
         with col1:
             c_name  = st.text_input("Company Name",  value=profile.get("company_name", ""),       key="c_name")
@@ -236,7 +236,7 @@ with tabs[1]:
             c_cof   = st.text_input("COF S97",        value=profile.get("company_cof_s97", ""),    key="c_cof")
             c_exp   = st.text_input("Exp. Date",      value=profile.get("company_expiration", ""), key="c_exp")
 
-    with st.expander("📐 Architect / Applicant Information"):
+    with st.expander("📐 Architect Information"):
         col1, col2 = st.columns(2)
         with col1:
             a_name    = st.text_input("Architect Co. Name", value=profile.get("arch_name", ""),        key="a_name")
@@ -271,13 +271,13 @@ with tabs[1]:
 
     col1, col2 = st.columns(2)
     with col1:
-        with st.expander("🛠️ Technical Defaults"):
+        with st.expander("🛠️ A-433 Defaults"):
             t_man   = st.text_input("Default Manufacturer",  value=profile.get("tech_manufacturer", ""), key="t_man")
             t_appr  = st.text_input("BSA/MEA/COA Approval",  value=profile.get("tech_approval", ""),     key="t_appr")
             t_gauge = st.text_input("Wire Gauge",            value=profile.get("tech_wire_gauge", ""),   key="t_gauge")
             t_wire  = st.text_input("Wire Type",             value=profile.get("tech_wire_type", ""),    key="t_wire")
     with col2:
-        with st.expander("📡 Central Station"):
+        with st.expander("📡 Central Station Information"):
             cs_name  = st.text_input("CS Name",    value=profile.get("cs_name", ""),    key="cs_name")
             cs_code  = st.text_input("CS Code",    value=profile.get("cs_code", ""),    key="cs_code")
             cs_addr  = st.text_input("CS Address", value=profile.get("cs_address", ""), key="cs_addr")
@@ -286,7 +286,7 @@ with tabs[1]:
             cs_zip   = st.text_input("CS Zip",     value=profile.get("cs_zip", ""),     key="cs_zip")
             cs_phone = st.text_input("CS Phone",   value=profile.get("cs_phone", ""),   key="cs_phone")
 
-    if st.button("💾 Save Profile Permanently", use_container_width=True):
+    if st.button("💾 Save", use_container_width=True):
         full_update = {
             "id": st.session_state.user.id,
             "updated_at": "now()",
