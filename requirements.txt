@@ -1,9 +1,10 @@
 streamlit
 pandas
 requests
-pypdf>=4.0.0
+pypdf
 customtkinter
 supabase
+
 
 
 
