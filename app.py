@@ -33,13 +33,13 @@ header {visibility: hidden;}
     gap: 2rem;
 }
 
-/* Estilo para el email pequeño arriba del botón logout */
+/* Estilo para el email pequeño arriba del botón logout - CORREGIDO OVERLAP */
 .user-info-text {
     font-size: 13px;
     color: #808495;
-    margin-bottom: -15px;
+    margin-bottom: 8px !important; /* Margen positivo para separarlo del botón */
     text-align: right;
-    font-weight: 400;
+    font-weight: 500;
 }
 
 /* Optimización de nitidez de imagen */
@@ -54,12 +54,12 @@ hr {
     margin-bottom: 1rem !important;
 }
 
-/* Estilo para el slogan pegado al logo */
+/* Estilo para el slogan pegado al logo - CORREGIDO ESPACIO */
 .slogan-text {
     color: #808495;
     font-size: 14px;
-    margin-top: -10px;
-    margin-left: 2px;
+    margin-top: -25px !important; /* Margen negativo agresivo para subirlo */
+    margin-left: 5px;
     line-height: 1.2;
 }
 </style>
@@ -182,7 +182,8 @@ def login_ui_centered():
         if os.path.exists("logo.png"):
             st.image("logo.png", use_column_width=True)
         
-        st.markdown("<p style='text-align: center; color: gray; margin-top: -15px;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
+        # Slogan subido y título completamente eliminado
+        st.markdown("<p style='text-align: center; color: gray; margin-top: -30px; font-size: 16px;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
         st.markdown("<br>", unsafe_allow_html=True)
         
         tab1, tab2 = st.tabs(["🔑 Login", "📝 Sign Up"])
@@ -241,7 +242,7 @@ if not st.session_state.user:
     st.stop()
 
 # --- HEADER REDISEÑADO (POST-LOGIN) ---
-col_h1, col_h2, col_h3 = st.columns([2.5, 1, 1])
+col_h1, col_h2, col_h3 = st.columns([3, 1, 1])
 
 with col_h1:
     if os.path.exists("logo.png"):
@@ -249,7 +250,9 @@ with col_h1:
     st.markdown('<p class="slogan-text">Automated form generation for the NYC Fire Alarm Industry</p>', unsafe_allow_html=True)
 
 with col_h3:
-    st.markdown(f'<p class="user-info-text">{st.session_state.user.email}</p>', unsafe_allow_html=True)
+    # Agregamos un poco de espacio superior para alinear con el logo
+    st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
+    st.markdown(f'<div class="user-info-text">{st.session_state.user.email}</div>', unsafe_allow_html=True)
     if st.button("🚪 Logout", use_container_width=True, type="secondary"):
         logout()
 
@@ -373,7 +376,7 @@ with tabs[1]:
     with st.expander("🏢 FA Company / Expeditor Information", expanded=True):
         col1, col2 = st.columns(2)
         with col1:
-            c_name  = st.text_input("Company Name",  value=profile.get("company_name", ""),       key="c_name")
+            c_name  = st.text_input("Company Name",  value=profile.get("company_name", ""),        key="c_name")
             c_addr  = st.text_input("Address",        value=profile.get("company_address", ""),    key="c_addr")
             c_city  = st.text_input("City",           value=profile.get("company_city", ""),       key="c_city")
             c_state = st.text_input("State",          value=profile.get("company_state", ""),      key="c_state")
