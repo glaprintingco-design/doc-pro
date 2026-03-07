@@ -6,7 +6,34 @@ import zipfile
 from io import BytesIO
 
 # --- CONFIGURACIÓN Y CONEXIÓN ---
-st.set_page_config(page_title="Fire Form Pro", layout="wide", page_icon="🔥")
+st.set_page_config(
+    page_title="Fire Form Pro", 
+    layout="wide", 
+    page_icon="🔥",
+    initial_sidebar_state="collapsed"  # Sidebar colapsado por defecto
+)
+
+# Ocultar elementos del menú de Streamlit excepto theme
+hide_streamlit_style = """
+<style>
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+header {visibility: hidden;}
+/* Mostrar solo el botón de theme */
+[data-testid="stToolbar"] {
+    display: none;
+}
+button[kind="header"] {
+    display: none;
+}
+/* Mejorar el logo */
+img {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+}
+</style>
+"""
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 main.API_KEY_NYC = st.secrets.get("NYC_API_KEY", "")
 main.APP_TOKEN_SOCRATA = st.secrets.get("SOCRATA_TOKEN", "")
@@ -18,7 +45,6 @@ SUPABASE_KEY = st.secrets.get("SUPABASE_KEY", "sb_publishable_mvqOWXc5s4b3_IMe4g
 if "supabase" not in st.session_state:
     try:
         st.session_state.supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-        st.sidebar.success("✅ Supabase connected")
     except Exception as e:
         st.error(f"❌ Failed to connect to Supabase: {e}")
         st.stop()
@@ -32,7 +58,6 @@ if "user" not in st.session_state:
         session = supabase.auth.get_session()
         if session and session.user:
             st.session_state.user = session.user
-            st.sidebar.success(f"🔄 Session restored: {session.user.email}")
     except Exception:
         pass
 
@@ -119,105 +144,144 @@ def sync_profile_to_main(profile):
     })
 
 
-# --- UI DE AUTENTICACIÓN ---
-def login_ui():
-    with st.sidebar:
-        st.header("🔑 User Access")
-        choice = st.radio("Action", ["Login", "Sign Up"])
-        email = st.text_input("Email Address")
-        password = st.text_input("Password", type="password")
-
-        if choice == "Login":
-            if st.button("Sign In", use_container_width=True):
-                if not email or not password:
-                    st.error("Please enter both email and password")
-                    return
-                with st.spinner("Authenticating..."):
-                    try:
-                        response = supabase.auth.sign_in_with_password({
-                            "email": email.strip(),
-                            "password": password
-                        })
-                        if response.user:
-                            st.session_state.user = response.user
-                            st.success(f"✅ Welcome back, {email}!")
-                            st.rerun()
-                        else:
-                            st.error("❌ Login failed: No user returned")
-                    except Exception as e:
-                        error_msg = str(e)
-                        st.error(f"❌ Login Error: {error_msg}")
-                        if "Invalid login credentials" in error_msg:
-                            st.warning("⚠️ Invalid email or password.")
-                        elif "Email not confirmed" in error_msg:
-                            st.warning("⚠️ Please confirm your email first.")
-                        elif "rate limit" in error_msg.lower():
-                            st.warning("⚠️ Too many attempts. Please wait.")
-                        else:
-                            with st.expander("Show full error"):
-                                st.code(error_msg)
-        else:
-            if st.button("Create Account", use_container_width=True):
-                if not email or not password:
-                    st.error("Please enter both email and password")
-                    return
-                if len(password) < 6:
-                    st.error("Password must be at least 6 characters")
-                    return
-                with st.spinner("Creating account..."):
-                    try:
-                        response = supabase.auth.sign_up({
-                            "email": email.strip(),
-                            "password": password
-                        })
-                        if response.user:
-                            st.success("✅ Account created successfully!")
-                            st.info("📧 Please check your email to confirm your account.")
+# --- UI DE AUTENTICACIÓN CENTRADA (CUANDO NO ESTÁ LOGUEADO) ---
+def login_ui_centered():
+    # Logo centrado y más grande
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if os.path.exists("logo.png"):
+            st.image("logo.png", use_column_width=True)
+        
+        st.markdown("<h1 style='text-align: center;'>Fire Form Pro</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: gray;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        # Card de login/signup
+        with st.container():
+            st.markdown("""
+                <style>
+                .login-container {
+                    background-color: rgba(255, 255, 255, 0.05);
+                    padding: 2rem;
+                    border-radius: 10px;
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                }
+                </style>
+            """, unsafe_allow_html=True)
+            
+            tab1, tab2 = st.tabs(["🔑 Login", "📝 Sign Up"])
+            
+            with tab1:
+                st.markdown("<br>", unsafe_allow_html=True)
+                email = st.text_input("Email Address", key="login_email", placeholder="user@example.com")
+                password = st.text_input("Password", type="password", key="login_password", placeholder="••••••••")
+                
+                col_a, col_b, col_c = st.columns([1, 2, 1])
+                with col_b:
+                    if st.button("Sign In", use_container_width=True, type="primary"):
+                        if not email or not password:
+                            st.error("Please enter both email and password")
+                            return
+                        with st.spinner("Authenticating..."):
                             try:
-                                supabase.table("profiles").insert({
-                                    "id": response.user.id,
-                                    "email": email
-                                }).execute()
-                            except Exception as profile_error:
-                                st.warning(f"Profile creation note: {profile_error}")
-                        else:
-                            st.error("Sign up completed but no user data returned")
-                    except Exception as e:
-                        error_msg = str(e)
-                        st.error(f"❌ Sign Up Error: {error_msg}")
-                        if "already registered" in error_msg.lower():
-                            st.warning("⚠️ Email already registered. Use the Login tab.")
-                        elif "valid email" in error_msg.lower():
-                            st.warning("⚠️ Please enter a valid email address.")
-                        else:
-                            with st.expander("Show full error"):
-                                st.code(error_msg)
+                                response = supabase.auth.sign_in_with_password({
+                                    "email": email.strip(),
+                                    "password": password
+                                })
+                                if response.user:
+                                    st.session_state.user = response.user
+                                    st.success(f"✅ Welcome back, {email}!")
+                                    st.rerun()
+                                else:
+                                    st.error("❌ Login failed: No user returned")
+                            except Exception as e:
+                                error_msg = str(e)
+                                st.error(f"❌ Login Error: {error_msg}")
+                                if "Invalid login credentials" in error_msg:
+                                    st.warning("⚠️ Invalid email or password.")
+                                elif "Email not confirmed" in error_msg:
+                                    st.warning("⚠️ Please confirm your email first.")
+                                elif "rate limit" in error_msg.lower():
+                                    st.warning("⚠️ Too many attempts. Please wait.")
+            
+            with tab2:
+                st.markdown("<br>", unsafe_allow_html=True)
+                email = st.text_input("Email Address", key="signup_email", placeholder="user@example.com")
+                password = st.text_input("Password", type="password", key="signup_password", placeholder="••••••••")
+                password_confirm = st.text_input("Confirm Password", type="password", key="signup_password_confirm", placeholder="••••••••")
+                
+                col_a, col_b, col_c = st.columns([1, 2, 1])
+                with col_b:
+                    if st.button("Create Account", use_container_width=True, type="primary"):
+                        if not email or not password:
+                            st.error("Please enter both email and password")
+                            return
+                        if password != password_confirm:
+                            st.error("Passwords do not match")
+                            return
+                        if len(password) < 6:
+                            st.error("Password must be at least 6 characters")
+                            return
+                        with st.spinner("Creating account..."):
+                            try:
+                                response = supabase.auth.sign_up({
+                                    "email": email.strip(),
+                                    "password": password
+                                })
+                                if response.user:
+                                    st.success("✅ Account created successfully!")
+                                    st.info("📧 Please check your email to confirm your account.")
+                                    try:
+                                        supabase.table("profiles").insert({
+                                            "id": response.user.id,
+                                            "email": email
+                                        }).execute()
+                                    except Exception as profile_error:
+                                        st.warning(f"Profile creation note: {profile_error}")
+                                else:
+                                    st.error("Sign up completed but no user data returned")
+                            except Exception as e:
+                                error_msg = str(e)
+                                st.error(f"❌ Sign Up Error: {error_msg}")
+                                if "already registered" in error_msg.lower():
+                                    st.warning("⚠️ Email already registered. Use the Login tab.")
+                                elif "valid email" in error_msg.lower():
+                                    st.warning("⚠️ Please enter a valid email address.")
 
 
 # --- CONTROL DE ACCESO ---
 if not st.session_state.user:
-    login_ui()
-    st.title("Fire Form Pro")
-    if os.path.exists("logo.png"):
-        st.image("logo.png", width=200)
-    st.warning("Please log in from the sidebar to access the generator.")
+    login_ui_centered()
     st.stop()
+
+# --- SIDEBAR MEJORADO (CUANDO ESTÁ LOGUEADO) ---
+with st.sidebar:
+    if os.path.exists("logo.png"):
+        st.image("logo.png", use_column_width=True)
+    
+    st.markdown("---")
+    st.markdown(f"**👤 Logged in as:**")
+    st.info(st.session_state.user.email)
+    
+    if st.button("🚪 Logout", use_container_width=True, type="secondary"):
+        logout()
+    
+    st.markdown("---")
+    st.caption("Fire Form Pro v1.0")
+    st.caption("© 2026 - NYC Fire Alarm Industry")
 
 # --- APP PRINCIPAL ---
 profile = fetch_user_profile(st.session_state.user.id)
-st.sidebar.success(f"Logged in as: {st.session_state.user.email}")
 
-if st.sidebar.button("Logout", use_container_width=True):
-    logout()
-
-tabs = st.tabs(["Project Builder", "👤 Profile Information"])
+tabs = st.tabs(["🏗️ Project Builder", "👤 Profile Information"])
 
 # ============================================================
 # TAB 1: PROFESSIONAL PROFILE
 # ============================================================
 with tabs[1]:
     st.header("Profile Information")
-    st.info("Data saved here is stored permanently in the cloud and fills your FDNY forms.")
+    st.info("💾 Data saved here is stored permanently in the cloud and fills your FDNY forms.")
 
     with st.expander("🏢 FA Company / Expeditor Information", expanded=True):
         col1, col2 = st.columns(2)
@@ -286,98 +350,100 @@ with tabs[1]:
             cs_zip   = st.text_input("CS Zip",     value=profile.get("cs_zip", ""),     key="cs_zip")
             cs_phone = st.text_input("CS Phone",   value=profile.get("cs_phone", ""),   key="cs_phone")
 
-    if st.button("💾 Save", use_container_width=True):
-        full_update = {
-            "id": st.session_state.user.id,
-            "updated_at": "now()",
-            # Company
-            "company_name": c_name, "company_address": c_addr, "company_city": c_city,
-            "company_state": c_state, "company_zip": c_zip, "company_phone": c_phone,
-            "company_email": c_email, "company_first_name": c_first, "company_last_name": c_last,
-            "company_reg_no": c_reg, "company_cof_s97": c_cof, "company_expiration": c_exp,
-            # Architect
-            "arch_name": a_name, "arch_address": a_addr, "arch_city": a_city,
-            "arch_state": a_state, "arch_zip": a_zip, "arch_phone": a_phone,
-            "arch_email": a_email, "arch_first_name": a_first, "arch_last_name": a_last,
-            "arch_license": a_license, "arch_role": a_role,
-            # Electrician
-            "elec_name": e_name, "elec_address": e_addr, "elec_city": e_city,
-            "elec_state": e_state, "elec_zip": e_zip, "elec_phone": e_phone,
-            "elec_email": e_email, "elec_first_name": e_first, "elec_last_name": e_last,
-            "elec_license": e_license, "elec_expiration": e_exp,
-            # Tech
-            "tech_manufacturer": t_man, "tech_approval": t_appr,
-            "tech_wire_gauge": t_gauge, "tech_wire_type": t_wire,
-            # Central Station
-            "cs_name": cs_name, "cs_code": cs_code, "cs_address": cs_addr,
-            "cs_city": cs_city, "cs_state": cs_state, "cs_zip": cs_zip, "cs_phone": cs_phone,
-        }
-        try:
-            supabase.table("profiles").upsert(full_update).execute()
-            # Actualizar perfil en memoria para que el tab 0 lo use de inmediato
-            profile.update(full_update)
-            sync_profile_to_main(profile)
-            st.success("✅ Profile saved successfully!")
-        except Exception as e:
-            st.error(f"Error saving to database: {e}")
+    col_save1, col_save2, col_save3 = st.columns([1, 1, 1])
+    with col_save2:
+        if st.button("💾 Save Profile", use_container_width=True, type="primary"):
+            full_update = {
+                "id": st.session_state.user.id,
+                "updated_at": "now()",
+                # Company
+                "company_name": c_name, "company_address": c_addr, "company_city": c_city,
+                "company_state": c_state, "company_zip": c_zip, "company_phone": c_phone,
+                "company_email": c_email, "company_first_name": c_first, "company_last_name": c_last,
+                "company_reg_no": c_reg, "company_cof_s97": c_cof, "company_expiration": c_exp,
+                # Architect
+                "arch_name": a_name, "arch_address": a_addr, "arch_city": a_city,
+                "arch_state": a_state, "arch_zip": a_zip, "arch_phone": a_phone,
+                "arch_email": a_email, "arch_first_name": a_first, "arch_last_name": a_last,
+                "arch_license": a_license, "arch_role": a_role,
+                # Electrician
+                "elec_name": e_name, "elec_address": e_addr, "elec_city": e_city,
+                "elec_state": e_state, "elec_zip": e_zip, "elec_phone": e_phone,
+                "elec_email": e_email, "elec_first_name": e_first, "elec_last_name": e_last,
+                "elec_license": e_license, "elec_expiration": e_exp,
+                # Tech
+                "tech_manufacturer": t_man, "tech_approval": t_appr,
+                "tech_wire_gauge": t_gauge, "tech_wire_type": t_wire,
+                # Central Station
+                "cs_name": cs_name, "cs_code": cs_code, "cs_address": cs_addr,
+                "cs_city": cs_city, "cs_state": cs_state, "cs_zip": cs_zip, "cs_phone": cs_phone,
+            }
+            try:
+                supabase.table("profiles").upsert(full_update).execute()
+                profile.update(full_update)
+                sync_profile_to_main(profile)
+                st.success("✅ Profile saved successfully!")
+            except Exception as e:
+                st.error(f"Error saving to database: {e}")
 
 
 # ============================================================
 # TAB 0: PROJECT BUILDER
 # ============================================================
 with tabs[0]:
-    if os.path.exists("logo.png"):
-        st.image("logo.png", width=150)
-    st.title("Fire Form Pro")
-    st.markdown("Automated form generation for the NYC Fire Alarm Industry.")
+    # Logo más grande en la parte superior
+    col_logo1, col_logo2, col_logo3 = st.columns([1, 2, 1])
+    with col_logo2:
+        if os.path.exists("logo.png"):
+            st.image("logo.png", use_column_width=True)
+    
+    st.markdown("<h1 style='text-align: center;'>Fire Form Pro</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: gray; margin-bottom: 2rem;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
 
     col1, col2 = st.columns([1, 2])
 
     with col1:
-        st.subheader("1. Project Information")
+        st.subheader("1️⃣ Project Information")
         bin_number = st.text_input("Enter Property BIN", placeholder="e.g. 1012345")
-        job_desc = st.text_area("TM-1 Job Description", value="Installation of Fire Alarm System.")
+        job_desc = st.text_area("TM-1 Job Description", value="Installation of Fire Alarm System.", height=100)
 
         st.divider()
 
-        st.markdown(
-            "<h3>2. A-433 Add Devices <span style='color:gray; font-size:14px;'>Optional</span></h3>",
-            unsafe_allow_html=True,
-        )
+        st.markdown("### 2️⃣ Add Devices <span style='color:gray; font-size:14px;'>(Optional)</span>", unsafe_allow_html=True)
 
         floor    = st.selectbox("Floor Location", main.FULL_FLOOR_LIST)
         category = st.selectbox("Category", list(main.MASTER_DEVICE_LIST.keys()))
         device   = st.selectbox("Device Type", main.MASTER_DEVICE_LIST.get(category, []))
         qty      = st.number_input("Quantity", min_value=1, value=1)
 
-        if st.button("➕ Add to List"):
+        if st.button("➕ Add to List", use_container_width=True):
             st.session_state.device_list.append({
                 "device": device,
                 "floor": floor,
                 "qty": qty,
             })
-            st.success(f"Added: {device} at {floor}")
+            st.success(f"✅ Added: {device} at {floor}")
 
         st.divider()
 
-        st.subheader("📝 Select Forms to Generate")
+        st.subheader("3️⃣ Select Forms to Generate")
         col_a, col_b = st.columns(2)
         with col_a:
-            gen_tm1    = st.checkbox("TM-1 Application",      value=True, key="chk_gen_tm1")
-            gen_a433   = st.checkbox("A-433 Device List",     value=True, key="chk_gen_a433")
+            gen_tm1    = st.checkbox("📄 TM-1 Application",      value=True, key="chk_gen_tm1")
+            gen_a433   = st.checkbox("📋 A-433 Device List",     value=True, key="chk_gen_a433")
         with col_b:
-            gen_b45    = st.checkbox("B-45 Inspection Request", value=True, key="chk_gen_b45")
-            gen_report = st.checkbox("Audit Report",           value=True, key="chk_gen_report")
+            gen_b45    = st.checkbox("🔍 B-45 Inspection", value=True, key="chk_gen_b45")
+            gen_report = st.checkbox("📊 Audit Report",           value=True, key="chk_gen_report")
 
         st.divider()
 
         if st.button("🔥 GENERATE DOCUMENTS", type="primary", use_container_width=True):
             if not bin_number:
-                st.error("Please enter a BIN number.")
+                st.error("⚠️ Please enter a BIN number.")
             elif not (gen_tm1 or gen_a433 or gen_b45 or gen_report):
                 st.warning("⚠️ Please select at least one form to generate.")
             else:
-                with st.spinner("Generating Forms..."):
+                with st.spinner("🔄 Generating Forms..."):
                     try:
                         sync_profile_to_main(profile)
 
@@ -413,14 +479,16 @@ with tabs[0]:
                                 data=zip_buffer.getvalue(),
                                 file_name=f"FDNY_Forms_{bin_number}.zip",
                                 mime="application/zip",
+                                use_container_width=True,
+                                type="primary"
                             )
                         else:
-                            st.error("Could not retrieve data for this BIN.")
+                            st.error("❌ Could not retrieve data for this BIN.")
                     except Exception as e:
-                        st.error(f"Critical Error: {e}")
+                        st.error(f"❌ Critical Error: {e}")
 
     # -------------------------------------------------------
-    # COLUMNA DERECHA — Device List (FUERA del if-button)
+    # COLUMNA DERECHA — Device List
     # -------------------------------------------------------
     with col2:
         st.subheader("📋 Project Device List")
@@ -445,8 +513,8 @@ with tabs[0]:
                 st.session_state.device_list = edited_list
                 st.rerun()
 
-            if st.button("🗑️ Clear Entire List", use_container_width=True):
+            if st.button("🗑️ Clear Entire List", use_container_width=True, type="secondary"):
                 st.session_state.device_list = []
                 st.rerun()
         else:
-            st.info("No devices added yet. Use the left panel to add them.")
+            st.info("💡 No devices added yet. Use the left panel to add them.")
