@@ -31,6 +31,15 @@ img {
     image-rendering: -webkit-optimize-contrast;
     image-rendering: crisp-edges;
 }
+/* Reducir padding superior */
+.block-container {
+    padding-top: 2rem;
+    padding-bottom: 0rem;
+}
+/* Reducir espacio en tabs */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 2rem;
+}
 </style>
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
@@ -255,6 +264,16 @@ if not st.session_state.user:
     login_ui_centered()
     st.stop()
 
+# --- HEADER CON LOGOUT (CUANDO ESTÁ LOGUEADO) ---
+col_header1, col_header2, col_header3 = st.columns([2, 2, 1])
+with col_header1:
+    st.markdown(f"**👤 {st.session_state.user.email}**")
+with col_header3:
+    if st.button("🚪 Logout", use_container_width=True, type="secondary"):
+        logout()
+
+st.markdown("---")
+
 # --- SIDEBAR MEJORADO (CUANDO ESTÁ LOGUEADO) ---
 with st.sidebar:
     if os.path.exists("logo.png"):
@@ -263,9 +282,6 @@ with st.sidebar:
     st.markdown("---")
     st.markdown(f"**👤 Logged in as:**")
     st.info(st.session_state.user.email)
-    
-    if st.button("🚪 Logout", use_container_width=True, type="secondary"):
-        logout()
     
     st.markdown("---")
     st.caption("Fire Form Pro v1.0")
@@ -391,14 +407,14 @@ with tabs[1]:
 # TAB 0: PROJECT BUILDER
 # ============================================================
 with tabs[0]:
-    # Logo más grande en la parte superior
+    # Logo más compacto en la parte superior
     col_logo1, col_logo2, col_logo3 = st.columns([1, 2, 1])
     with col_logo2:
         if os.path.exists("logo.png"):
             st.image("logo.png", use_column_width=True)
     
-    st.markdown("<h1 style='text-align: center;'>Fire Form Pro</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: gray; margin-bottom: 2rem;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center; margin-top: 0.5rem; margin-bottom: 0.5rem;'>Fire Form Pro</h2>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: gray; margin-bottom: 1rem;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
 
     col1, col2 = st.columns([1, 2])
 
