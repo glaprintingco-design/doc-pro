@@ -369,38 +369,6 @@ def obtener_datos_completos(bin_number):
         info["owner_business"] = info.get("owner_business_backup", "")
         
     return info
-    
-    from pypdf.generic import TextStringObject
-
-def fix_adobe_visibility(writer, campos):
-    """
-    Asegura visibilidad en Adobe/Nitro. 
-    Borra /AP solo para texto; mantiene /AP para checkboxes (/On).
-    """
-    if "/AcroForm" not in writer.root_object:
-        writer.root_object.update({
-            NameObject("/AcroForm"): writer._add_object(DictionaryObject())
-        })
-    writer.root_object["/AcroForm"].update({
-        NameObject("/NeedAppearances"): BooleanObject(True)
-    })
-
-    for page in writer.pages:
-        if "/Annots" in page:
-            for annot in page["/Annots"]:
-                obj = annot.get_object()
-                field_name = obj.get("/T")
-                if field_name in campos:
-                    val = str(campos[field_name])
-                    # SI NO ES UN CHECKMARK (no empieza con /), borramos el /AP
-                    if not val.startswith("/"):
-                        if "/AP" in obj:
-                            del obj["/AP"]
-                    # SI ES UN CHECKMARK, nos aseguramos de que el estado (/AS) sea correcto
-                    else:
-                        obj.update({
-                            NameObject("/AS"): NameObject(val)
-                        })    
 # ==========================================
 # 3. GENERADOR TM-1
 # ==========================================
@@ -444,7 +412,6 @@ def generar_tm1(datos, input_pdf, output_pdf):
             "EMail_2": COMPANY.get("Email"), "undefined_16": "/On", "2025": "/On", "Code Section": "BC 907"
         }
         for i in range(len(writer.pages)): writer.update_page_form_field_values(writer.pages[i], campos)
-        fix_adobe_visibility(writer, campos)
         with open(output_pdf, "wb") as f: writer.write(f)
         print("   ✅ TM-1 Generated.")
     except Exception as e: print(f"   ❌ TM-1 Error: {e}")
@@ -542,7 +509,6 @@ def generar_a433(datos, input_pdf, output_pdf):
 
         for i in range(len(writer.pages)): writer.update_page_form_field_values(writer.pages[i], campos)
         with open(output_pdf, "wb") as f: writer.write(f)
-        with open(output_pdf, "wb") as f: writer.write(f)
         print("   ✅ A-433 Generated.")
     except Exception as e: print(f"   ❌ A-433 Error: {e}")
 
@@ -571,7 +537,6 @@ def generar_b45(datos, input_pdf, output_pdf):
                 if obj.get("/T") in ["gp1", "gp2", "gp3", "gp4", "gp5", "inspector"]:
                     flags = obj.get("/Ff", 0)
                     if flags & 1: obj[NameObject("/Ff")] = NumberObject(flags & ~1)
-        with open(output_pdf, "wb") as f: writer.write(f)
         with open(output_pdf, "wb") as f: writer.write(f)
         print("   ✅ B-45 Generated.")
     except Exception as e: print(f"   ❌ B-45 Error: {e}")
