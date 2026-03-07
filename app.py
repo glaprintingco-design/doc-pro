@@ -425,7 +425,7 @@ with tabs[0]:
 
         st.divider()
 
-        st.markdown("### 2️⃣ Add Devices <span style='color:gray; font-size:14px;'>(Optional)</span>", unsafe_allow_html=True)
+        st.markdown("### 2️⃣ Add Devices <span style='color:gray; font-size:14px;'>(A-433 Optional)</span>", unsafe_allow_html=True)
 
         floor    = st.selectbox("Floor Location", main.FULL_FLOOR_LIST)
         category = st.selectbox("Category", list(main.MASTER_DEVICE_LIST.keys()))
