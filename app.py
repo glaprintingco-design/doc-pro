@@ -73,6 +73,8 @@ if "user" not in st.session_state:
 if "device_list" not in st.session_state:
     st.session_state.device_list = []
 
+if "generated_data" not in st.session_state:
+    st.session_state.generated_data = None
 
 # --- FUNCIONES DE APOYO ---
 def logout():
@@ -448,7 +450,7 @@ with tabs[0]:
             gen_tm1    = st.checkbox("📄 TM-1 Application",      value=True, key="chk_gen_tm1")
             gen_a433   = st.checkbox("📋 A-433 Device List",     value=True, key="chk_gen_a433")
         with col_b:
-            gen_b45    = st.checkbox("🔍 B-45 Inspection", value=True, key="chk_gen_b45")
+            gen_b45    = st.checkbox("📄 B-45 Inspection", value=True, key="chk_gen_b45")
             gen_report = st.checkbox("📊 Audit Report",           value=True, key="chk_gen_report")
 
         st.divider()
@@ -484,60 +486,63 @@ with tabs[0]:
 
                             zip_buffer = BytesIO()
                             file_data_dict = {}
-                            zip_buffer = BytesIO()
                             
                             with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
                                 for file_name in generated_files:
                                     if os.path.exists(file_name):
-                                        # Leer el archivo físicamente a la memoria de Streamlit
                                         with open(file_name, "rb") as f:
                                             file_bytes = f.read()
                                             file_data_dict[file_name] = file_bytes
                                         
-                                        # Escribir los bytes directamente al ZIP
                                         zip_file.writestr(file_name, file_bytes)
-                                        # Borrar el archivo físico del servidor para mantenerlo limpio
                                         os.remove(file_name)
 
-                            st.success(f"✅ {len(file_data_dict)} documents generated successfully!")
+                            # --- MAGIA AQUÍ: Guardamos en memoria en lugar de mostrar de una vez ---
+                            st.session_state.generated_data = {
+                                "archivos": file_data_dict,
+                                "zip_buffer": zip_buffer.getvalue(),
+                                "bin": bin_number
+                            }
                             
-                            # 1. BOTÓN PRINCIPAL (EL ZIP COMPLETO)
-                            st.download_button(
-                                label="📦 Download All Selected Forms (ZIP)",
-                                data=zip_buffer.getvalue(),
-                                file_name=f"FDNY_Forms_{bin_number}.zip",
-                                mime="application/zip",
-                                use_container_width=True,
-                                type="primary"
-                            )
-
-                            st.markdown("<p style='text-align: center; color: gray; font-size: 14px; margin-top: 10px;'>Or download individually:</p>", unsafe_allow_html=True)
-
-                            # 2. BOTONES INDIVIDUALES GENERADOS DINÁMICAMENTE
-                            # Creamos tantas columnas como archivos se generaron para que queden alineados
-                            cols = st.columns(len(file_data_dict))
-                            
-                            for idx, (f_name, f_bytes) in enumerate(file_data_dict.items()):
-                                with cols[idx]:
-                                    # Ajustar el tipo y el icono dependiendo de si es PDF o el archivo de texto (Reporte)
-                                    mime_type = "text/plain" if f_name.endswith(".txt") else "application/pdf"
-                                    icon = "📊" if f_name.endswith(".txt") else "📄"
-                                    
-                                    # Extraer el nombre corto para el botón (Ej: "TM1", "A433")
-                                    short_name = f_name.split('_')[0]
-                                    
-                                    st.download_button(
-                                        label=f"{icon} {short_name}",
-                                        data=f_bytes,
-                                        file_name=f_name,
-                                        mime=mime_type,
-                                        use_container_width=True
-                                    )
                         else:
                             st.error("❌ Could not retrieve data for this BIN.")
                     except Exception as e:
                         st.error(f"❌ Critical Error: {e}")
 
+        # --- BOTONES DE DESCARGA (AHORA VIVEN FUERA DEL IF DEL BOTÓN) ---
+        if st.session_state.generated_data:
+            datos = st.session_state.generated_data
+            
+            st.success(f"✅ {len(datos['archivos'])} documents generated successfully!")
+            
+            # 1. BOTÓN PRINCIPAL (EL ZIP COMPLETO)
+            st.download_button(
+                label="📦 Download All Selected Forms (ZIP)",
+                data=datos["zip_buffer"],
+                file_name=f"FDNY_Forms_{datos['bin']}.zip",
+                mime="application/zip",
+                use_container_width=True,
+                type="primary"
+            )
+
+            st.markdown("<p style='text-align: center; color: gray; font-size: 14px; margin-top: 10px;'>Or download individually:</p>", unsafe_allow_html=True)
+
+            # 2. BOTONES INDIVIDUALES
+            cols = st.columns(len(datos['archivos']))
+            
+            for idx, (f_name, f_bytes) in enumerate(datos['archivos'].items()):
+                with cols[idx]:
+                    mime_type = "text/plain" if f_name.endswith(".txt") else "application/pdf"
+                    icon = "📊" if f_name.endswith(".txt") else "📄"
+                    short_name = f_name.split('_')[0]
+                    
+                    st.download_button(
+                        label=f"{icon} {short_name}",
+                        data=f_bytes,
+                        file_name=f_name,
+                        mime=mime_type,
+                        use_container_width=True
+                    )
     # -------------------------------------------------------
     # COLUMNA DERECHA — Device List
     # -------------------------------------------------------
