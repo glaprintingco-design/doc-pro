@@ -344,7 +344,7 @@ col_h_izq, col_h_der = st.columns([3, 1])
 with col_h_izq:
     if os.path.exists("logo.png"):
         st.image("logo.png", width=280)
-        st.markdown("<p style='color: rgba(255,255,255,0.95); font-size: 15px; margin-top: -75px; margin-bottom: -15px; margin-left: 8px; font-weight: 500; letter-spacing: 0.3px;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
+        st.markdown("<p style='color: rgb(220 30 45); font-size: 15px; margin-top: -75px; margin-bottom: -15px; margin-left: 8px; font-weight: 500; letter-spacing: 0.3px;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
     else:
         st.markdown("<h1 style='color: white; margin: 0; font-size: 2.8rem; font-weight: 700; letter-spacing: -0.5px;'>🔥 Fire Form Pro</h1>", unsafe_allow_html=True)
         st.markdown("<p style='color: rgba(255,255,255,0.95); font-size: 15px; margin: 0; margin-top: 8px; font-weight: 500; letter-spacing: 0.3px;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
