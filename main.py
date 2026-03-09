@@ -372,8 +372,9 @@ def obtener_datos_completos(bin_number):
     
 def rellenar_pdf_inteligente(input_pdf, output_pdf, campos):
     """
-    Solución definitiva usando pypdf a bajo nivel.
-    Evita el bug UTF-16 de Nitro (letras separadas) y fuerza la visibilidad.
+    Solución definitiva (El 100%).
+    Combina la inteligencia de pypdf para los checkboxes, 
+    con una inyección manual quirúrgica para arreglar el texto en Nitro.
     """
     reader = PdfReader(input_pdf)
     writer = PdfWriter()
@@ -381,50 +382,50 @@ def rellenar_pdf_inteligente(input_pdf, output_pdf, campos):
     for page in reader.pages:
         writer.add_page(page)
         
-    # 1. ESTO ES VITAL: Le dice a Nitro/Adobe "Dibuja tú el texto"
+    # 1. Le decimos a Nitro que redibuje el formulario
     if "/AcroForm" in writer.root_object:
         writer.root_object["/AcroForm"][NameObject("/NeedAppearances")] = BooleanObject(True)
     
-    # 2. Inyección manual para evitar los errores
+    # 2. PRIMERA PASADA: Dejamos que pypdf llene todo 
+    # (Esto marca los checkboxes perfectamente sin importar cómo se llamen internamente)
+    for i in range(len(writer.pages)):
+        writer.update_page_form_field_values(writer.pages[i], campos)
+        
+    # 3. SEGUNDA PASADA (Quirúrgica): Curamos solo el texto para Nitro y Adobe
     for page in writer.pages:
         if "/Annots" in page:
             for annot in page["/Annots"]:
                 obj = annot.get_object()
                 
-                if obj.get("/T"): # Si es un campo con nombre
+                if obj.get("/T"): # Si el campo tiene nombre
                     key = obj.get("/T")
                     if key in campos:
                         val = campos[key]
                         
-                        # A. Checkboxes ("/On", "/Off")
-                        if val in ["/On", "/Off"]:
-                            obj.update({
-                                NameObject("/V"): NameObject(val),
-                                NameObject("/AS"): NameObject(val)
-                            })
-                        else:
-                            # B. Texto: Convertir a formato seguro para evitar espacios raros
+                        # Si es un campo de TEXTO (ignoramos los checkboxes "/On" o "/Off")
+                        if val not in ["/On", "/Off", True, False]:
+                            # Aplicamos la cura del formato seguro para que no haya espacios raros
                             texto_seguro = str(val).encode('latin-1', 'ignore').decode('latin-1')
                             obj.update({
                                 NameObject("/V"): TextStringObject(texto_seguro)
                             })
-                        
-                        # 3. BORRAR APARIENCIA VIEJA: Evita que el texto sea invisible
-                        if "/AP" in obj:
-                            del obj["/AP"]
                             
-                    # 4. LIMPIAR FLAGS (Para TODOS los campos)
-                    # Apaga el bit "Comb" (que separa letras) y el bit "ReadOnly" (para que siempre sean editables)
-                    if "/Ff" in obj:
-                        flags = obj.get("/Ff", 0)
-                        if isinstance(flags, int):
-                            flags = (flags & ~0x1000000) & ~1
-                            obj.update({NameObject("/Ff"): NumberObject(flags)})
+                            # Borramos la apariencia vieja para que Nitro no esconda el texto
+                            if "/AP" in obj:
+                                del obj["/AP"]
+                                
+                # 4. LIMPIEZA DE FLAGS: Hacemos TODO editable y quitamos separación de letras
+                if "/Ff" in obj:
+                    flags = obj.get("/Ff", 0)
+                    if isinstance(flags, int):
+                        # ~0x1000000 quita el "Comb" (letras separadas en casillas)
+                        # ~1 quita el "ReadOnly" (permite que el usuario edite el PDF)
+                        flags = (flags & ~0x1000000) & ~1
+                        obj.update({NameObject("/Ff"): NumberObject(flags)})
 
-    # Guardamos el archivo
+    # Guardamos el archivo final
     with open(output_pdf, "wb") as f:
-        writer.write(f)    
-
+        writer.write(f)
 # ==========================================
 # 3. GENERADOR TM-1
 # ==========================================
