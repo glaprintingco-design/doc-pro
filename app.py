@@ -406,35 +406,40 @@ with tabs[1]:
 
 
 # ============================================================
-# TAB 0: PROJECT BUILDER
+# TAB 0: PROJECT BUILDER (DISEÑO MEJORADO)
 # ============================================================
 with tabs[0]:
-    # Logo más compacto en la parte superior
+    # --- ENCABEZADO Y LOGO ---
     col_logo1, col_logo2, col_logo3 = st.columns([1, 2, 1])
     with col_logo2:
         if os.path.exists("logo.png"):
             st.image("logo.png", use_column_width=True)
     
     st.markdown("<h2 style='text-align: center; margin-top: 0.5rem; margin-bottom: 0.5rem;'>Fire Form Pro</h2>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: gray; margin-bottom: 1rem;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: gray; margin-bottom: 2rem;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
 
-    col1, col2 = st.columns([1, 2])
-
-    with col1:
-        st.subheader("1️⃣ Project Information")
+    # --- SECCIÓN 1: PROJECT INFORMATION (Ancho completo dividido en 2) ---
+    st.subheader("1️⃣ Project Information")
+    col_info1, col_info2 = st.columns(2)
+    with col_info1:
         bin_number = st.text_input("Enter Property BIN", placeholder="e.g. 1012345")
-        job_desc = st.text_area("TM-1 Job Description", value="Installation of Fire Alarm System.", height=100)
+    with col_info2:
+        job_desc = st.text_area("TM-1 Job Description", value="Installation of Fire Alarm System.", height=68)
 
-        st.divider()
+    st.divider()
 
-        st.markdown("### 2️⃣ Add Devices <span style='color:gray; font-size:14px;'>(A-433 Optional)</span>", unsafe_allow_html=True)
-
+    # --- SECCIÓN 2: DISPOSITIVOS (Izquierda: Controles | Derecha: Tabla) ---
+    st.markdown("### 2️⃣ Devices <span style='color:gray; font-size:14px;'>(A-433 Optional)</span>", unsafe_allow_html=True)
+    col_dev_left, col_dev_right = st.columns([1, 2]) # Le damos más espacio a la tabla
+    
+    with col_dev_left:
+        st.markdown("**➕ Add New Device**")
         floor    = st.selectbox("Floor Location", main.FULL_FLOOR_LIST)
         category = st.selectbox("Category", list(main.MASTER_DEVICE_LIST.keys()))
         device   = st.selectbox("Device Type", main.MASTER_DEVICE_LIST.get(category, []))
         qty      = st.number_input("Quantity", min_value=1, value=1)
-
-        if st.button("➕ Add to List", use_container_width=True):
+        
+        if st.button("Add to List", use_container_width=True):
             st.session_state.device_list.append({
                 "device": device,
                 "floor": floor,
@@ -442,19 +447,49 @@ with tabs[0]:
             })
             st.success(f"✅ Added: {device} at {floor}")
 
-        st.divider()
+    with col_dev_right:
+        st.markdown("**📋 Project Device List**")
+        if st.session_state.device_list:
+            edited_list = st.data_editor(
+                st.session_state.device_list,
+                num_rows="dynamic",
+                use_container_width=True,
+                column_config={
+                    "qty": st.column_config.NumberColumn("Quantity", min_value=1, max_value=999, step=1, required=True),
+                    "device": st.column_config.TextColumn("Device Type", disabled=True),
+                    "floor":  st.column_config.TextColumn("Floor Location", disabled=True),
+                },
+                key="device_editor",
+            )
+            if edited_list != st.session_state.device_list:
+                st.session_state.device_list = edited_list
+                st.rerun()
+                
+            if st.button("🗑️ Clear Entire List", use_container_width=True, type="secondary"):
+                st.session_state.device_list = []
+                st.rerun()
+        else:
+            st.info("💡 No devices added yet. Use the panel on the left to add them.")
 
-        st.subheader("3️⃣ Select Forms to Generate")
-        col_a, col_b = st.columns(2)
-        with col_a:
-            gen_tm1    = st.checkbox("📄 TM-1 Application",      value=True, key="chk_gen_tm1")
-            gen_a433   = st.checkbox("📋 A-433 Device List",     value=True, key="chk_gen_a433")
-        with col_b:
-            gen_b45    = st.checkbox("📄 B-45 Inspection", value=True, key="chk_gen_b45")
-            gen_report = st.checkbox("📊 Audit Report",           value=True, key="chk_gen_report")
+    st.divider()
 
-        st.divider()
-
+    # --- SECCIÓN 3: GENERACIÓN Y DESCARGA (Centrado) ---
+    st.subheader("3️⃣ Document Generation")
+    
+    # Centramos los checkboxes usando columnas espaciadoras
+    col_chk0, col_chk1, col_chk2, col_chk3 = st.columns([1, 2, 2, 1])
+    with col_chk1:
+        gen_tm1    = st.checkbox("📄 TM-1 Application", value=True, key="chk_gen_tm1")
+        gen_a433   = st.checkbox("📋 A-433 Device List", value=True, key="chk_gen_a433")
+    with col_chk2:
+        gen_b45    = st.checkbox("📄 B-45 Inspection", value=True, key="chk_gen_b45")
+        gen_report = st.checkbox("📊 Audit Report", value=True, key="chk_gen_report")
+        
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    # Botón principal y descargas centrados
+    col_gen1, col_gen2, col_gen3 = st.columns([1, 2, 1])
+    with col_gen2:
         if st.button("🔥 GENERATE DOCUMENTS", type="primary", use_container_width=True):
             if not bin_number:
                 st.error("⚠️ Please enter a BIN number.")
@@ -464,8 +499,8 @@ with tabs[0]:
                 with st.spinner("🔄 Generating Forms..."):
                     try:
                         sync_profile_to_main(profile)
-
                         info = main.obtener_datos_completos(bin_number)
+                        
                         if info:
                             job_specs = {"job_desc": job_desc, "devices": st.session_state.device_list}
                             full_data = {**info, **job_specs}
@@ -484,8 +519,8 @@ with tabs[0]:
                                 main.generar_reporte_auditoria(full_data, f"REPORT_{bin_number}.txt")
                                 generated_files.append(f"REPORT_{bin_number}.txt")
 
-                            zip_buffer = BytesIO()
                             file_data_dict = {}
+                            zip_buffer = BytesIO()
                             
                             with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
                                 for file_name in generated_files:
@@ -493,29 +528,27 @@ with tabs[0]:
                                         with open(file_name, "rb") as f:
                                             file_bytes = f.read()
                                             file_data_dict[file_name] = file_bytes
-                                        
                                         zip_file.writestr(file_name, file_bytes)
                                         os.remove(file_name)
 
-                            # --- MAGIA AQUÍ: Guardamos en memoria en lugar de mostrar de una vez ---
                             st.session_state.generated_data = {
                                 "archivos": file_data_dict,
                                 "zip_buffer": zip_buffer.getvalue(),
                                 "bin": bin_number
                             }
-                            
                         else:
                             st.error("❌ Could not retrieve data for this BIN.")
                     except Exception as e:
                         st.error(f"❌ Critical Error: {e}")
 
-        # --- BOTONES DE DESCARGA (AHORA VIVEN FUERA DEL IF DEL BOTÓN) ---
-        if st.session_state.generated_data:
+        # Bloque de descargas (Mantenemos todo dentro de la columna central para un diseño limpio)
+        if "generated_data" in st.session_state and st.session_state.generated_data:
+            st.markdown("<hr style='margin-top: 1rem; margin-bottom: 1rem;'>", unsafe_allow_html=True)
             datos = st.session_state.generated_data
             
             st.success(f"✅ {len(datos['archivos'])} documents generated successfully!")
             
-            # 1. BOTÓN PRINCIPAL (EL ZIP COMPLETO)
+            # Botón del ZIP
             st.download_button(
                 label="📦 Download All Selected Forms (ZIP)",
                 data=datos["zip_buffer"],
@@ -527,14 +560,10 @@ with tabs[0]:
 
             st.markdown("<p style='text-align: center; color: gray; font-size: 14px; margin-top: 10px;'>Or download individually:</p>", unsafe_allow_html=True)
 
-            # 2. BOTONES INDIVIDUALES (Organizados en Grid 2x2)
-            # 👇 ¡ESTA ES LA LÍNEA QUE FALTABA! 👇
+            # Botones en cuadrícula 2x2
             archivos_lista = list(datos['archivos'].items())
-            
-            # Recorremos la lista de 2 en 2 para crear filas
             for i in range(0, len(archivos_lista), 2):
-                cols = st.columns(2)  # Forzamos a que máximo haya 2 botones por fila
-                
+                cols = st.columns(2)
                 for j in range(2):
                     if i + j < len(archivos_lista):
                         f_name, f_bytes = archivos_lista[i + j]
@@ -550,34 +579,3 @@ with tabs[0]:
                                 mime=mime_type,
                                 use_container_width=True
                             )
-    # -------------------------------------------------------
-    # COLUMNA DERECHA — Device List
-    # -------------------------------------------------------
-    with col2:
-        st.subheader("📋 Project Device List")
-
-        if st.session_state.device_list:
-            edited_list = st.data_editor(
-                st.session_state.device_list,
-                num_rows="dynamic",
-                use_container_width=True,
-                column_config={
-                    "qty": st.column_config.NumberColumn(
-                        "Quantity", min_value=1, max_value=999, step=1, required=True
-                    ),
-                    "device": st.column_config.TextColumn("Device Type", disabled=True),
-                    "floor":  st.column_config.TextColumn("Floor Location", disabled=True),
-                },
-                key="device_editor",
-            )
-
-            # Sincronizar ediciones manuales de cantidad
-            if edited_list != st.session_state.device_list:
-                st.session_state.device_list = edited_list
-                st.rerun()
-
-            if st.button("🗑️ Clear Entire List", use_container_width=True, type="secondary"):
-                st.session_state.device_list = []
-                st.rerun()
-        else:
-            st.info("💡 No devices added yet. Use the left panel to add them.")
