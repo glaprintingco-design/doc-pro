@@ -3,6 +3,7 @@ import os
 import sys
 import datetime
 import requests
+import fitz  # PyMuPDF
 from pypdf import PdfReader, PdfWriter
 from pypdf.generic import NameObject, BooleanObject, NumberObject
 
@@ -369,17 +370,43 @@ def obtener_datos_completos(bin_number):
         info["owner_business"] = info.get("owner_business_backup", "")
         
     return info
+    
+
+def rellenar_pdf_seguro(input_pdf, output_pdf, campos):
+    """
+    Rellena PDFs usando PyMuPDF para evitar problemas de espaciado en Nitro/Adobe,
+    manteniendo los campos editables y resolviendo los checkboxes.
+    """
+    doc = fitz.open(input_pdf)
+    for page in doc:
+        for field in page.widgets():
+            if field.field_name in campos:
+                val = campos[field.field_name]
+                
+                # Detectar si es un checkbox o radio button
+                if field.field_type in [fitz.PDF_WIDGET_TYPE_CHECKBOX, fitz.PDF_WIDGET_TYPE_RADIO]:
+                    # Traducir la lógica vieja de pypdf ("/On", "/Off") a Booleano para PyMuPDF
+                    if val == "/On" or val is True:
+                        field.field_value = True
+                    elif val == "/Off" or val is False:
+                        field.field_value = False
+                else:
+                    # Campo de texto normal
+                    field.field_value = str(val)
+                
+                # ¡Esta es la magia! Regenera la apariencia visual del texto 
+                # correctamente sin bloquear la edición del campo
+                field.update()
+    
+    doc.save(output_pdf)
+    
+    
 # ==========================================
 # 3. GENERADOR TM-1
 # ==========================================
 def generar_tm1(datos, input_pdf, output_pdf):
     print(f"📄 2. Generating TM-1...")
     try:
-        reader = PdfReader(input_pdf); writer = PdfWriter()
-        for p in reader.pages: writer.add_page(p)
-        if "/AcroForm" in reader.root_object: writer.root_object[NameObject("/AcroForm")] = reader.root_object["/AcroForm"]
-        writer.root_object["/AcroForm"][NameObject("/NeedAppearances")] = BooleanObject(True)
-
         lm_yes = "/On" if datos["landmarked"] == "Yes" else "/Off"
         lm_no  = "/On" if datos["landmarked"] == "No" else "/Off"
         fl_yes = "/On" if datos["flood_zone"] == "Yes" else "/Off"
@@ -411,10 +438,13 @@ def generar_tm1(datos, input_pdf, output_pdf):
             "City_2": COMPANY.get("City"), "State_2": COMPANY.get("State"), "Zip_2": COMPANY.get("Zip"),
             "EMail_2": COMPANY.get("Email"), "undefined_16": "/On", "2025": "/On", "Code Section": "BC 907"
         }
-        for i in range(len(writer.pages)): writer.update_page_form_field_values(writer.pages[i], campos)
-        with open(output_pdf, "wb") as f: writer.write(f)
+        
+        # --- AQUÍ LLAMAMOS A LA NUEVA MAGIA ---
+        rellenar_pdf_seguro(input_pdf, output_pdf, campos)
+        
         print("   ✅ TM-1 Generated.")
-    except Exception as e: print(f"   ❌ TM-1 Error: {e}")
+    except Exception as e: 
+        print(f"   ❌ TM-1 Error: {e}")
 
 # ==========================================
 # 4. GENERADOR A-433 (EL MÁS IMPORTANTE)
