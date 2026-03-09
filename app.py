@@ -26,12 +26,12 @@ header {visibility: hidden;}
 button[kind="header"] {
     display: none;
 }
-/* Mejorar el logo */
+/* Mejorar la nitidez de las imágenes */
 img {
     image-rendering: -webkit-optimize-contrast;
     image-rendering: crisp-edges;
 }
-/* Reducir padding superior */
+/* Reducir padding superior de la página */
 .block-container {
     padding-top: 2rem;
     padding-bottom: 0rem;
@@ -76,6 +76,7 @@ if "device_list" not in st.session_state:
 if "generated_data" not in st.session_state:
     st.session_state.generated_data = None
 
+
 # --- FUNCIONES DE APOYO ---
 def logout():
     try:
@@ -84,6 +85,7 @@ def logout():
         pass
     st.session_state.user = None
     st.session_state.device_list = []
+    st.session_state.generated_data = None
     st.rerun()
 
 
@@ -155,110 +157,117 @@ def sync_profile_to_main(profile):
     })
 
 
-# --- UI DE AUTENTICACIÓN CENTRADA (CUANDO NO ESTÁ LOGUEADO) ---
+# --- UI DE AUTENTICACIÓN MEJORADA (CUANDO NO ESTÁ LOGUEADO) ---
 def login_ui_centered():
-    # Logo centrado y más grande
+    st.markdown("""
+        <style>
+        .login-wrapper {
+            max-width: 450px;
+            margin: 4rem auto;
+            padding: 2.5rem;
+            background-color: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            border: 1px solid rgba(211, 84, 0, 0.3);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .login-subtitle {
+            color: gray;
+            font-size: 14px;
+            margin-bottom: 2rem;
+            margin-top: -10px;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
+        st.markdown("<div class='login-wrapper'>", unsafe_allow_html=True)
+        
+        # Logo en el login
         if os.path.exists("logo.png"):
             st.image("logo.png", use_column_width=True)
         
-        st.markdown("<h1 style='text-align: center;'>Fire Form Pro</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center; color: gray;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
+        st.markdown("<p class='login-subtitle'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
         
-        st.markdown("<br>", unsafe_allow_html=True)
+        tab1, tab2 = st.tabs(["🔑 Login", "📝 Sign Up"])
         
-        # Card de login/signup
-        with st.container():
-            st.markdown("""
-                <style>
-                .login-container {
-                    background-color: rgba(255, 255, 255, 0.05);
-                    padding: 2rem;
-                    border-radius: 10px;
-                    border: 1px solid rgba(255, 255, 255, 0.1);
-                }
-                </style>
-            """, unsafe_allow_html=True)
+        with tab1:
+            st.markdown("<br>", unsafe_allow_html=True)
+            email = st.text_input("Email Address", key="login_email", placeholder="user@example.com")
+            password = st.text_input("Password", type="password", key="login_password", placeholder="••••••••")
             
-            tab1, tab2 = st.tabs(["🔑 Login", "📝 Sign Up"])
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("Sign In", use_container_width=True, type="primary"):
+                if not email or not password:
+                    st.error("Please enter both email and password")
+                    return
+                with st.spinner("Authenticating..."):
+                    try:
+                        response = supabase.auth.sign_in_with_password({
+                            "email": email.strip(),
+                            "password": password
+                        })
+                        if response.user:
+                            st.session_state.user = response.user
+                            st.success(f"✅ Welcome back!")
+                            st.rerun()
+                        else:
+                            st.error("❌ Login failed: No user returned")
+                    except Exception as e:
+                        error_msg = str(e)
+                        st.error(f"❌ Login Error: {error_msg}")
+                        if "Invalid login credentials" in error_msg:
+                            st.warning("⚠️ Invalid email or password.")
+                        elif "Email not confirmed" in error_msg:
+                            st.warning("⚠️ Please confirm your email first.")
+                        elif "rate limit" in error_msg.lower():
+                            st.warning("⚠️ Too many attempts. Please wait.")
+        
+        with tab2:
+            st.markdown("<br>", unsafe_allow_html=True)
+            email = st.text_input("Email Address", key="signup_email", placeholder="user@example.com")
+            password = st.text_input("Password", type="password", key="signup_password", placeholder="••••••••")
+            password_confirm = st.text_input("Confirm Password", type="password", key="signup_password_confirm", placeholder="••••••••")
             
-            with tab1:
-                st.markdown("<br>", unsafe_allow_html=True)
-                email = st.text_input("Email Address", key="login_email", placeholder="user@example.com")
-                password = st.text_input("Password", type="password", key="login_password", placeholder="••••••••")
-                
-                col_a, col_b, col_c = st.columns([1, 2, 1])
-                with col_b:
-                    if st.button("Sign In", use_container_width=True, type="primary"):
-                        if not email or not password:
-                            st.error("Please enter both email and password")
-                            return
-                        with st.spinner("Authenticating..."):
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("Create Account", use_container_width=True, type="primary"):
+                if not email or not password:
+                    st.error("Please enter both email and password")
+                    return
+                if password != password_confirm:
+                    st.error("Passwords do not match")
+                    return
+                if len(password) < 6:
+                    st.error("Password must be at least 6 characters")
+                    return
+                with st.spinner("Creating account..."):
+                    try:
+                        response = supabase.auth.sign_up({
+                            "email": email.strip(),
+                            "password": password
+                        })
+                        if response.user:
+                            st.success("✅ Account created successfully!")
+                            st.info("📧 Please check your email to confirm your account.")
                             try:
-                                response = supabase.auth.sign_in_with_password({
-                                    "email": email.strip(),
-                                    "password": password
-                                })
-                                if response.user:
-                                    st.session_state.user = response.user
-                                    st.success(f"✅ Welcome back, {email}!")
-                                    st.rerun()
-                                else:
-                                    st.error("❌ Login failed: No user returned")
-                            except Exception as e:
-                                error_msg = str(e)
-                                st.error(f"❌ Login Error: {error_msg}")
-                                if "Invalid login credentials" in error_msg:
-                                    st.warning("⚠️ Invalid email or password.")
-                                elif "Email not confirmed" in error_msg:
-                                    st.warning("⚠️ Please confirm your email first.")
-                                elif "rate limit" in error_msg.lower():
-                                    st.warning("⚠️ Too many attempts. Please wait.")
-            
-            with tab2:
-                st.markdown("<br>", unsafe_allow_html=True)
-                email = st.text_input("Email Address", key="signup_email", placeholder="user@example.com")
-                password = st.text_input("Password", type="password", key="signup_password", placeholder="••••••••")
-                password_confirm = st.text_input("Confirm Password", type="password", key="signup_password_confirm", placeholder="••••••••")
-                
-                col_a, col_b, col_c = st.columns([1, 2, 1])
-                with col_b:
-                    if st.button("Create Account", use_container_width=True, type="primary"):
-                        if not email or not password:
-                            st.error("Please enter both email and password")
-                            return
-                        if password != password_confirm:
-                            st.error("Passwords do not match")
-                            return
-                        if len(password) < 6:
-                            st.error("Password must be at least 6 characters")
-                            return
-                        with st.spinner("Creating account..."):
-                            try:
-                                response = supabase.auth.sign_up({
-                                    "email": email.strip(),
-                                    "password": password
-                                })
-                                if response.user:
-                                    st.success("✅ Account created successfully!")
-                                    st.info("📧 Please check your email to confirm your account.")
-                                    try:
-                                        supabase.table("profiles").insert({
-                                            "id": response.user.id,
-                                            "email": email
-                                        }).execute()
-                                    except Exception as profile_error:
-                                        st.warning(f"Profile creation note: {profile_error}")
-                                else:
-                                    st.error("Sign up completed but no user data returned")
-                            except Exception as e:
-                                error_msg = str(e)
-                                st.error(f"❌ Sign Up Error: {error_msg}")
-                                if "already registered" in error_msg.lower():
-                                    st.warning("⚠️ Email already registered. Use the Login tab.")
-                                elif "valid email" in error_msg.lower():
-                                    st.warning("⚠️ Please enter a valid email address.")
+                                supabase.table("profiles").insert({
+                                    "id": response.user.id,
+                                    "email": email
+                                }).execute()
+                            except Exception as profile_error:
+                                st.warning(f"Profile creation note: {profile_error}")
+                        else:
+                            st.error("Sign up completed but no user data returned")
+                    except Exception as e:
+                        error_msg = str(e)
+                        st.error(f"❌ Sign Up Error: {error_msg}")
+                        if "already registered" in error_msg.lower():
+                            st.warning("⚠️ Email already registered. Use the Login tab.")
+                        elif "valid email" in error_msg.lower():
+                            st.warning("⚠️ Please enter a valid email address.")
+                            
+        st.markdown("</div>", unsafe_allow_html=True)
 
 
 # --- CONTROL DE ACCESO ---
@@ -266,24 +275,59 @@ if not st.session_state.user:
     login_ui_centered()
     st.stop()
 
-# --- HEADER PRINCIPAL Y CONTROL DE SESIÓN ---
-col_header_izq, col_header_der = st.columns([3, 1])
 
-with col_header_izq:
+# ============================================================
+# CABECERA PRINCIPAL CON FONDO DE COLOR (DISEÑO PRO)
+# ============================================================
+header_style = """
+<style>
+    /* Contenedor principal del Header */
+    .fireform-header {
+        background-color: #D35400; /* Naranja quemado profesional */
+        color: white;              /* Todo el texto dentro será blanco */
+        padding: 1.5rem 2rem;       /* Espaciado interno generoso */
+        margin-top: -3rem;         /* Sube el header para que pegue arriba */
+        margin-bottom: 1.5rem;      /* Espacio debajo del header */
+        width: 100%;               /* Ancho completo */
+        border-radius: 8px;        /* Bordes suavemente redondeados */
+        position: relative;        /* Necesario para la alineación interna */
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1); /* Pequeña sombra elegante */
+    }
+
+    /* Estilo para el Eslogan (pegado debajo del logo) */
+    .fireform-slogan {
+        font-size: 14px;
+        opacity: 0.9;              
+        margin-top: 0.5rem;       
+    }
+
+    /* Estilo para la información del usuario */
+    .user-info {
+        text-align: right;         
+        margin-bottom: 0.5rem;     
+    }
+</style>
+"""
+st.markdown(header_style, unsafe_allow_html=True)
+
+st.markdown("<div class='fireform-header'>", unsafe_allow_html=True)
+
+col_h_izq, col_h_der = st.columns([3, 1])
+
+with col_h_izq:
     if os.path.exists("logo.png"):
         st.image("logo.png", width=220)
-    # Agregamos margin-bottom negativo para borrar el hueco que quedó abajo
-    st.markdown("<p style='color: gray; font-size: 14px; margin-top: -75px; margin-left: 5px; margin-bottom: -40px;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
+    st.markdown("<p class='fireform-slogan'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
 
-with col_header_der:
-    # Email alineado a la derecha, justo encima del botón
-    st.markdown(f"<div style='text-align: right; margin-bottom: 5px;'>👤 <b>{st.session_state.user.email}</b></div>", unsafe_allow_html=True)
+with col_h_der:
+    st.markdown(f"<p class='user-info'>👤 <b>{st.session_state.user.email}</b></p>", unsafe_allow_html=True)
     if st.button("🚪 Logout", use_container_width=True, type="secondary"):
         logout()
 
-st.markdown("---")
+st.markdown("</div> ", unsafe_allow_html=True)
 
-# --- SIDEBAR MEJORADO (CUANDO ESTÁ LOGUEADO) ---
+
+# --- SIDEBAR (INFO ADICIONAL) ---
 with st.sidebar:
     if os.path.exists("logo.png"):
         st.image("logo.png", use_column_width=True)
@@ -293,7 +337,7 @@ with st.sidebar:
     st.info(st.session_state.user.email)
     
     st.markdown("---")
-    st.caption("Fire Form Pro v1.0")
+    st.caption("Fire Form Pro v1.1")
     st.caption("© 2026 - NYC Fire Alarm Industry")
 
 # --- APP PRINCIPAL ---
@@ -381,25 +425,20 @@ with tabs[1]:
             full_update = {
                 "id": st.session_state.user.id,
                 "updated_at": "now()",
-                # Company
                 "company_name": c_name, "company_address": c_addr, "company_city": c_city,
                 "company_state": c_state, "company_zip": c_zip, "company_phone": c_phone,
                 "company_email": c_email, "company_first_name": c_first, "company_last_name": c_last,
                 "company_reg_no": c_reg, "company_cof_s97": c_cof, "company_expiration": c_exp,
-                # Architect
                 "arch_name": a_name, "arch_address": a_addr, "arch_city": a_city,
                 "arch_state": a_state, "arch_zip": a_zip, "arch_phone": a_phone,
                 "arch_email": a_email, "arch_first_name": a_first, "arch_last_name": a_last,
                 "arch_license": a_license, "arch_role": a_role,
-                # Electrician
                 "elec_name": e_name, "elec_address": e_addr, "elec_city": e_city,
                 "elec_state": e_state, "elec_zip": e_zip, "elec_phone": e_phone,
                 "elec_email": e_email, "elec_first_name": e_first, "elec_last_name": e_last,
                 "elec_license": e_license, "elec_expiration": e_exp,
-                # Tech
                 "tech_manufacturer": t_man, "tech_approval": t_appr,
                 "tech_wire_gauge": t_gauge, "tech_wire_type": t_wire,
-                # Central Station
                 "cs_name": cs_name, "cs_code": cs_code, "cs_address": cs_addr,
                 "cs_city": cs_city, "cs_state": cs_state, "cs_zip": cs_zip, "cs_phone": cs_phone,
             }
@@ -429,7 +468,7 @@ with tabs[0]:
 
     # --- SECCIÓN 2: DISPOSITIVOS (Izquierda: Controles | Derecha: Tabla) ---
     st.markdown("### 2️⃣ Devices <span style='color:gray; font-size:14px;'>(A-433 Optional)</span>", unsafe_allow_html=True)
-    col_dev_left, col_dev_right = st.columns([1, 2]) # Le damos más espacio a la tabla
+    col_dev_left, col_dev_right = st.columns([1, 2]) 
     
     with col_dev_left:
         st.markdown("**➕ Add New Device**")
@@ -540,7 +579,7 @@ with tabs[0]:
                     except Exception as e:
                         st.error(f"❌ Critical Error: {e}")
 
-        # Bloque de descargas (Mantenemos todo dentro de la columna central para un diseño limpio)
+        # Bloque de descargas 
         if "generated_data" in st.session_state and st.session_state.generated_data:
             st.markdown("<hr style='margin-top: 1rem; margin-bottom: 1rem;'>", unsafe_allow_html=True)
             datos = st.session_state.generated_data
@@ -578,6 +617,3 @@ with tabs[0]:
                                 mime=mime_type,
                                 use_container_width=True
                             )
-
-
-
