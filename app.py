@@ -527,9 +527,11 @@ with tabs[0]:
 
             st.markdown("<p style='text-align: center; color: gray; font-size: 14px; margin-top: 10px;'>Or download individually:</p>", unsafe_allow_html=True)
 
-            # 2. BOTONES INDIVIDUALES
-            cols = st.columns(len(datos['archivos']))
+            # 2. BOTONES INDIVIDUALES (Organizados en Grid 2x2)
+            # 👇 ¡ESTA ES LA LÍNEA QUE FALTABA! 👇
+            archivos_lista = list(datos['archivos'].items())
             
+            # Recorremos la lista de 2 en 2 para crear filas
             for i in range(0, len(archivos_lista), 2):
                 cols = st.columns(2)  # Forzamos a que máximo haya 2 botones por fila
                 
