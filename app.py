@@ -530,19 +530,24 @@ with tabs[0]:
             # 2. BOTONES INDIVIDUALES
             cols = st.columns(len(datos['archivos']))
             
-            for idx, (f_name, f_bytes) in enumerate(datos['archivos'].items()):
-                with cols[idx]:
-                    mime_type = "text/plain" if f_name.endswith(".txt") else "application/pdf"
-                    icon = "📊" if f_name.endswith(".txt") else "📄"
-                    short_name = f_name.split('_')[0]
-                    
-                    st.download_button(
-                        label=f"{icon} {short_name}",
-                        data=f_bytes,
-                        file_name=f_name,
-                        mime=mime_type,
-                        use_container_width=True
-                    )
+            for i in range(0, len(archivos_lista), 2):
+                cols = st.columns(2)  # Forzamos a que máximo haya 2 botones por fila
+                
+                for j in range(2):
+                    if i + j < len(archivos_lista):
+                        f_name, f_bytes = archivos_lista[i + j]
+                        with cols[j]:
+                            mime_type = "text/plain" if f_name.endswith(".txt") else "application/pdf"
+                            icon = "📊" if f_name.endswith(".txt") else "📄"
+                            short_name = f_name.split('_')[0]
+                            
+                            st.download_button(
+                                label=f"{icon} {short_name}",
+                                data=f_bytes,
+                                file_name=f_name,
+                                mime=mime_type,
+                                use_container_width=True
+                            )
     # -------------------------------------------------------
     # COLUMNA DERECHA — Device List
     # -------------------------------------------------------
