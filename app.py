@@ -266,11 +266,19 @@ if not st.session_state.user:
     login_ui_centered()
     st.stop()
 
-# --- HEADER CON LOGOUT (CUANDO ESTÁ LOGUEADO) ---
-col_header1, col_header2, col_header3 = st.columns([2, 2, 1])
-with col_header1:
-    st.markdown(f"**👤 {st.session_state.user.email}**")
-with col_header3:
+# --- HEADER PRINCIPAL Y CONTROL DE SESIÓN ---
+col_header_izq, col_header_der = st.columns([3, 1])
+
+with col_header_izq:
+    # Logo alineado a la izquierda (con un ancho fijo para que no se deforme)
+    if os.path.exists("logo.png"):
+        st.image("logo.png", width=220)
+    # Subtítulo pegadito abajo del logo usando margen negativo
+    st.markdown("<p style='color: gray; font-size: 15px; margin-top: -15px;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
+
+with col_header_der:
+    # Email alineado a la derecha, justo encima del botón
+    st.markdown(f"<div style='text-align: right; margin-bottom: 5px;'>👤 <b>{st.session_state.user.email}</b></div>", unsafe_allow_html=True)
     if st.button("🚪 Logout", use_container_width=True, type="secondary"):
         logout()
 
@@ -409,15 +417,7 @@ with tabs[1]:
 # TAB 0: PROJECT BUILDER (DISEÑO MEJORADO)
 # ============================================================
 with tabs[0]:
-    # --- ENCABEZADO Y LOGO ---
-    col_logo1, col_logo2, col_logo3 = st.columns([1, 2, 1])
-    with col_logo2:
-        if os.path.exists("logo.png"):
-            st.image("logo.png", use_column_width=True)
     
-    st.markdown("<h2 style='text-align: center; margin-top: 0.5rem; margin-bottom: 0.5rem;'>Fire Form Pro</h2>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: gray; margin-bottom: 2rem;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
-
     # --- SECCIÓN 1: PROJECT INFORMATION (Ancho completo dividido en 2) ---
     st.subheader("1️⃣ Project Information")
     col_info1, col_info2 = st.columns(2)
