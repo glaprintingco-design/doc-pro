@@ -28,6 +28,17 @@ header {visibility: hidden;}
     background-color: #F4F7F9;
 }
 
+/* Forzar colores de texto oscuros para evitar que se pierdan en Modo Oscuro */
+h1, h2, h3, h4, h5, h6, p, span, div {
+    color: #2D3748;
+}
+
+/* Etiquetas de los inputs (Labels) */
+.stTextInput label, .stNumberInput label, .stSelectbox label, .stCheckbox label, .stTextArea label {
+    color: #2D3748 !important;
+    font-weight: 600 !important;
+}
+
 /* Reducir padding superior para aprovechar la pantalla */
 .block-container {
     padding-top: 0rem !important;
@@ -58,6 +69,7 @@ header {visibility: hidden;}
 .stButton > button[kind="primary"]:hover, .stDownloadButton > button:hover {
     box-shadow: 0 6px 15px rgba(255, 107, 0, 0.4) !important;
     transform: translateY(-2px) !important;
+    color: white !important;
 }
 
 /* Estilo para botones secundarios */
@@ -106,15 +118,15 @@ header {visibility: hidden;}
 }
 
 /* Inputs de texto y selects */
-.stTextInput input, .stNumberInput input, .stSelectbox div[data-baseweb="select"] {
+.stTextInput input, .stNumberInput input, .stSelectbox div[data-baseweb="select"], .stTextArea textarea {
     background-color: white !important;
     border-radius: 8px !important;
     border: 1px solid #E2E8F0 !important;
-    color: #2D3748 !important;
+    color: #1A202C !important;
 }
 
 /* Efecto focus en inputs */
-.stTextInput input:focus, .stSelectbox div[data-baseweb="select"]:focus-within {
+.stTextInput input:focus, .stTextArea textarea:focus, .stSelectbox div[data-baseweb="select"]:focus-within {
     border-color: #FF6B00 !important;
     box-shadow: 0 0 0 1px #FF6B00 !important;
 }
@@ -261,11 +273,11 @@ def login_ui_centered():
         
         if os.path.exists("logo.png"):
             st.image("logo.png", width=250)
+            st.markdown("<p style='color: #718096; font-size: 15px; margin-top: -75px; margin-bottom: 2rem;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
         else:
             st.markdown("<h1 style='color: #FF6B00; margin-bottom: 0;'>🔥 Fire Form Pro</h1>", unsafe_allow_html=True)
+            st.markdown("<p style='color: #718096; font-size: 15px; margin-bottom: 2rem;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
             
-        st.markdown("<p style='color: #718096; font-size: 15px; margin-bottom: 2rem;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
-        
         tab1, tab2 = st.tabs(["🔑 Sign In", "📝 Create Account"])
         
         with tab1:
@@ -333,10 +345,10 @@ col_h_izq, col_h_der = st.columns([3, 1])
 with col_h_izq:
     if os.path.exists("logo.png"):
         st.image("logo.png", width=280)
-        st.markdown("<p style='color: rgba(255,255,255,0.95); font-size: 16px; margin: 0; margin-top: 8px; font-weight: 500; letter-spacing: 0.3px;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
+        st.markdown("<p style='color: rgba(255,255,255,0.95); font-size: 15px; margin-top: -75px; margin-bottom: -15px; margin-left: 8px; font-weight: 500; letter-spacing: 0.3px;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
     else:
         st.markdown("<h1 style='color: white; margin: 0; font-size: 2.8rem; font-weight: 700; letter-spacing: -0.5px;'>🔥 Fire Form Pro</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='color: rgba(255,255,255,0.95); font-size: 16px; margin: 0; margin-top: 8px; font-weight: 500; letter-spacing: 0.3px;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
+        st.markdown("<p style='color: rgba(255,255,255,0.95); font-size: 15px; margin: 0; margin-top: 8px; font-weight: 500; letter-spacing: 0.3px;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
 
 with col_h_der:
     st.markdown(f"""
@@ -347,7 +359,7 @@ with col_h_der:
                     border-radius: 25px; 
                     display: inline-block;
                     border: 1px solid rgba(255,255,255,0.3);'>
-            <span style='color: white; font-weight: 600; font-size: 14px;'>👤 {st.session_state.user.email}</span>
+            <span style='color: white !important; font-weight: 600; font-size: 14px;'>👤 {st.session_state.user.email}</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
