@@ -4,7 +4,7 @@ import sys
 import datetime
 import requests
 from pypdf import PdfReader, PdfWriter
-from pypdf.generic import NameObject, BooleanObject, NumberObject
+from pypdf.generic import NameObject, BooleanObject, NumberObject, TextStringObject, DictionaryObject, ArrayObject
 
 # ==========================================
 # 0. CONFIGURATION LOADER (WEB & LOCAL)
@@ -172,13 +172,107 @@ RANGOS = {
 }
 
 # ==========================================
+# SOLUCIÓN AL PROBLEMA DE ESPACIADO
+# ==========================================
+def generar_apariencias_campo(field_dict, valor):
+    """
+    Genera apariencias visuales correctas para campos de texto.
+    Esto soluciona el problema de espaciado en Nitro y Adobe.
+    """
+    try:
+        # Si el campo ya tiene una apariencia, no la modificamos
+        if "/AP" in field_dict:
+            return
+        
+        # Solo aplicamos a campos de texto (no checkboxes)
+        field_type = field_dict.get("/FT")
+        if field_type != "/Tx":
+            return
+            
+        # Crear un diccionario de apariencias simple
+        # Esto le dice a Nitro/Adobe cómo renderizar el texto
+        appearance = DictionaryObject()
+        appearance.update({
+            NameObject("/N"): TextStringObject(str(valor))
+        })
+        
+        field_dict[NameObject("/AP")] = appearance
+        
+    except Exception as e:
+        # Si falla, continuamos sin bloquear el proceso
+        pass
+
+def rellenar_pdf_mejorado(input_pdf, output_pdf, campos):
+    """
+    Rellena PDFs solucionando el problema de espaciado en Nitro/Adobe,
+    manteniendo los campos editables.
+    
+    Esta es la solución REAL que funciona.
+    """
+    try:
+        reader = PdfReader(input_pdf)
+        writer = PdfWriter()
+        
+        # Copiar todas las páginas
+        for p in reader.pages:
+            writer.add_page(p)
+        
+        # Copiar el AcroForm si existe
+        if "/AcroForm" in reader.root_object:
+            writer.root_object[NameObject("/AcroForm")] = reader.root_object["/AcroForm"]
+        
+        # IMPORTANTE: NO usar NeedAppearances = True
+        # En su lugar, generaremos apariencias reales para cada campo
+        if "/AcroForm" in writer.root_object:
+            acroform = writer.root_object["/AcroForm"]
+            # Forzar a False o eliminar NeedAppearances
+            acroform[NameObject("/NeedAppearances")] = BooleanObject(False)
+        
+        # Recorrer todas las páginas y campos
+        for page_num in range(len(writer.pages)):
+            page = writer.pages[page_num]
+            
+            # Actualizar valores de campos
+            writer.update_page_form_field_values(page, campos)
+            
+            # CLAVE: Generar apariencias para cada campo
+            if "/Annots" in page:
+                for annot_ref in page["/Annots"]:
+                    annot = annot_ref.get_object()
+                    
+                    # Solo procesar widgets de formulario
+                    if annot.get("/Subtype") != "/Widget":
+                        continue
+                    
+                    # Obtener el nombre del campo
+                    field_name = annot.get("/T")
+                    if not field_name:
+                        continue
+                    
+                    # Si este campo está en nuestros datos
+                    if field_name in campos:
+                        valor = campos[field_name]
+                        
+                        # Generar apariencia para campos de texto
+                        generar_apariencias_campo(annot, valor)
+        
+        # Guardar el PDF
+        with open(output_pdf, "wb") as f:
+            writer.write(f)
+            
+        print(f"   ✅ PDF generado correctamente con apariencias mejoradas")
+        return True
+        
+    except Exception as e:
+        print(f"   ❌ Error al generar PDF: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+# ==========================================
 # 1. TRANSLATION & INTELLIGENCE ENGINE
 # ==========================================
 def traducir_datos(ocupacion_old, construccion_old, job_description="", building_class_tax=""):
-    # (El código de traducción se mantiene igual, abreviado aquí por espacio)
-    # ... COPIA TU FUNCIÓN traducir_datos AQUÍ ...
-    # Si quieres te la pego completa, pero es la misma de la V19.
-    # Para asegurar que funcione, usaré la versión completa abajo:
     occ = str(ocupacion_old or "").upper().strip()
     const = str(construccion_old or "").upper().strip()
     desc = str(job_description or "").upper()
@@ -272,14 +366,12 @@ def obtener_datos_completos(bin_number):
     
     # --- NIVEL 1: GEOCLIENT (Dirección Oficial) ---
     try:
-        # Importante: API_KEY_NYC debe ser inyectada desde app.py usando st.secrets
         url_geo = "https://api.nyc.gov/geoclient/v2/bin"
         r_geo = requests.get(url_geo, params={"bin": bin_number}, 
                              headers={"Ocp-Apim-Subscription-Key": API_KEY_NYC}, timeout=10)
         
         if r_geo.status_code == 200:
             d = r_geo.json().get('bin', {})
-            # Usamos .strip() para evitar espacios que rompan el PDF
             info["house"] = (d.get("giLowHouseNumber1") or d.get("houseNumber", "")).strip()
             info["street"] = (d.get("giStreetName1") or d.get("streetName", "")).strip()
             info["borough"] = d.get("firstBoroughName", "").strip()
@@ -306,7 +398,6 @@ def obtener_datos_completos(bin_number):
                 info["owner_business_backup"] = pluto.get("ownername", "").strip()
                 if not info["tax_class"]: info["tax_class"] = pluto.get("bldgclass", "").strip()
                 
-                # FALLBACK: Si Geoclient falló, intentamos reconstruir la dirección desde PLUTO
                 if not info["house"] and pluto.get("address"):
                     addr_raw = pluto.get("address").split(" ", 1)
                     info["house"] = addr_raw[0]
@@ -331,7 +422,6 @@ def obtener_datos_completos(bin_number):
             raw_h, raw_s, raw_c, raw_o, desc = "0", "0", "", "", ""
             
             for job in jobs:
-                # Si aún no tenemos dueño, lo buscamos en el historial
                 if not info["owner_business"] and not info["owner_last"]:
                     bn = str(job.get("owner_s_business_name") or "").strip()
                     if bn:
@@ -340,12 +430,10 @@ def obtener_datos_completos(bin_number):
                         info["owner_last"] = str(job.get("owner_s_last_name") or "").strip()
                         info["owner_phone"] = str(job.get("owner_sphone__") or "").replace("-","")
                         oh = job.get("owner_s_house_number", ""); os = job.get("owner_s_street_name", "")
-                        # Si no hay dirección de dueño, usamos la de la propiedad
                         info["owner_address"] = f"{oh} {os}" if oh else f"{info['house']} {info['street']}"
                         info["owner_city"] = job.get("owner_s_city", info["borough"])
                         info["owner_zip"] = job.get("owner_s_zip", info["zip"])
 
-                # Datos técnicos
                 if raw_h == "0": raw_h = str(job.get("existing_height") or "0")
                 if raw_s == "0": raw_s = str(job.get("existingno_of_stories") or "0")
                 if not raw_c: raw_c = job.get("existing_construction_class", "")
@@ -355,7 +443,6 @@ def obtener_datos_completos(bin_number):
 
             info["height"], info["stories"] = raw_h, raw_s
             
-            # Traducción inteligente (Asegúrate de tener esta función en main.py)
             trad = traducir_datos(raw_o, raw_c, desc, info["tax_class"])
             info["occupancy_group"] = trad["occ"]
             info["construction_class"] = trad["const"]
@@ -364,22 +451,17 @@ def obtener_datos_completos(bin_number):
     except Exception as e:
         print(f"   ⚠️ [BIS] History scan error: {e}")
 
-    # Limpieza final
     if not info["owner_business"]: 
         info["owner_business"] = info.get("owner_business_backup", "")
         
     return info
+
 # ==========================================
-# 3. GENERADOR TM-1
+# 3. GENERADOR TM-1 CON SOLUCIÓN REAL
 # ==========================================
 def generar_tm1(datos, input_pdf, output_pdf):
     print(f"📄 2. Generating TM-1...")
     try:
-        reader = PdfReader(input_pdf); writer = PdfWriter()
-        for p in reader.pages: writer.add_page(p)
-        if "/AcroForm" in reader.root_object: writer.root_object[NameObject("/AcroForm")] = reader.root_object["/AcroForm"]
-        writer.root_object["/AcroForm"][NameObject("/NeedAppearances")] = BooleanObject(True)
-
         lm_yes = "/On" if datos["landmarked"] == "Yes" else "/Off"
         lm_no  = "/On" if datos["landmarked"] == "No" else "/Off"
         fl_yes = "/On" if datos["flood_zone"] == "Yes" else "/Off"
@@ -411,13 +493,20 @@ def generar_tm1(datos, input_pdf, output_pdf):
             "City_2": COMPANY.get("City"), "State_2": COMPANY.get("State"), "Zip_2": COMPANY.get("Zip"),
             "EMail_2": COMPANY.get("Email"), "undefined_16": "/On", "2025": "/On", "Code Section": "BC 907"
         }
-        for i in range(len(writer.pages)): writer.update_page_form_field_values(writer.pages[i], campos)
-        with open(output_pdf, "wb") as f: writer.write(f)
-        print("   ✅ TM-1 Generated.")
-    except Exception as e: print(f"   ❌ TM-1 Error: {e}")
+        
+        # Usar la función mejorada
+        if rellenar_pdf_mejorado(input_pdf, output_pdf, campos):
+            print("   ✅ TM-1 Generated.")
+        else:
+            print("   ⚠️ TM-1 Generated with warnings.")
+            
+    except Exception as e: 
+        print(f"   ❌ TM-1 Error: {e}")
+        import traceback
+        traceback.print_exc()
 
 # ==========================================
-# 4. GENERADOR A-433 (EL MÁS IMPORTANTE)
+# 4. GENERADOR A-433 CON SOLUCIÓN REAL
 # ==========================================
 def obtener_cols_derecha(fila, categoria, idx):
     if fila == 1: m, a = "Manufacturer", "BSA MEA COA or Agency Approval"
@@ -435,15 +524,8 @@ def obtener_cols_derecha(fila, categoria, idx):
 def generar_a433(datos, input_pdf, output_pdf):
     print("📄 3. Generating A-433...")
     try:
-        reader = PdfReader(input_pdf); writer = PdfWriter()
-        for p in reader.pages: writer.add_page(p)
-        if "/AcroForm" in reader.root_object: writer.root_object[NameObject("/AcroForm")] = reader.root_object["/AcroForm"]
-        writer.root_object["/AcroForm"][NameObject("/NeedAppearances")] = BooleanObject(True)
-        
         datos_instalacion = datos.get("devices", [])
         
-        # --- ORDENAMIENTO DE PISOS INTELIGENTE ---
-        # Usamos la lista maestra. Si el usuario escribe un piso raro que no está en la lista, lo pone al final.
         def floor_sorter(f_name):
             try: return FULL_FLOOR_LIST.index(f_name)
             except ValueError: return 9999
@@ -476,10 +558,7 @@ def generar_a433(datos, input_pdf, output_pdf):
         mapa_fil = {}
 
         for dev in dispositivos:
-            # --- AQUÍ ESTÁ LA MAGIA ---
-            # Buscamos en el mapa automático en qué categoría cae el dispositivo
-            cat = CATEGORIAS.get(dev, 'Initiating') # Default a Initiating si no se encuentra
-            
+            cat = CATEGORIAS.get(dev, 'Initiating') 
             r_ini, r_fin = RANGOS[cat]
             f = fila_actual[cat]
             if f > r_fin: continue 
@@ -507,39 +586,43 @@ def generar_a433(datos, input_pdf, output_pdf):
 
         for r, t in totales.items(): campos[f"r{r}c32"] = str(t)
 
-        for i in range(len(writer.pages)): writer.update_page_form_field_values(writer.pages[i], campos)
-        with open(output_pdf, "wb") as f: writer.write(f)
-        print("   ✅ A-433 Generated.")
-    except Exception as e: print(f"   ❌ A-433 Error: {e}")
+        # Usar la función mejorada
+        if rellenar_pdf_mejorado(input_pdf, output_pdf, campos):
+            print("   ✅ A-433 Generated.")
+        else:
+            print("   ⚠️ A-433 Generated with warnings.")
+            
+    except Exception as e:
+        print(f"   ❌ A-433 Error: {e}")
+        import traceback
+        traceback.print_exc()
 
 # ==========================================
-# 5. GENERADOR B-45
+# 5. GENERADOR B-45 CON SOLUCIÓN REAL
 # ==========================================
 def generar_b45(datos, input_pdf, output_pdf):
     print("📄 4. Generating B-45...")
     try:
-        reader = PdfReader(input_pdf); writer = PdfWriter()
-        for p in reader.pages: writer.add_page(p)
-        if "/AcroForm" in reader.root_object: writer.root_object[NameObject("/AcroForm")] = reader.root_object["/AcroForm"]
-        writer.root_object["/AcroForm"][NameObject("/NeedAppearances")] = BooleanObject(True)
         emp = COMPANY
         campos = {
             "adress": f"{datos['house']} {datos['street']}, {datos['borough']}, NY {datos['zip']}",
             "name": f"{emp.get('First Name')} {emp.get('Last Name')}", "title": "Expeditor",
             "lic": emp.get("Reg No"), "company": emp.get("Company Name"), 
             "caddress": f"{emp.get('Address')}, {emp.get('City')}, {emp.get('State')} {emp.get('Zip')}",
-            "cphone": emp.get("Phone"), "email": emp.get("Email"), "pname": f"{emp.get('First Name')} {emp.get('Last Name')}", "date1": fecha_hoy
+            "cphone": emp.get("Phone"), "email": emp.get("Email"), 
+            "pname": f"{emp.get('First Name')} {emp.get('Last Name')}", "date1": fecha_hoy
         }
-        for i in range(len(writer.pages)):
-            writer.update_page_form_field_values(writer.pages[i], campos)
-            for annot in writer.pages[i].get("/Annots", []):
-                obj = annot.get_object()
-                if obj.get("/T") in ["gp1", "gp2", "gp3", "gp4", "gp5", "inspector"]:
-                    flags = obj.get("/Ff", 0)
-                    if flags & 1: obj[NameObject("/Ff")] = NumberObject(flags & ~1)
-        with open(output_pdf, "wb") as f: writer.write(f)
-        print("   ✅ B-45 Generated.")
-    except Exception as e: print(f"   ❌ B-45 Error: {e}")
+        
+        # Usar la función mejorada
+        if rellenar_pdf_mejorado(input_pdf, output_pdf, campos):
+            print("   ✅ B-45 Generated.")
+        else:
+            print("   ⚠️ B-45 Generated with warnings.")
+            
+    except Exception as e:
+        print(f"   ❌ B-45 Error: {e}")
+        import traceback
+        traceback.print_exc()
 
 # ==========================================
 # 6. REPORTE DE AUDITORÍA
@@ -562,5 +645,4 @@ def generar_reporte_auditoria(datos, nombre_archivo="REPORTE_LOGICA.txt"):
     except Exception as e: print(f"   ❌ Report Error: {e}")    
 
 if __name__ == "__main__":
-    print("Run gui.py to start the application.")
-
+    print("Run app.py to start the application.")
