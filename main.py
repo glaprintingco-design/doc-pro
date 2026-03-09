@@ -3,7 +3,6 @@ import os
 import sys
 import datetime
 import requests
-import fitz  # PyMuPDF
 from pypdf import PdfReader, PdfWriter
 from pypdf.generic import NameObject, BooleanObject, NumberObject
 
@@ -370,47 +369,17 @@ def obtener_datos_completos(bin_number):
         info["owner_business"] = info.get("owner_business_backup", "")
         
     return info
-    
-
-import streamlit as st # Asegúrate de que esto esté arriba en tus imports
-
-def rellenar_pdf_seguro(input_pdf, output_pdf, campos):
-    """
-    Rellena PDFs usando PyMuPDF blindado contra errores y liberando memoria (doc.close)
-    """
-    doc = fitz.open(input_pdf)
-    for page in doc:
-        for field in page.widgets():
-            if field.field_name in campos:
-                try:
-                    val = campos[field.field_name]
-                    
-                    # Detectar si es un checkbox o radio button
-                    if field.field_type in [fitz.PDF_WIDGET_TYPE_CHECKBOX, fitz.PDF_WIDGET_TYPE_RADIO]:
-                        # Abarcamos todas las posibles formas en las que puede venir un "True"
-                        if val in ["/On", True, "Yes", "On"]:
-                            field.field_value = True
-                        else:
-                            field.field_value = False
-                    else:
-                        # Campo de texto normal
-                        field.field_value = str(val) if val is not None else ""
-                    
-                    # Regenera la apariencia visual del texto
-                    field.update()
-                except Exception as e:
-                    print(f"⚠️ Warning: No se pudo llenar el campo '{field.field_name}': {e}")
-    
-    doc.save(output_pdf)
-    doc.close()  # <-- ¡VITAL! Libera el archivo para que Streamlit pueda descargarlo
-
-
 # ==========================================
 # 3. GENERADOR TM-1
 # ==========================================
 def generar_tm1(datos, input_pdf, output_pdf):
     print(f"📄 2. Generating TM-1...")
     try:
+        reader = PdfReader(input_pdf); writer = PdfWriter()
+        for p in reader.pages: writer.add_page(p)
+        if "/AcroForm" in reader.root_object: writer.root_object[NameObject("/AcroForm")] = reader.root_object["/AcroForm"]
+        writer.root_object["/AcroForm"][NameObject("/NeedAppearances")] = BooleanObject(True)
+
         lm_yes = "/On" if datos["landmarked"] == "Yes" else "/Off"
         lm_no  = "/On" if datos["landmarked"] == "No" else "/Off"
         fl_yes = "/On" if datos["flood_zone"] == "Yes" else "/Off"
@@ -442,12 +411,10 @@ def generar_tm1(datos, input_pdf, output_pdf):
             "City_2": COMPANY.get("City"), "State_2": COMPANY.get("State"), "Zip_2": COMPANY.get("Zip"),
             "EMail_2": COMPANY.get("Email"), "undefined_16": "/On", "2025": "/On", "Code Section": "BC 907"
         }
-        
-        rellenar_pdf_seguro(input_pdf, output_pdf, campos)
+        for i in range(len(writer.pages)): writer.update_page_form_field_values(writer.pages[i], campos)
+        with open(output_pdf, "wb") as f: writer.write(f)
         print("   ✅ TM-1 Generated.")
-    except Exception as e: 
-        st.error(f"❌ Error interno en TM-1: {e}") # Ahora Streamlit te avisará qué falló
-        print(f"   ❌ TM-1 Error: {e}")
+    except Exception as e: print(f"   ❌ TM-1 Error: {e}")
 
 # ==========================================
 # 4. GENERADOR A-433 (EL MÁS IMPORTANTE)
@@ -468,8 +435,15 @@ def obtener_cols_derecha(fila, categoria, idx):
 def generar_a433(datos, input_pdf, output_pdf):
     print("📄 3. Generating A-433...")
     try:
+        reader = PdfReader(input_pdf); writer = PdfWriter()
+        for p in reader.pages: writer.add_page(p)
+        if "/AcroForm" in reader.root_object: writer.root_object[NameObject("/AcroForm")] = reader.root_object["/AcroForm"]
+        writer.root_object["/AcroForm"][NameObject("/NeedAppearances")] = BooleanObject(True)
+        
         datos_instalacion = datos.get("devices", [])
         
+        # --- ORDENAMIENTO DE PISOS INTELIGENTE ---
+        # Usamos la lista maestra. Si el usuario escribe un piso raro que no está en la lista, lo pone al final.
         def floor_sorter(f_name):
             try: return FULL_FLOOR_LIST.index(f_name)
             except ValueError: return 9999
@@ -502,7 +476,10 @@ def generar_a433(datos, input_pdf, output_pdf):
         mapa_fil = {}
 
         for dev in dispositivos:
-            cat = CATEGORIAS.get(dev, 'Initiating') 
+            # --- AQUÍ ESTÁ LA MAGIA ---
+            # Buscamos en el mapa automático en qué categoría cae el dispositivo
+            cat = CATEGORIAS.get(dev, 'Initiating') # Default a Initiating si no se encuentra
+            
             r_ini, r_fin = RANGOS[cat]
             f = fila_actual[cat]
             if f > r_fin: continue 
@@ -530,11 +507,10 @@ def generar_a433(datos, input_pdf, output_pdf):
 
         for r, t in totales.items(): campos[f"r{r}c32"] = str(t)
 
-        rellenar_pdf_seguro(input_pdf, output_pdf, campos)
+        for i in range(len(writer.pages)): writer.update_page_form_field_values(writer.pages[i], campos)
+        with open(output_pdf, "wb") as f: writer.write(f)
         print("   ✅ A-433 Generated.")
-    except Exception as e: 
-        st.error(f"❌ Error interno en A-433: {e}")
-        print(f"   ❌ A-433 Error: {e}")
+    except Exception as e: print(f"   ❌ A-433 Error: {e}")
 
 # ==========================================
 # 5. GENERADOR B-45
@@ -542,6 +518,10 @@ def generar_a433(datos, input_pdf, output_pdf):
 def generar_b45(datos, input_pdf, output_pdf):
     print("📄 4. Generating B-45...")
     try:
+        reader = PdfReader(input_pdf); writer = PdfWriter()
+        for p in reader.pages: writer.add_page(p)
+        if "/AcroForm" in reader.root_object: writer.root_object[NameObject("/AcroForm")] = reader.root_object["/AcroForm"]
+        writer.root_object["/AcroForm"][NameObject("/NeedAppearances")] = BooleanObject(True)
         emp = COMPANY
         campos = {
             "adress": f"{datos['house']} {datos['street']}, {datos['borough']}, NY {datos['zip']}",
@@ -550,12 +530,17 @@ def generar_b45(datos, input_pdf, output_pdf):
             "caddress": f"{emp.get('Address')}, {emp.get('City')}, {emp.get('State')} {emp.get('Zip')}",
             "cphone": emp.get("Phone"), "email": emp.get("Email"), "pname": f"{emp.get('First Name')} {emp.get('Last Name')}", "date1": fecha_hoy
         }
-        
-        rellenar_pdf_seguro(input_pdf, output_pdf, campos)
+        for i in range(len(writer.pages)):
+            writer.update_page_form_field_values(writer.pages[i], campos)
+            for annot in writer.pages[i].get("/Annots", []):
+                obj = annot.get_object()
+                if obj.get("/T") in ["gp1", "gp2", "gp3", "gp4", "gp5", "inspector"]:
+                    flags = obj.get("/Ff", 0)
+                    if flags & 1: obj[NameObject("/Ff")] = NumberObject(flags & ~1)
+        with open(output_pdf, "wb") as f: writer.write(f)
         print("   ✅ B-45 Generated.")
-    except Exception as e: 
-        st.error(f"❌ Error interno en B-45: {e}")
-        print(f"   ❌ B-45 Error: {e}")
+    except Exception as e: print(f"   ❌ B-45 Error: {e}")
+
 # ==========================================
 # 6. REPORTE DE AUDITORÍA
 # ==========================================
