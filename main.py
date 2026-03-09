@@ -4,7 +4,7 @@ import sys
 import datetime
 import requests
 from pypdf import PdfReader, PdfWriter
-from pypdf.generic import NameObject, BooleanObject, StringObject, NumberObject
+from pypdf.generic import NameObject, BooleanObject, NumberObject, TextStringObject
 
 # ==========================================
 # 0. CONFIGURATION LOADER (WEB & LOCAL)
@@ -406,7 +406,7 @@ def rellenar_pdf_inteligente(input_pdf, output_pdf, campos):
                             # B. Texto: Convertir a formato seguro para evitar espacios raros
                             texto_seguro = str(val).encode('latin-1', 'ignore').decode('latin-1')
                             obj.update({
-                                NameObject("/V"): StringObject(texto_seguro)
+                                NameObject("/V"): TextStringObject(texto_seguro)
                             })
                         
                         # 3. BORRAR APARIENCIA VIEJA: Evita que el texto sea invisible
