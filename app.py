@@ -272,7 +272,7 @@ def login_ui_centered():
         
         if os.path.exists("logo.png"):
             st.image("logo.png", width=250)
-            st.markdown("<p style='color: #718096; font-size: 15px; margin-top: -90px; margin-bottom: 2rem;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
+            st.markdown("<p style='color: #718096 !important; font-size: 15px; margin-top: -90px; margin-bottom: 2rem;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
         else:
             st.markdown("<h1 style='color: #FF6B00; margin-bottom: 0;'>🔥 Fire Form Pro</h1>", unsafe_allow_html=True)
             st.markdown("<p style='color: #718096; font-size: 15px; margin-bottom: 2rem;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
