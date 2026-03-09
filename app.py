@@ -498,7 +498,7 @@ with tabs[0]:
     st.markdown("<hr style='border-color: #E2E8F0; margin: 2rem 0;'>", unsafe_allow_html=True)
 
     # SECCIÓN 2
-    st.markdown("<h4 style='color: #2D3748;'>2️⃣ Device Schedule <span style='font-size:14px; color:#A0AEC0;'>(Optional)</span></h4>", unsafe_allow_html=True)
+    st.markdown("<h4 style='color: #2D3748;'>2️⃣ Device Schedule <span style='font-size:14px; color:#A0AEC0;'>(A-433 Optional)</span></h4>", unsafe_allow_html=True)
     col_dev_left, col_dev_right = st.columns([1, 2])
     
     with col_dev_left:
