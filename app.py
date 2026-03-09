@@ -274,7 +274,7 @@ with col_header_izq:
         st.image("logo.png", width=220)
     # Aumentamos el margen negativo a -35px para "chupar" el texto hacia arriba
     # y le damos 5px a la izquierda para que alinee bonito con las letras.
-    st.markdown("<p style='color: gray; font-size: 14px; margin-top: -65px; margin-left: 5px;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color: gray; font-size: 14px; margin-top: -75px; margin-left: 5px;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
 
 with col_header_der:
     # Email alineado a la derecha, justo encima del botón
@@ -579,4 +579,5 @@ with tabs[0]:
                                 mime=mime_type,
                                 use_container_width=True
                             )
+
 
