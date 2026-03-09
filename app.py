@@ -270,11 +270,11 @@ if not st.session_state.user:
 col_header_izq, col_header_der = st.columns([3, 1])
 
 with col_header_izq:
-    # Logo alineado a la izquierda (con un ancho fijo para que no se deforme)
     if os.path.exists("logo.png"):
         st.image("logo.png", width=220)
-    # Subtítulo pegadito abajo del logo usando margen negativo
-    st.markdown("<p style='color: gray; font-size: 15px; margin-top: -15px;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
+    # Aumentamos el margen negativo a -35px para "chupar" el texto hacia arriba
+    # y le damos 5px a la izquierda para que alinee bonito con las letras.
+    st.markdown("<p style='color: gray; font-size: 14px; margin-top: -45px; margin-left: 5px;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
 
 with col_header_der:
     # Email alineado a la derecha, justo encima del botón
