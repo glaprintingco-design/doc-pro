@@ -372,9 +372,8 @@ def obtener_datos_completos(bin_number):
     
 def rellenar_pdf_inteligente(input_pdf, output_pdf, campos):
     """
-    Solución definitiva (El 100%).
-    Combina la inteligencia de pypdf para los checkboxes, 
-    con una inyección manual quirúrgica para arreglar el texto en Nitro.
+    Solución definitiva. Auto-descubre el "nombre real" de cada checkbox 
+    y formatea el texto perfectamente para Nitro.
     """
     reader = PdfReader(input_pdf)
     writer = PdfWriter()
@@ -386,12 +385,7 @@ def rellenar_pdf_inteligente(input_pdf, output_pdf, campos):
     if "/AcroForm" in writer.root_object:
         writer.root_object["/AcroForm"][NameObject("/NeedAppearances")] = BooleanObject(True)
     
-    # 2. PRIMERA PASADA: Dejamos que pypdf llene todo 
-    # (Esto marca los checkboxes perfectamente sin importar cómo se llamen internamente)
-    for i in range(len(writer.pages)):
-        writer.update_page_form_field_values(writer.pages[i], campos)
-        
-    # 3. SEGUNDA PASADA (Quirúrgica): Curamos solo el texto para Nitro y Adobe
+    # 2. Pasada Quirúrgica: Campo por Campo
     for page in writer.pages:
         if "/Annots" in page:
             for annot in page["/Annots"]:
@@ -402,28 +396,58 @@ def rellenar_pdf_inteligente(input_pdf, output_pdf, campos):
                     if key in campos:
                         val = campos[key]
                         
-                        # Si es un campo de TEXTO (ignoramos los checkboxes "/On" o "/Off")
-                        if val not in ["/On", "/Off", True, False]:
-                            # Aplicamos la cura del formato seguro para que no haya espacios raros
+                        # A. ¿ES UN CHECKBOX O RADIO BUTTON?
+                        # (Lo sabemos si el valor es /On, /Off, o si el tipo de campo /FT es /Btn)
+                        is_button = obj.get("/FT") == "/Btn"
+                        
+                        if val in ["/On", "/Off", True, False] or is_button:
+                            if val in ["/On", True]:
+                                # Por defecto asumimos que se llama "/On"
+                                estado_activo = NameObject("/On")
+                                
+                                # MAGIA: Buscamos dentro de la estructura del PDF cuál es el nombre real
+                                if "/AP" in obj:
+                                    ap = obj["/AP"].get_object()
+                                    if "/N" in ap:
+                                        n_dict = ap["/N"].get_object()
+                                        # Buscamos cualquier llave que NO sea "/Off"
+                                        if hasattr(n_dict, "keys"):
+                                            for k in n_dict.keys():
+                                                if k != "/Off":
+                                                    estado_activo = NameObject(k)
+                                                    break
+                                
+                                # Activamos la casilla con su contraseña secreta
+                                obj.update({
+                                    NameObject("/V"): estado_activo,
+                                    NameObject("/AS"): estado_activo
+                                })
+                            else:
+                                obj.update({
+                                    NameObject("/V"): NameObject("/Off"),
+                                    NameObject("/AS"): NameObject("/Off")
+                                })
+                        
+                        # B. ES UN CAMPO DE TEXTO NORMAL
+                        else:
                             texto_seguro = str(val).encode('latin-1', 'ignore').decode('latin-1')
                             obj.update({
                                 NameObject("/V"): TextStringObject(texto_seguro)
                             })
                             
-                            # Borramos la apariencia vieja para que Nitro no esconda el texto
+                            # Borramos la apariencia vieja para que Nitro redibuje
                             if "/AP" in obj:
                                 del obj["/AP"]
                                 
-                # 4. LIMPIEZA DE FLAGS: Hacemos TODO editable y quitamos separación de letras
-                if "/Ff" in obj:
-                    flags = obj.get("/Ff", 0)
-                    if isinstance(flags, int):
-                        # ~0x1000000 quita el "Comb" (letras separadas en casillas)
-                        # ~1 quita el "ReadOnly" (permite que el usuario edite el PDF)
-                        flags = (flags & ~0x1000000) & ~1
-                        obj.update({NameObject("/Ff"): NumberObject(flags)})
+                    # 3. LIMPIEZA GENERAL (Para todos los campos)
+                    if "/Ff" in obj:
+                        flags = obj.get("/Ff", 0)
+                        if isinstance(flags, int):
+                            # Hacemos todo editable y quitamos separación
+                            flags = (flags & ~0x1000000) & ~1
+                            obj.update({NameObject("/Ff"): NumberObject(flags)})
 
-    # Guardamos el archivo final
+    # Guardamos el archivo
     with open(output_pdf, "wb") as f:
         writer.write(f)
 # ==========================================
