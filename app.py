@@ -10,57 +10,35 @@ st.set_page_config(
     page_title="Fire Form Pro", 
     layout="wide", 
     page_icon="🔥",
-    initial_sidebar_state="collapsed" 
+    initial_sidebar_state="collapsed"  # Sidebar colapsado por defecto
 )
 
-# --- CSS PERSONALIZADO PARA OPTIMIZAR ESPACIO ---
+# Ocultar elementos del menú de Streamlit excepto theme
 hide_streamlit_style = """
 <style>
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
 header {visibility: hidden;}
-
-/* Eliminar el espacio en blanco superior masivo de Streamlit */
-.block-container {
-    padding-top: 0.5rem;
-    padding-bottom: 0rem;
-    padding-left: 3rem;
-    padding-right: 3rem;
+/* Mostrar solo el botón de theme */
+[data-testid="stToolbar"] {
+    display: none;
 }
-
-/* Ajustar el espacio de los Tabs para que suban más */
-.stTabs [data-baseweb="tab-list"] {
-    gap: 2rem;
+button[kind="header"] {
+    display: none;
 }
-
-/* Estilo para el email pequeño arriba del botón logout - CORREGIDO OVERLAP */
-.user-info-text {
-    font-size: 13px;
-    color: #808495;
-    margin-bottom: 8px !important; /* Margen positivo para separarlo del botón */
-    text-align: right;
-    font-weight: 500;
-}
-
-/* Optimización de nitidez de imagen */
+/* Mejorar el logo */
 img {
     image-rendering: -webkit-optimize-contrast;
     image-rendering: crisp-edges;
 }
-
-/* Reducir margen de los divisores */
-hr {
-    margin-top: 0.5rem !important;
-    margin-bottom: 1rem !important;
+/* Reducir padding superior */
+.block-container {
+    padding-top: 2rem;
+    padding-bottom: 0rem;
 }
-
-/* Estilo para el slogan pegado al logo - CORREGIDO ESPACIO */
-.slogan-text {
-    color: #808495;
-    font-size: 14px;
-    margin-top: -25px !important; /* Margen negativo agresivo para subirlo */
-    margin-left: 5px;
-    line-height: 1.2;
+/* Reducir espacio en tabs */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 2rem;
 }
 </style>
 """
@@ -121,42 +99,42 @@ def sync_profile_to_main(profile):
     main.COMPANY.update({
         "Company Name": profile.get("company_name", ""),
         "Address":      profile.get("company_address", ""),
-        "City":          profile.get("company_city", ""),
-        "State":         profile.get("company_state", "NY"),
-        "Zip":           profile.get("company_zip", ""),
-        "Phone":         profile.get("company_phone", ""),
-        "Email":         profile.get("company_email", ""),
-        "First Name":    profile.get("company_first_name", ""),
-        "Last Name":     profile.get("company_last_name", ""),
-        "Reg No":        profile.get("company_reg_no", ""),
+        "City":         profile.get("company_city", ""),
+        "State":        profile.get("company_state", "NY"),
+        "Zip":          profile.get("company_zip", ""),
+        "Phone":        profile.get("company_phone", ""),
+        "Email":        profile.get("company_email", ""),
+        "First Name":   profile.get("company_first_name", ""),
+        "Last Name":    profile.get("company_last_name", ""),
+        "Reg No":       profile.get("company_reg_no", ""),
         "COF S97":      profile.get("company_cof_s97", ""),
-        "Expiration":    profile.get("company_expiration", ""),
+        "Expiration":   profile.get("company_expiration", ""),
     })
     main.ARCHITECT.update({
         "Company Name": profile.get("arch_name", ""),
         "Address":      profile.get("arch_address", ""),
-        "City":          profile.get("arch_city", ""),
-        "State":         profile.get("arch_state", ""),
-        "Zip":           profile.get("arch_zip", ""),
-        "Phone":         profile.get("arch_phone", ""),
-        "Email":         profile.get("arch_email", ""),
-        "First Name":    profile.get("arch_first_name", ""),
-        "Last Name":     profile.get("arch_last_name", ""),
-        "License No":    profile.get("arch_license", ""),
-        "Role":          profile.get("arch_role", "PE"),
+        "City":         profile.get("arch_city", ""),
+        "State":        profile.get("arch_state", ""),
+        "Zip":          profile.get("arch_zip", ""),
+        "Phone":        profile.get("arch_phone", ""),
+        "Email":        profile.get("arch_email", ""),
+        "First Name":   profile.get("arch_first_name", ""),
+        "Last Name":    profile.get("arch_last_name", ""),
+        "License No":   profile.get("arch_license", ""),
+        "Role":         profile.get("arch_role", "PE"),
     })
     main.ELECTRICIAN.update({
         "Company Name": profile.get("elec_name", ""),
         "Address":      profile.get("elec_address", ""),
-        "City":          profile.get("elec_city", ""),
-        "State":         profile.get("elec_state", ""),
-        "Zip":           profile.get("elec_zip", ""),
-        "Phone":         profile.get("elec_phone", ""),
-        "Email":         profile.get("elec_email", ""),
-        "First Name":    profile.get("elec_first_name", ""),
-        "Last Name":     profile.get("elec_last_name", ""),
-        "License No":    profile.get("elec_license", ""),
-        "Expiration":    profile.get("elec_expiration", ""),
+        "City":         profile.get("elec_city", ""),
+        "State":        profile.get("elec_state", ""),
+        "Zip":          profile.get("elec_zip", ""),
+        "Phone":        profile.get("elec_phone", ""),
+        "Email":        profile.get("elec_email", ""),
+        "First Name":   profile.get("elec_first_name", ""),
+        "Last Name":    profile.get("elec_last_name", ""),
+        "License No":   profile.get("elec_license", ""),
+        "Expiration":   profile.get("elec_expiration", ""),
     })
     main.TECH_DEFAULTS.update({
         "Manufacturer": profile.get("tech_manufacturer", ""),
@@ -168,72 +146,117 @@ def sync_profile_to_main(profile):
         "Company Name": profile.get("cs_name", ""),
         "CS Code":      profile.get("cs_code", ""),
         "Address":      profile.get("cs_address", ""),
-        "City":          profile.get("cs_city", ""),
-        "State":         profile.get("cs_state", ""),
-        "Zip":           profile.get("cs_zip", ""),
-        "Phone":         profile.get("cs_phone", ""),
+        "City":         profile.get("cs_city", ""),
+        "State":        profile.get("cs_state", ""),
+        "Zip":          profile.get("cs_zip", ""),
+        "Phone":        profile.get("cs_phone", ""),
     })
 
 
-# --- UI DE AUTENTICACIÓN (LOGIN) ---
+# --- UI DE AUTENTICACIÓN CENTRADA (CUANDO NO ESTÁ LOGUEADO) ---
 def login_ui_centered():
-    col1, col2, col3 = st.columns([1, 1.8, 1])
+    # Logo centrado y más grande
+    col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         if os.path.exists("logo.png"):
             st.image("logo.png", use_column_width=True)
         
-        # Slogan subido y título completamente eliminado
-        st.markdown("<p style='text-align: center; color: gray; margin-top: -30px; font-size: 16px;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
+        st.markdown("<h1 style='text-align: center;'>Fire Form Pro</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: gray;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
+        
         st.markdown("<br>", unsafe_allow_html=True)
         
-        tab1, tab2 = st.tabs(["🔑 Login", "📝 Sign Up"])
-        
-        with tab1:
-            st.markdown("<br>", unsafe_allow_html=True)
-            email = st.text_input("Email Address", key="login_email", placeholder="user@example.com")
-            password = st.text_input("Password", type="password", key="login_password", placeholder="••••••••")
+        # Card de login/signup
+        with st.container():
+            st.markdown("""
+                <style>
+                .login-container {
+                    background-color: rgba(255, 255, 255, 0.05);
+                    padding: 2rem;
+                    border-radius: 10px;
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                }
+                </style>
+            """, unsafe_allow_html=True)
             
-            col_a, col_b, col_c = st.columns([1, 2, 1])
-            with col_b:
-                if st.button("Sign In", use_container_width=True, type="primary"):
-                    if not email or not password:
-                        st.error("Please enter both email and password")
-                        return
-                    with st.spinner("Authenticating..."):
-                        try:
-                            response = supabase.auth.sign_in_with_password({
-                                "email": email.strip(),
-                                "password": password
-                            })
-                            if response.user:
-                                st.session_state.user = response.user
-                                st.rerun()
-                        except Exception as e:
-                            st.error(f"❌ Login Error: {str(e)}")
-        
-        with tab2:
-            st.markdown("<br>", unsafe_allow_html=True)
-            email = st.text_input("Email Address", key="signup_email", placeholder="user@example.com")
-            password = st.text_input("Password", type="password", key="signup_password", placeholder="••••••••")
-            password_confirm = st.text_input("Confirm Password", type="password", key="signup_password_confirm", placeholder="••••••••")
+            tab1, tab2 = st.tabs(["🔑 Login", "📝 Sign Up"])
             
-            col_a, col_b, col_c = st.columns([1, 2, 1])
-            with col_b:
-                if st.button("Create Account", use_container_width=True, type="primary"):
-                    if password != password_confirm:
-                        st.error("Passwords do not match")
-                        return
-                    with st.spinner("Creating account..."):
-                        try:
-                            response = supabase.auth.sign_up({"email": email.strip(), "password": password})
-                            if response.user:
-                                st.success("✅ Account created! Check your email to confirm.")
-                                try:
-                                    supabase.table("profiles").insert({"id": response.user.id, "email": email}).execute()
-                                except: 
-                                    pass
-                        except Exception as e:
-                            st.error(f"❌ Error: {str(e)}")
+            with tab1:
+                st.markdown("<br>", unsafe_allow_html=True)
+                email = st.text_input("Email Address", key="login_email", placeholder="user@example.com")
+                password = st.text_input("Password", type="password", key="login_password", placeholder="••••••••")
+                
+                col_a, col_b, col_c = st.columns([1, 2, 1])
+                with col_b:
+                    if st.button("Sign In", use_container_width=True, type="primary"):
+                        if not email or not password:
+                            st.error("Please enter both email and password")
+                            return
+                        with st.spinner("Authenticating..."):
+                            try:
+                                response = supabase.auth.sign_in_with_password({
+                                    "email": email.strip(),
+                                    "password": password
+                                })
+                                if response.user:
+                                    st.session_state.user = response.user
+                                    st.success(f"✅ Welcome back, {email}!")
+                                    st.rerun()
+                                else:
+                                    st.error("❌ Login failed: No user returned")
+                            except Exception as e:
+                                error_msg = str(e)
+                                st.error(f"❌ Login Error: {error_msg}")
+                                if "Invalid login credentials" in error_msg:
+                                    st.warning("⚠️ Invalid email or password.")
+                                elif "Email not confirmed" in error_msg:
+                                    st.warning("⚠️ Please confirm your email first.")
+                                elif "rate limit" in error_msg.lower():
+                                    st.warning("⚠️ Too many attempts. Please wait.")
+            
+            with tab2:
+                st.markdown("<br>", unsafe_allow_html=True)
+                email = st.text_input("Email Address", key="signup_email", placeholder="user@example.com")
+                password = st.text_input("Password", type="password", key="signup_password", placeholder="••••••••")
+                password_confirm = st.text_input("Confirm Password", type="password", key="signup_password_confirm", placeholder="••••••••")
+                
+                col_a, col_b, col_c = st.columns([1, 2, 1])
+                with col_b:
+                    if st.button("Create Account", use_container_width=True, type="primary"):
+                        if not email or not password:
+                            st.error("Please enter both email and password")
+                            return
+                        if password != password_confirm:
+                            st.error("Passwords do not match")
+                            return
+                        if len(password) < 6:
+                            st.error("Password must be at least 6 characters")
+                            return
+                        with st.spinner("Creating account..."):
+                            try:
+                                response = supabase.auth.sign_up({
+                                    "email": email.strip(),
+                                    "password": password
+                                })
+                                if response.user:
+                                    st.success("✅ Account created successfully!")
+                                    st.info("📧 Please check your email to confirm your account.")
+                                    try:
+                                        supabase.table("profiles").insert({
+                                            "id": response.user.id,
+                                            "email": email
+                                        }).execute()
+                                    except Exception as profile_error:
+                                        st.warning(f"Profile creation note: {profile_error}")
+                                else:
+                                    st.error("Sign up completed but no user data returned")
+                            except Exception as e:
+                                error_msg = str(e)
+                                st.error(f"❌ Sign Up Error: {error_msg}")
+                                if "already registered" in error_msg.lower():
+                                    st.warning("⚠️ Email already registered. Use the Login tab.")
+                                elif "valid email" in error_msg.lower():
+                                    st.warning("⚠️ Please enter a valid email address.")
 
 
 # --- CONTROL DE ACCESO ---
@@ -241,130 +264,33 @@ if not st.session_state.user:
     login_ui_centered()
     st.stop()
 
-# --- HEADER REDISEÑADO (POST-LOGIN) ---
-col_h1, col_h2, col_h3 = st.columns([3, 1, 1])
-
-with col_h1:
-    if os.path.exists("logo.png"):
-        st.image("logo.png", width=220)
-    st.markdown('<p class="slogan-text">Automated form generation for the NYC Fire Alarm Industry</p>', unsafe_allow_html=True)
-
-with col_h3:
-    # Agregamos un poco de espacio superior para alinear con el logo
-    st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
-    st.markdown(f'<div class="user-info-text">{st.session_state.user.email}</div>', unsafe_allow_html=True)
+# --- HEADER CON LOGOUT (CUANDO ESTÁ LOGUEADO) ---
+col_header1, col_header2, col_header3 = st.columns([2, 2, 1])
+with col_header1:
+    st.markdown(f"**👤 {st.session_state.user.email}**")
+with col_header3:
     if st.button("🚪 Logout", use_container_width=True, type="secondary"):
         logout()
 
 st.markdown("---")
 
+# --- SIDEBAR MEJORADO (CUANDO ESTÁ LOGUEADO) ---
+with st.sidebar:
+    if os.path.exists("logo.png"):
+        st.image("logo.png", use_column_width=True)
+    
+    st.markdown("---")
+    st.markdown(f"**👤 Logged in as:**")
+    st.info(st.session_state.user.email)
+    
+    st.markdown("---")
+    st.caption("Fire Form Pro v1.0")
+    st.caption("© 2026 - NYC Fire Alarm Industry")
+
 # --- APP PRINCIPAL ---
 profile = fetch_user_profile(st.session_state.user.id)
+
 tabs = st.tabs(["🏗️ Project Builder", "👤 Profile Information"])
-
-# ============================================================
-# TAB 0: PROJECT BUILDER
-# ============================================================
-with tabs[0]:
-    col1, col2 = st.columns([1, 2])
-
-    with col1:
-        st.subheader("1️⃣ Project Information")
-        bin_number = st.text_input("Enter Property BIN", placeholder="e.g. 1012345", key="bin_input")
-        job_desc = st.text_area("TM-1 Job Description", value="Installation of Fire Alarm System.", height=100, key="job_desc_input")
-
-        st.divider()
-        st.markdown("### 2️⃣ Add Devices", unsafe_allow_html=True)
-
-        floor    = st.selectbox("Floor Location", main.FULL_FLOOR_LIST, key="floor_select")
-        category = st.selectbox("Category", list(main.MASTER_DEVICE_LIST.keys()), key="category_select")
-        device   = st.selectbox("Device Type", main.MASTER_DEVICE_LIST.get(category, []), key="device_select")
-        qty      = st.number_input("Quantity", min_value=1, value=1, key="qty_input")
-
-        if st.button("➕ Add to List", use_container_width=True, key="add_device_btn"):
-            st.session_state.device_list.append({"device": device, "floor": floor, "qty": qty})
-            st.success(f"✅ Added: {device} at {floor}")
-
-        st.divider()
-        st.subheader("3️⃣ Select Forms")
-        col_a, col_b = st.columns(2)
-        with col_a:
-            gen_tm1    = st.checkbox("📄 TM-1 Application",      value=True, key="chk_gen_tm1")
-            gen_a433   = st.checkbox("📋 A-433 Device List",     value=True, key="chk_gen_a433")
-        with col_b:
-            gen_b45    = st.checkbox("🔍 B-45 Inspection", value=True, key="chk_gen_b45")
-            gen_report = st.checkbox("📊 Audit Report",           value=True, key="chk_gen_report")
-
-        if st.button("🔥 GENERATE DOCUMENTS", type="primary", use_container_width=True, key="generate_btn"):
-            if not bin_number:
-                st.error("⚠️ Please enter a BIN number.")
-            else:
-                with st.spinner("🔄 Generating..."):
-                    try:
-                        sync_profile_to_main(profile)
-                        info = main.obtener_datos_completos(bin_number)
-                        if info:
-                            job_specs = {"job_desc": job_desc, "devices": st.session_state.device_list}
-                            full_data = {**info, **job_specs}
-                            generated_files = []
-
-                            if gen_tm1:
-                                main.generar_tm1(full_data, "tm-1-application-for-plan-examination-doc-review.pdf", f"TM1_{bin_number}.pdf")
-                                generated_files.append(f"TM1_{bin_number}.pdf")
-                            if gen_a433:
-                                main.generar_a433(full_data, "application-a-433-c.pdf", f"A433_{bin_number}.pdf")
-                                generated_files.append(f"A433_{bin_number}.pdf")
-                            if gen_b45:
-                                main.generar_b45(full_data, "b45-inspection-request.pdf", f"B45_{bin_number}.pdf")
-                                generated_files.append(f"B45_{bin_number}.pdf")
-                            if gen_report:
-                                main.generar_reporte_auditoria(full_data, f"REPORT_{bin_number}.txt")
-                                generated_files.append(f"REPORT_{bin_number}.txt")
-
-                            zip_buffer = BytesIO()
-                            with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
-                                for file_name in generated_files:
-                                    if os.path.exists(file_name):
-                                        zip_file.write(file_name)
-                                        os.remove(file_name)
-
-                            st.download_button(
-                                label="📥 Download Forms (ZIP)",
-                                data=zip_buffer.getvalue(),
-                                file_name=f"FDNY_Forms_{bin_number}.zip",
-                                mime="application/zip",
-                                use_container_width=True,
-                                type="primary",
-                                key="download_zip_btn"
-                            )
-                        else:
-                            st.error("❌ Could not retrieve data for this BIN.")
-                    except Exception as e:
-                        st.error(f"❌ Error: {e}")
-
-    with col2:
-        st.subheader("📋 Project Device List")
-        if st.session_state.device_list:
-            edited_list = st.data_editor(
-                st.session_state.device_list,
-                num_rows="dynamic",
-                use_container_width=True,
-                column_config={
-                    "qty": st.column_config.NumberColumn("Quantity", min_value=1, step=1),
-                    "device": st.column_config.TextColumn("Device Type", disabled=True),
-                    "floor":  st.column_config.TextColumn("Floor Location", disabled=True),
-                },
-                key="device_editor",
-            )
-            if edited_list != st.session_state.device_list:
-                st.session_state.device_list = edited_list
-                st.rerun()
-
-            if st.button("🗑️ Clear List", use_container_width=True, type="secondary", key="clear_list_btn"):
-                st.session_state.device_list = []
-                st.rerun()
-        else:
-            st.info("💡 No devices added yet.")
 
 # ============================================================
 # TAB 1: PROFESSIONAL PROFILE
@@ -376,7 +302,7 @@ with tabs[1]:
     with st.expander("🏢 FA Company / Expeditor Information", expanded=True):
         col1, col2 = st.columns(2)
         with col1:
-            c_name  = st.text_input("Company Name",  value=profile.get("company_name", ""),        key="c_name")
+            c_name  = st.text_input("Company Name",  value=profile.get("company_name", ""),       key="c_name")
             c_addr  = st.text_input("Address",        value=profile.get("company_address", ""),    key="c_addr")
             c_city  = st.text_input("City",           value=profile.get("company_city", ""),       key="c_city")
             c_state = st.text_input("State",          value=profile.get("company_state", ""),      key="c_state")
@@ -442,7 +368,7 @@ with tabs[1]:
 
     col_save1, col_save2, col_save3 = st.columns([1, 1, 1])
     with col_save2:
-        if st.button("💾 Save Profile", use_container_width=True, type="primary", key="save_profile_btn"):
+        if st.button("💾 Save Profile", use_container_width=True, type="primary"):
             full_update = {
                 "id": st.session_state.user.id,
                 "updated_at": "now()",
@@ -475,3 +401,171 @@ with tabs[1]:
                 st.success("✅ Profile saved successfully!")
             except Exception as e:
                 st.error(f"Error saving to database: {e}")
+
+
+# ============================================================
+# TAB 0: PROJECT BUILDER
+# ============================================================
+with tabs[0]:
+    # Logo más compacto en la parte superior
+    col_logo1, col_logo2, col_logo3 = st.columns([1, 2, 1])
+    with col_logo2:
+        if os.path.exists("logo.png"):
+            st.image("logo.png", use_column_width=True)
+    
+    st.markdown("<h2 style='text-align: center; margin-top: 0.5rem; margin-bottom: 0.5rem;'>Fire Form Pro</h2>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: gray; margin-bottom: 1rem;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
+
+    col1, col2 = st.columns([1, 2])
+
+    with col1:
+        st.subheader("1️⃣ Project Information")
+        bin_number = st.text_input("Enter Property BIN", placeholder="e.g. 1012345")
+        job_desc = st.text_area("TM-1 Job Description", value="Installation of Fire Alarm System.", height=100)
+
+        st.divider()
+
+        st.markdown("### 2️⃣ Add Devices <span style='color:gray; font-size:14px;'>(A-433 Optional)</span>", unsafe_allow_html=True)
+
+        floor    = st.selectbox("Floor Location", main.FULL_FLOOR_LIST)
+        category = st.selectbox("Category", list(main.MASTER_DEVICE_LIST.keys()))
+        device   = st.selectbox("Device Type", main.MASTER_DEVICE_LIST.get(category, []))
+        qty      = st.number_input("Quantity", min_value=1, value=1)
+
+        if st.button("➕ Add to List", use_container_width=True):
+            st.session_state.device_list.append({
+                "device": device,
+                "floor": floor,
+                "qty": qty,
+            })
+            st.success(f"✅ Added: {device} at {floor}")
+
+        st.divider()
+
+        st.subheader("3️⃣ Select Forms to Generate")
+        col_a, col_b = st.columns(2)
+        with col_a:
+            gen_tm1    = st.checkbox("📄 TM-1 Application",      value=True, key="chk_gen_tm1")
+            gen_a433   = st.checkbox("📋 A-433 Device List",     value=True, key="chk_gen_a433")
+        with col_b:
+            gen_b45    = st.checkbox("🔍 B-45 Inspection", value=True, key="chk_gen_b45")
+            gen_report = st.checkbox("📊 Audit Report",           value=True, key="chk_gen_report")
+
+        st.divider()
+
+        if st.button("🔥 GENERATE DOCUMENTS", type="primary", use_container_width=True):
+            if not bin_number:
+                st.error("⚠️ Please enter a BIN number.")
+            elif not (gen_tm1 or gen_a433 or gen_b45 or gen_report):
+                st.warning("⚠️ Please select at least one form to generate.")
+            else:
+                with st.spinner("🔄 Generating Forms..."):
+                    try:
+                        sync_profile_to_main(profile)
+
+                        info = main.obtener_datos_completos(bin_number)
+                        if info:
+                            job_specs = {"job_desc": job_desc, "devices": st.session_state.device_list}
+                            full_data = {**info, **job_specs}
+                            generated_files = []
+
+                            if gen_tm1:
+                                main.generar_tm1(full_data, "tm-1-application-for-plan-examination-doc-review.pdf", f"TM1_{bin_number}.pdf")
+                                generated_files.append(f"TM1_{bin_number}.pdf")
+                            if gen_a433:
+                                main.generar_a433(full_data, "application-a-433-c.pdf", f"A433_{bin_number}.pdf")
+                                generated_files.append(f"A433_{bin_number}.pdf")
+                            if gen_b45:
+                                main.generar_b45(full_data, "b45-inspection-request.pdf", f"B45_{bin_number}.pdf")
+                                generated_files.append(f"B45_{bin_number}.pdf")
+                            if gen_report:
+                                main.generar_reporte_auditoria(full_data, f"REPORT_{bin_number}.txt")
+                                generated_files.append(f"REPORT_{bin_number}.txt")
+
+                            zip_buffer = BytesIO()
+                            file_data_dict = {}
+                            zip_buffer = BytesIO()
+                            
+                            with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
+                                for file_name in generated_files:
+                                    if os.path.exists(file_name):
+                                        # Leer el archivo físicamente a la memoria de Streamlit
+                                        with open(file_name, "rb") as f:
+                                            file_bytes = f.read()
+                                            file_data_dict[file_name] = file_bytes
+                                        
+                                        # Escribir los bytes directamente al ZIP
+                                        zip_file.writestr(file_name, file_bytes)
+                                        # Borrar el archivo físico del servidor para mantenerlo limpio
+                                        os.remove(file_name)
+
+                            st.success(f"✅ {len(file_data_dict)} documents generated successfully!")
+                            
+                            # 1. BOTÓN PRINCIPAL (EL ZIP COMPLETO)
+                            st.download_button(
+                                label="📦 Download All Selected Forms (ZIP)",
+                                data=zip_buffer.getvalue(),
+                                file_name=f"FDNY_Forms_{bin_number}.zip",
+                                mime="application/zip",
+                                use_container_width=True,
+                                type="primary"
+                            )
+
+                            st.markdown("<p style='text-align: center; color: gray; font-size: 14px; margin-top: 10px;'>Or download individually:</p>", unsafe_allow_html=True)
+
+                            # 2. BOTONES INDIVIDUALES GENERADOS DINÁMICAMENTE
+                            # Creamos tantas columnas como archivos se generaron para que queden alineados
+                            cols = st.columns(len(file_data_dict))
+                            
+                            for idx, (f_name, f_bytes) in enumerate(file_data_dict.items()):
+                                with cols[idx]:
+                                    # Ajustar el tipo y el icono dependiendo de si es PDF o el archivo de texto (Reporte)
+                                    mime_type = "text/plain" if f_name.endswith(".txt") else "application/pdf"
+                                    icon = "📊" if f_name.endswith(".txt") else "📄"
+                                    
+                                    # Extraer el nombre corto para el botón (Ej: "TM1", "A433")
+                                    short_name = f_name.split('_')[0]
+                                    
+                                    st.download_button(
+                                        label=f"{icon} {short_name}",
+                                        data=f_bytes,
+                                        file_name=f_name,
+                                        mime=mime_type,
+                                        use_container_width=True
+                                    )
+                        else:
+                            st.error("❌ Could not retrieve data for this BIN.")
+                    except Exception as e:
+                        st.error(f"❌ Critical Error: {e}")
+
+    # -------------------------------------------------------
+    # COLUMNA DERECHA — Device List
+    # -------------------------------------------------------
+    with col2:
+        st.subheader("📋 Project Device List")
+
+        if st.session_state.device_list:
+            edited_list = st.data_editor(
+                st.session_state.device_list,
+                num_rows="dynamic",
+                use_container_width=True,
+                column_config={
+                    "qty": st.column_config.NumberColumn(
+                        "Quantity", min_value=1, max_value=999, step=1, required=True
+                    ),
+                    "device": st.column_config.TextColumn("Device Type", disabled=True),
+                    "floor":  st.column_config.TextColumn("Floor Location", disabled=True),
+                },
+                key="device_editor",
+            )
+
+            # Sincronizar ediciones manuales de cantidad
+            if edited_list != st.session_state.device_list:
+                st.session_state.device_list = edited_list
+                st.rerun()
+
+            if st.button("🗑️ Clear Entire List", use_container_width=True, type="secondary"):
+                st.session_state.device_list = []
+                st.rerun()
+        else:
+            st.info("💡 No devices added yet. Use the left panel to add them.")
