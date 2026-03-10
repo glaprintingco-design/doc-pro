@@ -6,7 +6,7 @@ import zipfile
 from io import BytesIO
 
 # ============================================================
-# CONFIGURACIÓN Y TEMA VISUAL (UI PRO)
+# CONFIGURACIÓN Y TEMA VISUAL (UI PRO CORREGIDA)
 # ============================================================
 st.set_page_config(
     page_title="Fire Form Pro", 
@@ -15,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Estilo CSS Moderno (Light Theme + Naranja Fire Alarm)
+# Estilo CSS Moderno (Corregido para evitar desbordamientos)
 modern_styles = """
 <style>
 /* Ocultar elementos por defecto de Streamlit */
@@ -23,12 +23,12 @@ modern_styles = """
 footer {visibility: hidden;}
 header {visibility: hidden;}
 
-/* Fondo general de la aplicación (Gris muy claro para resaltar las tarjetas blancas) */
+/* Fondo general de la aplicación */
 .stApp {
     background-color: #F4F7F9;
 }
 
-/* Forzar colores de texto oscuros para evitar que se pierdan en Modo Oscuro */
+/* Forzar colores de texto oscuros */
 h1, h2, h3, h4, h5, h6, p, span, div {
     color: #2D3748;
 }
@@ -39,19 +39,20 @@ h1, h2, h3, h4, h5, h6, p, span, div {
     font-weight: 600 !important;
 }
 
-/* Reducir padding superior para aprovechar la pantalla */
+/* --- CORRECCIÓN DE MÁRGENES Y ANCHO --- */
+/* Limitamos el ancho para que no se "desparrame" en pantallas anchas */
 .block-container {
     padding-top: 0rem !important;
-    max-width: 100% !important;
-    padding-left: 0rem !important;
-    padding-right: 0rem !important;
+    max-width: 1200px !important; 
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
+    margin: 0 auto !important;
 }
 
-/* Contenedor interno para el contenido */
+/* Contenedor interno para el contenido adicional */
 .main-content {
-    max-width: 1400px;
+    max-width: 100%;
     margin: 0 auto;
-    padding: 0 2rem;
 }
 
 /* Estilo para los botones principales (Naranja) */
@@ -89,19 +90,14 @@ h1, h2, h3, h4, h5, h6, p, span, div {
 
 /* Botón de logout blanco */
 .stButton > button[key="logout_btn"] {
-    background: rgba(255,255,255,0.25) !important;
+    background: rgba(255,255,255,0.2) !important;
     backdrop-filter: blur(10px) !important;
-    border: 1px solid rgba(255,255,255,0.4) !important;
+    border: 1px solid rgba(255,255,255,0.3) !important;
     color: white !important;
     border-radius: 8px !important;
     font-weight: 600 !important;
     padding: 0.5rem 1rem !important;
     transition: all 0.3s ease !important;
-}
-
-.stButton > button[key="logout_btn"]:hover {
-    background: rgba(255,255,255,0.35) !important;
-    transform: translateY(-1px) !important;
 }
 
 /* Tarjetas (Expanders y Data Editor) */
@@ -112,11 +108,6 @@ h1, h2, h3, h4, h5, h6, p, span, div {
     box-shadow: 0 4px 6px rgba(0,0,0,0.02) !important;
 }
 
-[data-testid="stExpander"] summary {
-    font-weight: 600 !important;
-    color: #2D3748 !important;
-}
-
 /* Inputs de texto y selects */
 .stTextInput input, .stNumberInput input, .stSelectbox div[data-baseweb="select"], .stTextArea textarea {
     background-color: white !important;
@@ -125,26 +116,14 @@ h1, h2, h3, h4, h5, h6, p, span, div {
     color: #1A202C !important;
 }
 
-/* Efecto focus en inputs */
-.stTextInput input:focus, .stTextArea textarea:focus, .stSelectbox div[data-baseweb="select"]:focus-within {
-    border-color: #FF6B00 !important;
-    box-shadow: 0 0 0 1px #FF6B00 !important;
-}
-
 /* Títulos de pestañas (Tabs) */
 .stTabs [data-baseweb="tab"] {
     color: #718096 !important;
     font-weight: 600 !important;
-    font-size: 1.1rem !important;
 }
 .stTabs [aria-selected="true"] {
     color: #FF6B00 !important;
     border-bottom-color: #FF6B00 !important;
-}
-
-/* Mensajes de éxito/error */
-.stAlert {
-    border-radius: 10px !important;
 }
 </style>
 """
@@ -266,13 +245,10 @@ def sync_profile_to_main(profile):
 def login_ui_centered():
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        # Tarjeta blanca central
-        st.markdown("""
-        """, unsafe_allow_html=True)
-        
+        st.markdown("<br><br>", unsafe_allow_html=True)
         if os.path.exists("logo.png"):
             st.image("logo.png", width=250)
-            st.markdown("<p style='color: #718096 !important; font-size: 15px; margin-top: -90px; margin-bottom: 2rem;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
+            st.markdown("<p style='color: #718096; font-size: 15px; margin-top: -80px; margin-bottom: 2rem;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
         else:
             st.markdown("<h1 style='color: #FF6B00; margin-bottom: 0;'>🔥 Fire Form Pro</h1>", unsafe_allow_html=True)
             st.markdown("<p style='color: #718096; font-size: 15px; margin-bottom: 2rem;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
@@ -295,7 +271,7 @@ def login_ui_centered():
                             if response.user:
                                 st.session_state.user = response.user
                                 st.rerun()
-                        except Exception as e:
+                        except Exception:
                             st.error("⚠️ Invalid email or password.")
         
         with tab2:
@@ -322,21 +298,20 @@ def login_ui_centered():
                         except Exception as e:
                             st.error(f"❌ Error: {str(e)}")
 
-        st.markdown("</div>", unsafe_allow_html=True)
-
 if not st.session_state.user:
     login_ui_centered()
     st.stop()
 
 # ============================================================
-# CABECERA PRINCIPAL DE LA APP (HEADER ELEGANTE A PANTALLA COMPLETA)
+# CABECERA PRINCIPAL (HEADER ADAPTADO AL CONTENEDOR)
 # ============================================================
+# Usamos un contenedor que abarque todo el ancho visual pero mantenga el contenido alineado
 st.markdown("""
 <div style="background: linear-gradient(135deg, #FF6B00 0%, #E65100 100%); 
-            padding: 2.5rem 0; 
-            margin: -1rem 0 0 0;
+            padding: 2rem 0; 
+            margin: 0 -2rem 2rem -2rem;
             box-shadow: 0 4px 20px rgba(255, 107, 0, 0.2);">
-    <div style="max-width: 1400px; margin: 0 auto; padding: 0 3rem;">
+    <div style="max-width: 1200px; margin: 0 auto; padding: 0 2rem;">
 """, unsafe_allow_html=True)
 
 col_h_izq, col_h_der = st.columns([3, 1])
@@ -344,24 +319,13 @@ col_h_izq, col_h_der = st.columns([3, 1])
 with col_h_izq:
     if os.path.exists("logo.png"):
         st.image("logo.png", width=280)
-        st.markdown("<p style='color: rgb(220 30 45); font-size: 15px; margin-top: -90px; margin-bottom: -15px; margin-left: 8px; font-weight: 500; letter-spacing: 0.3px;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
+        st.markdown("<p style='color: white; font-size: 14px; margin-top: -85px; font-weight: 500;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
     else:
-        st.markdown("<h1 style='color: white; margin: 0; font-size: 2.8rem; font-weight: 700; letter-spacing: -0.5px;'>🔥 Fire Form Pro</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='color: rgba(255,255,255,0.95); font-size: 15px; margin: 0; margin-top: 8px; font-weight: 500; letter-spacing: 0.3px;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
+        st.markdown("<h1 style='color: white; margin: 0; font-size: 2.2rem;'>🔥 Fire Form Pro</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='color: rgba(255,255,255,0.9); margin: 0;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
 
 with col_h_der:
-    st.markdown(f"""
-    <div style='text-align: right; margin-bottom: 12px;'>
-        <div style='background: rgba(255,255,255,0.2); 
-                    backdrop-filter: blur(10px); 
-                    padding: 10px 20px; 
-                    border-radius: 25px; 
-                    display: inline-block;
-                    border: 1px solid rgba(255,255,255,0.3);'>
-            <span style='color: white !important; font-weight: 600; font-size: 14px;'>👤 {st.session_state.user.email}</span>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(f"<div style='text-align: right; color: white; margin-bottom: 10px; font-weight: 600;'>👤 {st.session_state.user.email}</div>", unsafe_allow_html=True)
     if st.button("🚪 Logout", use_container_width=True, key="logout_btn"):
         logout()
 
@@ -396,18 +360,18 @@ with tabs[1]:
             c_email = st.text_input("Email",          value=profile.get("company_email", ""),      key="c_email")
             c_first = st.text_input("First Name",     value=profile.get("company_first_name", ""), key="c_first")
             c_last  = st.text_input("Last Name",      value=profile.get("company_last_name", ""),  key="c_last")
-            c_reg   = st.text_input("Reg No",         value=profile.get("company_reg_no", ""),     key="c_reg")
+            c_reg   = st.text_input("Reg No",          value=profile.get("company_reg_no", ""),     key="c_reg")
             c_cof   = st.text_input("COF S97",        value=profile.get("company_cof_s97", ""),    key="c_cof")
             c_exp   = st.text_input("Exp. Date",      value=profile.get("company_expiration", ""), key="c_exp")
 
     with st.expander("📐 Architect / Engineer Information"):
         col1, col2 = st.columns(2)
         with col1:
-            a_name    = st.text_input("Company Name",   value=profile.get("arch_name", ""),        key="a_name")
+            a_name    = st.text_input("Company Name",   value=profile.get("arch_name", ""),         key="a_name")
             a_addr    = st.text_input("Address",         value=profile.get("arch_address", ""),     key="a_addr")
-            a_city    = st.text_input("City",            value=profile.get("arch_city", ""),        key="a_city")
+            a_city    = st.text_input("City",            value=profile.get("arch_city", ""),         key="a_city")
             a_state   = st.text_input("State",           value=profile.get("arch_state", ""),       key="a_state")
-            a_zip     = st.text_input("Zip Code",        value=profile.get("arch_zip", ""),         key="a_zip")
+            a_zip     = st.text_input("Zip Code",        value=profile.get("arch_zip", ""),          key="a_zip")
             a_phone   = st.text_input("Phone",           value=profile.get("arch_phone", ""),       key="a_phone")
         with col2:
             a_email   = st.text_input("Email",           value=profile.get("arch_email", ""),       key="a_email")
@@ -419,11 +383,11 @@ with tabs[1]:
     with st.expander("⚡ Electrical Contractor Information"):
         col1, col2 = st.columns(2)
         with col1:
-            e_name    = st.text_input("Company Name",   value=profile.get("elec_name", ""),        key="e_name")
+            e_name    = st.text_input("Company Name",   value=profile.get("elec_name", ""),         key="e_name")
             e_addr    = st.text_input("Address",         value=profile.get("elec_address", ""),     key="e_addr")
-            e_city    = st.text_input("City",            value=profile.get("elec_city", ""),        key="e_city")
+            e_city    = st.text_input("City",            value=profile.get("elec_city", ""),         key="e_city")
             e_state   = st.text_input("State",           value=profile.get("elec_state", ""),       key="e_state")
-            e_zip     = st.text_input("Zip Code",        value=profile.get("elec_zip", ""),         key="e_zip")
+            e_zip     = st.text_input("Zip Code",        value=profile.get("elec_zip", ""),          key="e_zip")
             e_phone   = st.text_input("Phone",           value=profile.get("elec_phone", ""),       key="e_phone")
         with col2:
             e_email   = st.text_input("Email",           value=profile.get("elec_email", ""),       key="e_email")
@@ -438,7 +402,7 @@ with tabs[1]:
             t_man   = st.text_input("Default Manufacturer",  value=profile.get("tech_manufacturer", ""), key="t_man")
             t_appr  = st.text_input("BSA/MEA/COA Approval",  value=profile.get("tech_approval", ""),     key="t_appr")
             t_gauge = st.text_input("Wire Gauge",            value=profile.get("tech_wire_gauge", ""),   key="t_gauge")
-            t_wire  = st.text_input("Wire Type",             value=profile.get("tech_wire_type", ""),    key="t_wire")
+            t_wire  = st.text_input("Wire Type",              value=profile.get("tech_wire_type", ""),    key="t_wire")
     with col2:
         with st.expander("📡 Central Station Information"):
             cs_name  = st.text_input("CS Name",    value=profile.get("cs_name", ""),    key="cs_name")
@@ -450,8 +414,8 @@ with tabs[1]:
             cs_phone = st.text_input("CS Phone",   value=profile.get("cs_phone", ""),   key="cs_phone")
 
     st.markdown("<br>", unsafe_allow_html=True)
-    col_save1, col_save2, col_save3 = st.columns([1, 1, 1])
-    with col_save2:
+    _, col_save_center, _ = st.columns([1, 1, 1])
+    with col_save_center:
         if st.button("💾 Save Profile", use_container_width=True, type="primary"):
             full_update = {
                 "id": st.session_state.user.id,
@@ -487,35 +451,31 @@ with tabs[1]:
 with tabs[0]:
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # SECCIÓN 1
-    st.markdown("<h4 style='color: #2D3748;'>1️⃣ Project Information</h4>", unsafe_allow_html=True)
+    st.markdown("<h4>1️⃣ Project Information</h4>", unsafe_allow_html=True)
     col_info1, col_info2 = st.columns([1, 2])
     with col_info1:
         bin_number = st.text_input("Property BIN Number", placeholder="e.g. 1012345")
     with col_info2:
         job_desc = st.text_area("TM-1 Job Description", value="Installation of Fire Alarm System.", height=68)
 
-    st.markdown("<hr style='border-color: #E2E8F0; margin: 2rem 0;'>", unsafe_allow_html=True)
+    st.divider()
 
-    # SECCIÓN 2
-    st.markdown("<h4 style='color: #2D3748;'>2️⃣ Device Schedule <span style='font-size:14px; color:#A0AEC0;'>(A-433 Optional)</span></h4>", unsafe_allow_html=True)
+    st.markdown("<h4>2️⃣ Device Schedule <span style='font-size:14px; color:#718096;'>(A-433 Optional)</span></h4>", unsafe_allow_html=True)
     col_dev_left, col_dev_right = st.columns([1, 2])
     
     with col_dev_left:
-        with st.container():
-            floor    = st.selectbox("Floor Location", main.FULL_FLOOR_LIST)
-            category = st.selectbox("Category", list(main.MASTER_DEVICE_LIST.keys()))
-            device   = st.selectbox("Device Type", main.MASTER_DEVICE_LIST.get(category, []))
-            qty      = st.number_input("Quantity", min_value=1, value=1)
-            
-            st.markdown("<br>", unsafe_allow_html=True)
-            if st.button("➕ Add to Schedule", use_container_width=True, type="secondary"):
-                st.session_state.device_list.append({
-                    "device": device,
-                    "floor": floor,
-                    "qty": qty,
-                })
-                st.success(f"Added: {device}")
+        floor    = st.selectbox("Floor Location", main.FULL_FLOOR_LIST)
+        category = st.selectbox("Category", list(main.MASTER_DEVICE_LIST.keys()))
+        device   = st.selectbox("Device Type", main.MASTER_DEVICE_LIST.get(category, []))
+        qty      = st.number_input("Quantity", min_value=1, value=1)
+        
+        if st.button("➕ Add to Schedule", use_container_width=True, type="secondary"):
+            st.session_state.device_list.append({
+                "device": device,
+                "floor": floor,
+                "qty": qty,
+            })
+            st.toast(f"Added: {device}")
 
     with col_dev_right:
         if st.session_state.device_list:
@@ -524,7 +484,7 @@ with tabs[0]:
                 num_rows="dynamic",
                 use_container_width=True,
                 column_config={
-                    "qty": st.column_config.NumberColumn("Qty", min_value=1, max_value=999, step=1, required=True),
+                    "qty": st.column_config.NumberColumn("Qty", min_value=1, step=1),
                     "device": st.column_config.TextColumn("Device Type", disabled=True),
                     "floor":  st.column_config.TextColumn("Floor Location", disabled=True),
                 },
@@ -534,44 +494,31 @@ with tabs[0]:
                 st.session_state.device_list = edited_list
                 st.rerun()
                 
-            if st.button("🗑️ Clear List", use_container_width=False, type="secondary"):
+            if st.button("🗑️ Clear List", type="secondary"):
                 st.session_state.device_list = []
                 st.rerun()
         else:
-            st.markdown("""
-            <div style='background-color: white; border: 1px dashed #CBD5E0; border-radius: 12px; padding: 3rem; text-align: center; color: #A0AEC0;'>
-                <h3 style='color: #A0AEC0; margin-bottom: 0.5rem;'>📋</h3>
-                <p style='margin: 0;'>No devices added yet</p>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown("<div style='background: white; border: 1px dashed #CBD5E0; border-radius: 12px; padding: 3rem; text-align: center; color: #A0AEC0;'>No devices added yet</div>", unsafe_allow_html=True)
 
-    st.markdown("<hr style='border-color: #E2E8F0; margin: 2rem 0;'>", unsafe_allow_html=True)
+    st.divider()
 
-    # SECCIÓN 3
-    st.markdown("<h4 style='color: #2D3748; text-align: center;'>3️⃣ Document Generation</h4>", unsafe_allow_html=True)
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("<h4 style='text-align: center;'>3️⃣ Document Generation</h4>", unsafe_allow_html=True)
     
-    col_chk0, col_chk1, col_chk2, col_chk3, col_chk4, col_chk5 = st.columns([1, 2, 2, 2, 2, 1])
-    with col_chk1:
-        gen_tm1 = st.checkbox("📄 TM-1", value=True, key="chk_gen_tm1")
-    with col_chk2:
-        gen_a433 = st.checkbox("📋 A-433", value=True, key="chk_gen_a433")
-    with col_chk3:
-        gen_b45 = st.checkbox("🔍 B-45", value=True, key="chk_gen_b45")
-    with col_chk4:
-        gen_report = st.checkbox("📊 Report", value=True, key="chk_gen_report")
-        
-    st.markdown("<br>", unsafe_allow_html=True)
+    _, col_chk1, col_chk2, col_chk3, col_chk4, _ = st.columns([1, 2, 2, 2, 2, 1])
+    with col_chk1: gen_tm1 = st.checkbox("📄 TM-1", value=True)
+    with col_chk2: gen_a433 = st.checkbox("📋 A-433", value=True)
+    with col_chk3: gen_b45 = st.checkbox("🔍 B-45", value=True)
+    with col_chk4: gen_report = st.checkbox("📊 Report", value=True)
     
-    col_gen1, col_gen2, col_gen3 = st.columns([1, 2, 1])
-    with col_gen2:
+    _, col_gen_btn, _ = st.columns([1, 2, 1])
+    with col_gen_btn:
         if st.button("🔥 GENERATE DOCUMENTS", type="primary", use_container_width=True):
             if not bin_number:
                 st.error("⚠️ Please enter a BIN number.")
             elif not (gen_tm1 or gen_a433 or gen_b45 or gen_report):
                 st.warning("⚠️ Select at least one form.")
             else:
-                with st.spinner("Fetching property data & generating..."):
+                with st.spinner("Generating documents..."):
                     try:
                         sync_profile_to_main(profile)
                         info = main.obtener_datos_completos(bin_number)
@@ -596,7 +543,6 @@ with tabs[0]:
 
                             file_data_dict = {}
                             zip_buffer = BytesIO()
-                            
                             with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
                                 for file_name in generated_files:
                                     if os.path.exists(file_name):
@@ -612,45 +558,34 @@ with tabs[0]:
                                 "bin": bin_number
                             }
                         else:
-                            st.error("❌ Could not retrieve data for this BIN.")
+                            st.error("❌ BIN not found.")
                     except Exception as e:
                         st.error(f"❌ Error: {e}")
 
-        # Bloque de descargas
-        if "generated_data" in st.session_state and st.session_state.generated_data:
-            st.markdown("<hr style='margin: 2rem 0;'>", unsafe_allow_html=True)
-            datos = st.session_state.generated_data
-            
-            st.success(f"✅ {len(datos['archivos'])} documents ready for BIN {datos['bin']}!")
-            
-            st.download_button(
-                label="📦 Download All as ZIP",
-                data=datos["zip_buffer"],
-                file_name=f"FDNY_Forms_{datos['bin']}.zip",
-                mime="application/zip",
-                use_container_width=True,
-                type="primary"
-            )
+    # Bloque de descargas
+    if st.session_state.generated_data:
+        st.divider()
+        datos = st.session_state.generated_data
+        st.success(f"✅ Documents ready for BIN {datos['bin']}!")
+        
+        st.download_button(
+            label="📦 Download All as ZIP",
+            data=datos["zip_buffer"],
+            file_name=f"FDNY_Forms_{datos['bin']}.zip",
+            mime="application/zip",
+            use_container_width=True,
+            type="primary"
+        )
 
-            st.markdown("<p style='text-align: center; color: #A0AEC0; font-size: 14px; margin: 15px 0;'>Or download individually</p>", unsafe_allow_html=True)
-
-            archivos_lista = list(datos['archivos'].items())
-            for i in range(0, len(archivos_lista), 2):
-                cols = st.columns(2)
-                for j in range(2):
-                    if i + j < len(archivos_lista):
-                        f_name, f_bytes = archivos_lista[i + j]
-                        with cols[j]:
-                            mime_type = "text/plain" if f_name.endswith(".txt") else "application/pdf"
-                            icon = "📊" if f_name.endswith(".txt") else "📄"
-                            short_name = f_name.split('_')[0]
-                            
-                            st.download_button(
-                                label=f"{icon} {short_name}",
-                                data=f_bytes,
-                                file_name=f_name,
-                                mime=mime_type,
-                                use_container_width=True
-                            )
+        archivos_lista = list(datos['archivos'].items())
+        for i in range(0, len(archivos_lista), 2):
+            cols = st.columns(2)
+            for j in range(2):
+                if i + j < len(archivos_lista):
+                    f_name, f_bytes = archivos_lista[i + j]
+                    with cols[j]:
+                        mime_type = "text/plain" if f_name.endswith(".txt") else "application/pdf"
+                        short_name = f_name.split('_')[0]
+                        st.download_button(label=f"📄 {short_name}", data=f_bytes, file_name=f_name, mime=mime_type, use_container_width=True)
 
 st.markdown('</div>', unsafe_allow_html=True)
