@@ -643,6 +643,7 @@ with st.expander("📂 Recent Projects / History", expanded=False):
                         sync_profile_to_main(profile)
                         info = main.obtener_datos_completos(bin_number)
                         
+                        if info:
                             address_full = f"{info.get('house')} {info.get('street')}, {info.get('borough')}"
                             save_project(
                                 st.session_state.user.id, 
@@ -652,7 +653,6 @@ with st.expander("📂 Recent Projects / History", expanded=False):
                                 job_desc
                             )
                         
-                        if info:
                             job_specs = {"job_desc": job_desc, "devices": st.session_state.device_list}
                             full_data = {**info, **job_specs}
                             generated_files = []
