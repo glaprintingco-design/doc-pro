@@ -544,13 +544,12 @@ with st.expander("📂 Recent Projects / History", expanded=False):
     col_info1, col_info2 = st.columns([1, 2])
 
     with col_info1:
-        # Usamos el valor guardado en session_state si existe
-        bin_number = st.text_input(
-            "Property BIN Number", 
-            value=st.session_state.get('bin_input', ''), 
-            placeholder="e.g. 1012345",
-            key="bin_input_widget" # Cambiamos la key para no colisionar
-        )
+    bin_number = st.text_input(
+        "Property BIN Number", 
+        value=st.session_state.get('bin_input', ''), # Cambia esto para que use el valor cargado
+        placeholder="e.g. 1012345",
+        key="bin_input" # Asegúrate de que la KEY sea la misma que usas en el botón Load
+    )
         # Sincronizamos bin_number con el estado global
         st.session_state.bin_input = bin_number
 
