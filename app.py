@@ -517,52 +517,50 @@ with tabs[1]:
 # ------------------------------------------------------------
 with tabs[0]:
     st.markdown("<br>", unsafe_allow_html=True)
-   
-   # --- NUEVA SECCIÓN: HISTORIAL ---
-with st.expander("📂 Recent Projects / History", expanded=False):
-    projects = fetch_projects(st.session_state.user.id)
-    if not projects:
-        st.info("No saved projects yet.")
-    else:
-        for p in projects:
-            col_p1, col_p2, col_p3 = st.columns([3, 1, 1])
-            with col_p1:
-                st.markdown(f"**{p['address']}** (BIN: {p['bin']})")
-            with col_p2:
-                if st.button(f"🔄 Load", key=f"load_{p['id']}", use_container_width=True):
-                    # ESTO ES LA MAGIA: Cargamos los datos en el estado de la sesión
-                    st.session_state.bin_input = p['bin'] # Necesitas asignar 'key' al text_input del BIN
-                    st.session_state.device_list = p['device_list']
-                    st.session_state.job_desc_input = p['job_description']
-                    st.rerun()
-            with col_p3:
-                if st.button(f"🗑️", key=f"del_{p['id']}", use_container_width=True):
-                    delete_project(p['id'])
-# -------------------------------
-    # SECCIÓN 1 (CORREGIDA)
+    
+    # --- NUEVA SECCIÓN: HISTORIAL (Ahora correctamente dentro del tab) ---
+    with st.expander("📂 Recent Projects / History", expanded=False):
+        projects = fetch_projects(st.session_state.user.id)
+        if not projects:
+            st.info("No saved projects yet.")
+        else:
+            for p in projects:
+                col_p1, col_p2, col_p3 = st.columns([3, 1, 1])
+                with col_p1:
+                    st.markdown(f"**{p['address']}** (BIN: {p['bin']})")
+                with col_p2:
+                    if st.button(f"🔄 Load", key=f"load_{p['id']}", use_container_width=True):
+                        st.session_state.bin_input = p['bin']
+                        st.session_state.device_list = p['device_list']
+                        st.session_state.job_desc_input = p['job_description']
+                        st.rerun()
+                with col_p3:
+                    if st.button(f"🗑️", key=f"del_{p['id']}", use_container_width=True):
+                        delete_project(p['id'])
+
+    # SECCIÓN 1 (CORREGIDA CON SANGREÍA CORRECTA)
     st.markdown("<h4 style='color: #2D3748;'>1️⃣ Project Information</h4>", unsafe_allow_html=True)
     col_info1, col_info2 = st.columns([1, 2])
 
     with col_info1:
-    bin_number = st.text_input(
-        "Property BIN Number", 
-        value=st.session_state.get('bin_input', ''), # Cambia esto para que use el valor cargado
-        placeholder="e.g. 1012345",
-        key="bin_input" # Asegúrate de que la KEY sea la misma que usas en el botón Load
-    )
-        # Sincronizamos bin_number con el estado global
+        # Fíjate que bin_number ahora está indentado 4 espacios hacia adentro
+        bin_number = st.text_input(
+            "Property BIN Number", 
+            value=st.session_state.get('bin_input', ''), 
+            placeholder="e.g. 1012345",
+            key="bin_input" 
+        )
         st.session_state.bin_input = bin_number
 
     with col_info2:
+        # Fíjate que job_desc ahora está indentado 4 espacios hacia adentro
         job_desc = st.text_area(
             "TM-1 Job Description", 
             value=st.session_state.get('job_desc_input', "Installation of Fire Alarm System."), 
             height=68,
             key="job_desc_widget"
         )
-        # Sincronizamos job_desc con el estado global
-        st.session_state.job_desc_input = job_desc
-        
+        st.session_state.job_desc_input = job_desc        
     # SECCIÓN 2
     st.markdown("<h4 style='color: #2D3748;'>2️⃣ Device Schedule <span style='font-size:14px; color:#A0AEC0;'>(A-433 Optional)</span></h4>", unsafe_allow_html=True)
     col_dev_left, col_dev_right = st.columns([1, 2])
