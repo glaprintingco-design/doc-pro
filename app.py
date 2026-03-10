@@ -538,29 +538,30 @@ with tabs[0]:
                     if st.button(f"🗑️", key=f"del_{p['id']}", use_container_width=True):
                         delete_project(p['id'])
 
-    # SECCIÓN 1 (CORREGIDA CON SANGREÍA CORRECTA)
+    # SECCIÓN 1 (CORREGIDA - SIN ERRORES DE SESIÓN)
     st.markdown("<h4 style='color: #2D3748;'>1️⃣ Project Information</h4>", unsafe_allow_html=True)
     col_info1, col_info2 = st.columns([1, 2])
 
     with col_info1:
-        # Fíjate que bin_number ahora está indentado 4 espacios hacia adentro
+        # Eliminamos 'st.session_state.bin_input = bin_number'
+        # El widget ya guarda el valor en session_state['bin_input'] por su 'key'
         bin_number = st.text_input(
             "Property BIN Number", 
             value=st.session_state.get('bin_input', ''), 
             placeholder="e.g. 1012345",
             key="bin_input" 
         )
-        st.session_state.bin_input = bin_number
 
     with col_info2:
-        # Fíjate que job_desc ahora está indentado 4 espacios hacia adentro
+        # Eliminamos 'st.session_state.job_desc_input = job_desc'
         job_desc = st.text_area(
             "TM-1 Job Description", 
             value=st.session_state.get('job_desc_input', "Installation of Fire Alarm System."), 
             height=68,
-            key="job_desc_widget"
-        )
-        st.session_state.job_desc_input = job_desc        
+            key="job_desc_input"
+        )        
+    
+    
     # SECCIÓN 2
     st.markdown("<h4 style='color: #2D3748;'>2️⃣ Device Schedule <span style='font-size:14px; color:#A0AEC0;'>(A-433 Optional)</span></h4>", unsafe_allow_html=True)
     col_dev_left, col_dev_right = st.columns([1, 2])
