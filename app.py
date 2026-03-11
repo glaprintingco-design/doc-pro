@@ -39,12 +39,16 @@ h1, h2, h3, h4, h5, h6, p, span, div {
     font-weight: 600 !important;
 }
 
-/* Reducir padding superior para aprovechar la pantalla */
+/* Controlar el ancho de la app y centrar el contenedor principal */
 .block-container {
-    padding-top: 0rem !important;
-    max-width: 100% !important;
-    padding-left: 0rem !important;
-    padding-right: 0rem !important;
+    padding-top: 2rem !important;
+    max-width: 1200px !important; /* Limita el ancho para que no se salga de la pantalla */
+    margin: 0 auto !important; /* Centra el contenido */
+}
+
+/* Ocultar la línea de decoración superior por defecto de Streamlit */
+[data-testid="stDecoration"] {
+    display: none;
 }
 
 /* Contenedor interno para el contenido */
@@ -360,40 +364,23 @@ if not st.session_state.user:
     st.stop()
 
 # ============================================================
-# CABECERA PRINCIPAL DE LA APP (HEADER ELEGANTE A PANTALLA COMPLETA)
+# ENCABEZADO SUPERIOR (LIMPIO)
 # ============================================================
-st.markdown("""
-<div style="background: linear-gradient(135deg, #FF6B00 0%, #E65100 100%); 
-            padding: 2.5rem 0; 
-            margin: -1rem 0 0 0;
-            box-shadow: 0 4px 20px rgba(255, 107, 0, 0.2);">
-    <div style="max-width: 1400px; margin: 0 auto; padding: 0 3rem;">
-""", unsafe_allow_html=True)
+col_logo, col_logout = st.columns([4, 1])
 
-col_h_izq, col_h_der = st.columns([3, 1])
-
-with col_h_izq:
+with col_logo:
     if os.path.exists("logo.png"):
         st.image("logo.png", width=280)
-        st.markdown("<p style='color: rgb(220 30 45); font-size: 15px; margin-top: -90px; margin-bottom: -15px; margin-left: 8px; font-weight: 500; letter-spacing: 0.3px;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
+        # Eslogan en color oscuro
+        st.markdown("<p style='color: #2D3748; font-size: 16px; margin-top: -15px; margin-bottom: 20px; font-weight: 500;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
     else:
-        st.markdown("<h1 style='color: white; margin: 0; font-size: 2.8rem; font-weight: 700; letter-spacing: -0.5px;'>🔥 Fire Form Pro</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='color: rgba(255,255,255,0.95); font-size: 15px; margin: 0; margin-top: 8px; font-weight: 500; letter-spacing: 0.3px;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
+        st.markdown("<h1 style='color: #FF6B00; margin: 0;'>🔥 Fire Form Pro</h1>", unsafe_allow_html=True)
+        # Eslogan en color oscuro
+        st.markdown("<p style='color: #2D3748; font-size: 16px; margin-top: 5px; margin-bottom: 20px; font-weight: 500;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
 
-with col_h_der:
-    st.markdown(f"""
-    <div style='text-align: right; margin-bottom: 12px;'>
-        <div style='background: rgba(255,255,255,0.2); 
-                    backdrop-filter: blur(10px); 
-                    padding: 10px 20px; 
-                    border-radius: 25px; 
-                    display: inline-block;
-                    border: 1px solid rgba(255,255,255,0.3);'>
-            <span style='color: white !important; font-weight: 600; font-size: 14px;'>👤 {st.session_state.user.email}</span>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-    if st.button("🚪 Logout", use_container_width=True, key="logout_btn"):
+with col_logout:
+    st.markdown(f"<div style='text-align: right; margin-bottom: 10px;'><span style='color: #4A5568; font-weight: 600;'>👤 {st.session_state.user.email}</span></div>", unsafe_allow_html=True)
+    if st.button("🚪 Logout", use_container_width=True, type="secondary"):
         logout()
 
 st.markdown("</div></div>", unsafe_allow_html=True)
