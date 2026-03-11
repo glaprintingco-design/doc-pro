@@ -39,38 +39,19 @@ h1, h2, h3, h4, h5, h6, p, span, div {
     font-weight: 600 !important;
 }
 
-/* Ajustar padding y márgenes para mejor visualización en desktop */
+/* Reducir padding superior y ajustar el contenedor base de Streamlit */
 .block-container {
     padding-top: 1rem !important;
-    padding-bottom: 2rem !important;
-    max-width: 1200px !important;
-    padding-left: 2rem !important;
-    padding-right: 2rem !important;
+    padding-bottom: 1rem !important;
+    padding-left: 5% !important;  /* Margen de seguridad lateral */
+    padding-right: 5% !important;
 }
 
-/* Para pantallas muy grandes, limitar aún más el ancho */
-@media (min-width: 1400px) {
-    .block-container {
-        max-width: 1300px !important;
-        padding-left: 3rem !important;
-        padding-right: 3rem !important;
-    }
-}
-
-/* Para tablets y pantallas medianas */
-@media (max-width: 1024px) {
-    .block-container {
-        padding-left: 1.5rem !important;
-        padding-right: 1.5rem !important;
-    }
-}
-
-/* Para móviles */
-@media (max-width: 768px) {
-    .block-container {
-        padding-left: 1rem !important;
-        padding-right: 1rem !important;
-    }
+/* Contenedor interno para el contenido: Bajamos de 1400px a 1100px */
+.main-content {
+    max-width: 1100px; 
+    margin: 0 auto;
+    padding: 0 1rem;
 }
 
 /* Estilo para los botones principales (Naranja) */
@@ -215,257 +196,348 @@ def logout():
     st.session_state.generated_data = None
     st.rerun()
 
-def get_profile(user_id: str):
+def fetch_user_profile(user_id):
     try:
-        res = supabase.table("profiles").select("*").eq("id", user_id).execute()
-        if res.data and len(res.data) > 0:
-            return res.data[0]
-        return None
+        response = supabase.table("profiles").select("*").eq("id", user_id).execute()
+        return response.data[0] if response.data else {}
     except Exception as e:
-        st.error(f"Error loading profile: {e}")
-        return None
+        return {}
 
-def update_profile(user_id: str, data: dict):
+def sync_profile_to_main(profile):
+    main.COMPANY.update({
+        "Company Name": profile.get("company_name", ""),
+        "Address":      profile.get("company_address", ""),
+        "City":         profile.get("company_city", ""),
+        "State":        profile.get("company_state", "NY"),
+        "Zip":          profile.get("company_zip", ""),
+        "Phone":        profile.get("company_phone", ""),
+        "Email":        profile.get("company_email", ""),
+        "First Name":   profile.get("company_first_name", ""),
+        "Last Name":    profile.get("company_last_name", ""),
+        "Reg No":       profile.get("company_reg_no", ""),
+        "COF S97":      profile.get("company_cof_s97", ""),
+        "Expiration":   profile.get("company_expiration", ""),
+    })
+    main.ARCHITECT.update({
+        "Company Name": profile.get("arch_name", ""),
+        "Address":      profile.get("arch_address", ""),
+        "City":         profile.get("arch_city", ""),
+        "State":        profile.get("arch_state", ""),
+        "Zip":          profile.get("arch_zip", ""),
+        "Phone":        profile.get("arch_phone", ""),
+        "Email":        profile.get("arch_email", ""),
+        "First Name":   profile.get("arch_first_name", ""),
+        "Last Name":    profile.get("arch_last_name", ""),
+        "License No":   profile.get("arch_license", ""),
+        "Role":         profile.get("arch_role", "PE"),
+    })
+    main.ELECTRICIAN.update({
+        "Company Name": profile.get("elec_name", ""),
+        "Address":      profile.get("elec_address", ""),
+        "City":         profile.get("elec_city", ""),
+        "State":        profile.get("elec_state", ""),
+        "Zip":          profile.get("elec_zip", ""),
+        "Phone":        profile.get("elec_phone", ""),
+        "Email":        profile.get("elec_email", ""),
+        "First Name":   profile.get("elec_first_name", ""),
+        "Last Name":    profile.get("elec_last_name", ""),
+        "License No":   profile.get("elec_license", ""),
+        "Expiration":   profile.get("elec_expiration", ""),
+    })
+    main.TECH_DEFAULTS.update({
+        "Manufacturer": profile.get("tech_manufacturer", ""),
+        "Approval":     profile.get("tech_approval", ""),
+        "WireGauge":    profile.get("tech_wire_gauge", ""),
+        "WireType":     profile.get("tech_wire_type", ""),
+    })
+    main.CENTRAL_STATION.update({
+        "Company Name": profile.get("cs_name", ""),
+        "CS Code":      profile.get("cs_code", ""),
+        "Address":      profile.get("cs_address", ""),
+        "City":         profile.get("cs_city", ""),
+        "State":        profile.get("cs_state", ""),
+        "Zip":          profile.get("cs_zip", ""),
+        "Phone":        profile.get("cs_phone", ""),
+    })
+
+def save_project(user_id, bin_val, address, devices, job_desc):
+    project_data = {
+        "user_id": user_id,
+        "bin": bin_val,
+        "address": address,
+        "device_list": devices,
+        "job_description": job_desc
+    }
+    # Usamos upsert basado en el BIN y user_id para actualizar si ya existe
     try:
-        supabase.table("profiles").update(data).eq("id", user_id).execute()
-        st.success("✅ Profile updated!")
+        supabase.table("projects").upsert(
+            project_data, on_conflict="user_id, bin" 
+        ).execute()
     except Exception as e:
-        st.error(f"Error updating profile: {e}")
+        st.error(f"Error saving project: {e}")
 
-def create_profile(user_id: str, email: str):
+def fetch_projects(user_id):
     try:
-        supabase.table("profiles").insert({
-            "id": user_id,
-            "email": email,
-            "company": "",
-            "license": "",
-            "principal_name": "",
-            "principal_license": ""
-        }).execute()
-    except Exception:
-        pass
-
-def save_project(user_id: str, bin_number: str, address: str, devices: list, job_desc: str):
-    try:
-        existing = supabase.table("projects")\
-            .select("*")\
-            .eq("user_id", user_id)\
-            .eq("bin_number", bin_number)\
-            .execute()
-        
-        if existing.data and len(existing.data) > 0:
-            supabase.table("projects").update({
-                "address": address,
-                "devices": devices,
-                "job_description": job_desc
-            }).eq("id", existing.data[0]["id"]).execute()
-        else:
-            supabase.table("projects").insert({
-                "user_id": user_id,
-                "bin_number": bin_number,
-                "address": address,
-                "devices": devices,
-                "job_description": job_desc
-            }).execute()
-    except Exception as e:
-        st.warning(f"Could not save project: {e}")
-
-def load_projects(user_id: str):
-    try:
-        res = supabase.table("projects")\
-            .select("*")\
-            .eq("user_id", user_id)\
-            .order("created_at", desc=True)\
-            .execute()
-        return res.data if res.data else []
-    except Exception:
+        res = supabase.table("projects").select("*").eq("user_id", user_id).order("created_at", desc=True).execute()
+        return res.data
+    except:
         return []
 
-def delete_project(project_id: int):
+def delete_project(project_id):
     try:
         supabase.table("projects").delete().eq("id", project_id).execute()
-        st.success("🗑️ Project deleted")
         st.rerun()
-    except Exception as e:
-        st.error(f"Error: {e}")
+    except:
+        pass
 
-def load_project_data(project_id: int):
-    try:
-        res = supabase.table("projects").select("*").eq("id", project_id).execute()
-        if res.data and len(res.data) > 0:
-            p = res.data[0]
-            st.session_state.bin_input = p.get("bin_number", "")
-            st.session_state.job_desc_input = p.get("job_description", "")
-            st.session_state.device_list = p.get("devices", [])
-            st.success(f"✅ Loaded: {p.get('address', '')}")
-    except Exception as e:
-        st.error(f"Error: {e}")
-
-def sync_profile_to_main(profile: dict):
-    if profile:
-        main.NOMBRE_COMPANIA = profile.get("company", "")
-        main.NUMERO_LICENCIA = profile.get("license", "")
-        main.NOMBRE_RESPONSABLE = profile.get("principal_name", "")
-        main.NUMERO_LICENCIA_RESPONSABLE = profile.get("principal_license", "")
 
 # ============================================================
-# HEADER CON DEGRADADO DE FUEGO 🔥
+# PANTALLA DE LOGIN (TARJETA MODERNA)
 # ============================================================
-header_gradient = """
-<div style='
-    background: linear-gradient(135deg, #FF6B00 0%, #FF4500 50%, #E65100 100%);
-    padding: 2rem 3rem;
-    border-radius: 0 0 20px 20px;
-    box-shadow: 0 6px 20px rgba(255,107,0,0.25);
-    margin-bottom: 2rem;
-'>
-    <div style='display: flex; justify-content: space-between; align-items: center;'>
-        <div>
-            <h1 style='color: white; margin: 0; font-weight: 700; font-size: 2rem;'>
-                🔥 Fire Form Pro
-            </h1>
-            <p style='color: rgba(255,255,255,0.9); margin: 0.3rem 0 0 0; font-size: 1rem;'>
-                Automated FDNY Document Generator
-            </p>
-        </div>
-    </div>
-</div>
-"""
-st.markdown(header_gradient, unsafe_allow_html=True)
-
-# ============================================================
-# LÓGICA DE AUTENTICACIÓN
-# ============================================================
-if not st.session_state.user:
-    st.markdown("""
-    <div style='max-width: 480px; margin: 3rem auto; background: white; padding: 3rem; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.08);'>
-        <h2 style='text-align: center; margin-bottom: 2rem; color: #2D3748;'>Welcome Back! 👋</h2>
-    """, unsafe_allow_html=True)
-    
-    tab1, tab2 = st.tabs(["🔑 Sign In", "🆕 Sign Up"])
-    
-    with tab1:
-        with st.form("login_form"):
-            email = st.text_input("Email", placeholder="you@company.com", key="login_email")
-            password = st.text_input("Password", type="password", placeholder="••••••••", key="login_pass")
-            submit = st.form_submit_button("Sign In", use_container_width=True, type="primary")
+def login_ui_centered():
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        # Tarjeta blanca central
+        st.markdown("""
+        """, unsafe_allow_html=True)
+        
+        if os.path.exists("logo.png"):
+            st.image("logo.png", width=250)
+            st.markdown("<p style='color: #718096 !important; font-size: 15px; margin-top: -90px; margin-bottom: 2rem;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
+        else:
+            st.markdown("<h1 style='color: #FF6B00; margin-bottom: 0;'>🔥 Fire Form Pro</h1>", unsafe_allow_html=True)
+            st.markdown("<p style='color: #718096; font-size: 15px; margin-bottom: 2rem;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
             
-            if submit:
+        tab1, tab2 = st.tabs(["🔑 Sign In", "📝 Create Account"])
+        
+        with tab1:
+            st.markdown("<br>", unsafe_allow_html=True)
+            email = st.text_input("Email Address", key="login_email", placeholder="you@company.com")
+            password = st.text_input("Password", type="password", key="login_password", placeholder="••••••••")
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            if st.button("Sign In →", use_container_width=True, type="primary"):
                 if not email or not password:
-                    st.error("⚠️ Please fill in all fields")
+                    st.error("Please enter both email and password")
                 else:
-                    try:
-                        response = supabase.auth.sign_in_with_password({
-                            "email": email,
-                            "password": password
-                        })
-                        if response.user:
-                            st.session_state.user = response.user
-                            st.success("✅ Login successful!")
-                            st.rerun()
-                        else:
-                            st.error("❌ Invalid credentials")
-                    except Exception as e:
-                        st.error(f"❌ Login failed: {e}")
-
-    with tab2:
-        with st.form("signup_form"):
-            new_email = st.text_input("Email", placeholder="you@company.com", key="signup_email")
-            new_password = st.text_input("Password", type="password", placeholder="••••••••", key="signup_pass")
-            confirm_password = st.text_input("Confirm Password", type="password", placeholder="••••••••", key="confirm_pass")
-            submit_signup = st.form_submit_button("Create Account", use_container_width=True, type="primary")
+                    with st.spinner("Authenticating..."):
+                        try:
+                            response = supabase.auth.sign_in_with_password({"email": email.strip(), "password": password})
+                            if response.user:
+                                st.session_state.user = response.user
+                                st.rerun()
+                        except Exception as e:
+                            st.error("⚠️ Invalid email or password.")
+        
+        with tab2:
+            st.markdown("<br>", unsafe_allow_html=True)
+            email = st.text_input("Email Address", key="signup_email", placeholder="you@company.com")
+            password = st.text_input("Password", type="password", key="signup_password", placeholder="Min. 6 characters")
+            password_confirm = st.text_input("Confirm Password", type="password", key="signup_password_confirm", placeholder="Repeat password")
+            st.markdown("<br>", unsafe_allow_html=True)
             
-            if submit_signup:
-                if not new_email or not new_password or not confirm_password:
-                    st.error("⚠️ Please fill in all fields")
-                elif new_password != confirm_password:
-                    st.error("⚠️ Passwords do not match")
-                elif len(new_password) < 6:
-                    st.error("⚠️ Password must be at least 6 characters")
+            if st.button("Create Account →", use_container_width=True, type="primary"):
+                if password != password_confirm:
+                    st.error("❌ Passwords do not match.")
+                elif len(password) < 6:
+                    st.error("Password must be at least 6 characters.")
                 else:
-                    try:
-                        response = supabase.auth.sign_up({
-                            "email": new_email,
-                            "password": new_password
-                        })
-                        if response.user:
-                            create_profile(response.user.id, new_email)
-                            st.success("✅ Account created! You can now sign in.")
-                        else:
-                            st.error("❌ Registration failed")
-                    except Exception as e:
-                        st.error(f"❌ Registration error: {e}")
+                    with st.spinner("Creating account..."):
+                        try:
+                            response = supabase.auth.sign_up({"email": email.strip(), "password": password})
+                            if response.user:
+                                st.success("✅ Account created! Please check your email.")
+                                try:
+                                    supabase.table("profiles").insert({"id": response.user.id, "email": email}).execute()
+                                except Exception: pass
+                        except Exception as e:
+                            st.error(f"❌ Error: {str(e)}")
 
-    st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+if not st.session_state.user:
+    login_ui_centered()
     st.stop()
 
 # ============================================================
-# APLICACIÓN PRINCIPAL (USUARIO AUTENTICADO)
+# CABECERA PRINCIPAL DE LA APP (HEADER ELEGANTE A PANTALLA COMPLETA)
 # ============================================================
-col_header, col_logout = st.columns([5, 1])
-with col_logout:
-    if st.button("🚪 Logout", key="logout_btn", use_container_width=True):
+st.markdown("""
+<div style="background: linear-gradient(135deg, #FF6B00 0%, #E65100 100%); 
+            padding: 2rem 0; 
+            margin: -1rem 0 0 0;
+            box-shadow: 0 4px 20px rgba(255, 107, 0, 0.2);">
+    <div style="max-width: 1100px; margin: 0 auto; padding: 0 2rem;">  """, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
+
+col_h_izq, col_h_der = st.columns([3, 1])
+
+with col_h_izq:
+    if os.path.exists("logo.png"):
+        st.image("logo.png", width=280)
+        st.markdown("<p style='color: rgb(220 30 45); font-size: 15px; margin-top: -90px; margin-bottom: -15px; margin-left: 8px; font-weight: 500; letter-spacing: 0.3px;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
+    else:
+        st.markdown("<h1 style='color: white; margin: 0; font-size: 2.8rem; font-weight: 700; letter-spacing: -0.5px;'>🔥 Fire Form Pro</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='color: rgba(255,255,255,0.95); font-size: 15px; margin: 0; margin-top: 8px; font-weight: 500; letter-spacing: 0.3px;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
+
+with col_h_der:
+    st.markdown(f"""
+    <div style='text-align: right; margin-bottom: 12px;'>
+        <div style='background: rgba(255,255,255,0.2); 
+                    backdrop-filter: blur(10px); 
+                    padding: 10px 20px; 
+                    border-radius: 25px; 
+                    display: inline-block;
+                    border: 1px solid rgba(255,255,255,0.3);'>
+            <span style='color: white !important; font-weight: 600; font-size: 14px;'>👤 {st.session_state.user.email}</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    if st.button("🚪 Logout", use_container_width=True, key="logout_btn"):
         logout()
 
-st.markdown("<br>", unsafe_allow_html=True)
+st.markdown("</div></div>", unsafe_allow_html=True)
 
-profile = get_profile(st.session_state.user.id)
-if not profile:
-    create_profile(st.session_state.user.id, st.session_state.user.email)
-    profile = get_profile(st.session_state.user.id)
+# Contenedor para el contenido principal
+st.markdown('<div class="main-content">', unsafe_allow_html=True)
 
-# Tabs principales
-tab_main, tab_settings, tab_projects = st.tabs(["📋 Form Generator", "⚙️ Settings", "📁 My Projects"])
+# ============================================================
+# APP PRINCIPAL (PESTAÑAS)
+# ============================================================
+profile = fetch_user_profile(st.session_state.user.id)
+tabs = st.tabs(["🏗️ Project Builder", "👤 Profile Settings"])
 
-# TAB: SETTINGS
-with tab_settings:
-    st.markdown("<h3 style='color: #2D3748;'>👤 Company Profile</h3>", unsafe_allow_html=True)
-    st.markdown("<p style='color: #718096;'>This info will auto-fill in your FDNY forms.</p>", unsafe_allow_html=True)
+# ------------------------------------------------------------
+# TAB 1: PROFILE SETTINGS
+# ------------------------------------------------------------
+with tabs[1]:
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.info("💾 Data saved here is stored securely in the cloud and auto-fills your FDNY forms on every project.")
+
+    with st.expander("🏢 FA Company / Expeditor Information", expanded=True):
+        col1, col2 = st.columns(2)
+        with col1:
+            c_name  = st.text_input("Company Name",  value=profile.get("company_name", ""),       key="c_name")
+            c_addr  = st.text_input("Address",        value=profile.get("company_address", ""),    key="c_addr")
+            c_city  = st.text_input("City",           value=profile.get("company_city", ""),       key="c_city")
+            c_state = st.text_input("State",          value=profile.get("company_state", "NY"),      key="c_state")
+            c_zip   = st.text_input("Zip Code",       value=profile.get("company_zip", ""),        key="c_zip")
+            c_phone = st.text_input("Phone",          value=profile.get("company_phone", ""),      key="c_phone")
+        with col2:
+            c_email = st.text_input("Email",          value=profile.get("company_email", ""),      key="c_email")
+            c_first = st.text_input("First Name",     value=profile.get("company_first_name", ""), key="c_first")
+            c_last  = st.text_input("Last Name",      value=profile.get("company_last_name", ""),  key="c_last")
+            c_reg   = st.text_input("Reg No",         value=profile.get("company_reg_no", ""),     key="c_reg")
+            c_cof   = st.text_input("COF S97",        value=profile.get("company_cof_s97", ""),    key="c_cof")
+            c_exp   = st.text_input("Exp. Date",      value=profile.get("company_expiration", ""), key="c_exp")
+
+    with st.expander("📐 Architect / Engineer Information"):
+        col1, col2 = st.columns(2)
+        with col1:
+            a_name    = st.text_input("Company Name",   value=profile.get("arch_name", ""),        key="a_name")
+            a_addr    = st.text_input("Address",         value=profile.get("arch_address", ""),     key="a_addr")
+            a_city    = st.text_input("City",            value=profile.get("arch_city", ""),        key="a_city")
+            a_state   = st.text_input("State",           value=profile.get("arch_state", ""),       key="a_state")
+            a_zip     = st.text_input("Zip Code",        value=profile.get("arch_zip", ""),         key="a_zip")
+            a_phone   = st.text_input("Phone",           value=profile.get("arch_phone", ""),       key="a_phone")
+        with col2:
+            a_email   = st.text_input("Email",           value=profile.get("arch_email", ""),       key="a_email")
+            a_first   = st.text_input("First Name",      value=profile.get("arch_first_name", ""),  key="a_first")
+            a_last    = st.text_input("Last Name",       value=profile.get("arch_last_name", ""),   key="a_last")
+            a_license = st.text_input("License No",      value=profile.get("arch_license", ""),     key="a_license")
+            a_role    = st.selectbox("Role", ["PE", "RA"], index=0 if profile.get("arch_role") == "PE" else 1, key="a_role")
+
+    with st.expander("⚡ Electrical Contractor Information"):
+        col1, col2 = st.columns(2)
+        with col1:
+            e_name    = st.text_input("Company Name",   value=profile.get("elec_name", ""),        key="e_name")
+            e_addr    = st.text_input("Address",         value=profile.get("elec_address", ""),     key="e_addr")
+            e_city    = st.text_input("City",            value=profile.get("elec_city", ""),        key="e_city")
+            e_state   = st.text_input("State",           value=profile.get("elec_state", ""),       key="e_state")
+            e_zip     = st.text_input("Zip Code",        value=profile.get("elec_zip", ""),         key="e_zip")
+            e_phone   = st.text_input("Phone",           value=profile.get("elec_phone", ""),       key="e_phone")
+        with col2:
+            e_email   = st.text_input("Email",           value=profile.get("elec_email", ""),       key="e_email")
+            e_first   = st.text_input("First Name",      value=profile.get("elec_first_name", ""),  key="e_first")
+            e_last    = st.text_input("Last Name",       value=profile.get("elec_last_name", ""),   key="e_last")
+            e_license = st.text_input("License No",      value=profile.get("elec_license", ""),     key="e_license")
+            e_exp     = st.text_input("Expiration",      value=profile.get("elec_expiration", ""),  key="e_exp")
+
+    col1, col2 = st.columns(2)
+    with col1:
+        with st.expander("🛠️ A-433 Defaults"):
+            t_man   = st.text_input("Default Manufacturer",  value=profile.get("tech_manufacturer", ""), key="t_man")
+            t_appr  = st.text_input("BSA/MEA/COA Approval",  value=profile.get("tech_approval", ""),     key="t_appr")
+            t_gauge = st.text_input("Wire Gauge",            value=profile.get("tech_wire_gauge", ""),   key="t_gauge")
+            t_wire  = st.text_input("Wire Type",             value=profile.get("tech_wire_type", ""),    key="t_wire")
+    with col2:
+        with st.expander("📡 Central Station Information"):
+            cs_name  = st.text_input("CS Name",    value=profile.get("cs_name", ""),    key="cs_name")
+            cs_code  = st.text_input("CS Code",    value=profile.get("cs_code", ""),    key="cs_code")
+            cs_addr  = st.text_input("CS Address", value=profile.get("cs_address", ""), key="cs_addr")
+            cs_city  = st.text_input("CS City",    value=profile.get("cs_city", ""),    key="cs_city")
+            cs_state = st.text_input("CS State",   value=profile.get("cs_state", ""),   key="cs_state")
+            cs_zip   = st.text_input("CS Zip",     value=profile.get("cs_zip", ""),     key="cs_zip")
+            cs_phone = st.text_input("CS Phone",   value=profile.get("cs_phone", ""),   key="cs_phone")
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    col_save1, col_save2, col_save3 = st.columns([1, 1, 1])
+    with col_save2:
+        if st.button("💾 Save Profile", use_container_width=True, type="primary"):
+            full_update = {
+                "id": st.session_state.user.id,
+                "updated_at": "now()",
+                "company_name": c_name, "company_address": c_addr, "company_city": c_city,
+                "company_state": c_state, "company_zip": c_zip, "company_phone": c_phone,
+                "company_email": c_email, "company_first_name": c_first, "company_last_name": c_last,
+                "company_reg_no": c_reg, "company_cof_s97": c_cof, "company_expiration": c_exp,
+                "arch_name": a_name, "arch_address": a_addr, "arch_city": a_city,
+                "arch_state": a_state, "arch_zip": a_zip, "arch_phone": a_phone,
+                "arch_email": a_email, "arch_first_name": a_first, "arch_last_name": a_last,
+                "arch_license": a_license, "arch_role": a_role,
+                "elec_name": e_name, "elec_address": e_addr, "elec_city": e_city,
+                "elec_state": e_state, "elec_zip": e_zip, "elec_phone": e_phone,
+                "elec_email": e_email, "elec_first_name": e_first, "elec_last_name": e_last,
+                "elec_license": e_license, "elec_expiration": e_exp,
+                "tech_manufacturer": t_man, "tech_approval": t_appr,
+                "tech_wire_gauge": t_gauge, "tech_wire_type": t_wire,
+                "cs_name": cs_name, "cs_code": cs_code, "cs_address": cs_addr,
+                "cs_city": cs_city, "cs_state": cs_state, "cs_zip": cs_zip, "cs_phone": cs_phone,
+            }
+            try:
+                supabase.table("profiles").upsert(full_update).execute()
+                profile.update(full_update)
+                sync_profile_to_main(profile)
+                st.success("✅ Profile saved successfully!")
+            except Exception as e:
+                st.error(f"Error saving: {e}")
+
+# ------------------------------------------------------------
+# TAB 0: PROJECT BUILDER
+# ------------------------------------------------------------
+with tabs[0]:
+    st.markdown("<br>", unsafe_allow_html=True)
     
-    with st.form("profile_form"):
-        company_input = st.text_input("Company Name", value=profile.get("company", ""))
-        license_input = st.text_input("Installer License Number", value=profile.get("license", ""))
-        principal_name_input = st.text_input("Principal Fire Alarm Contractor Name", value=profile.get("principal_name", ""))
-        principal_license_input = st.text_input("Principal License Number", value=profile.get("principal_license", ""))
-        
-        submitted = st.form_submit_button("💾 Save Profile", type="primary", use_container_width=True)
-        if submitted:
-            update_profile(st.session_state.user.id, {
-                "company": company_input,
-                "license": license_input,
-                "principal_name": principal_name_input,
-                "principal_license": principal_license_input
-            })
-
-# TAB: PROJECTS
-with tab_projects:
-    st.markdown("<h3 style='color: #2D3748;'>📂 Saved Projects</h3>", unsafe_allow_html=True)
-    projects = load_projects(st.session_state.user.id)
-    
-    if not projects:
-        st.markdown("""
-        <div style='background-color: white; border: 1px dashed #CBD5E0; border-radius: 12px; padding: 3rem; text-align: center; color: #A0AEC0; margin-top: 2rem;'>
-            <h3 style='color: #A0AEC0; margin-bottom: 0.5rem;'>📁</h3>
-            <p style='margin: 0;'>No saved projects yet</p>
-        </div>
-        """, unsafe_allow_html=True)
-    else:
-        for p in projects:
-            with st.expander(f"🏢 {p.get('address', 'N/A')} — BIN: {p.get('bin_number', 'N/A')}"):
-                st.markdown(f"**Job Description:** {p.get('job_description', 'N/A')}")
-                st.markdown(f"**Devices:** {len(p.get('devices', []))} items")
-                
-                col_p1, col_p2, col_p3 = st.columns([2, 2, 1])
+    # --- NUEVA SECCIÓN: HISTORIAL (Ahora correctamente dentro del tab) ---
+    with st.expander("📂 Recent Projects / History", expanded=False):
+        projects = fetch_projects(st.session_state.user.id)
+        if not projects:
+            st.info("No saved projects yet.")
+        else:
+            for p in projects:
+                col_p1, col_p2, col_p3 = st.columns([3, 1, 1])
                 with col_p1:
-                    if st.button(f"📥 Load Project", key=f"load_{p['id']}", use_container_width=True, type="secondary"):
-                        load_project_data(p['id'])
+                    st.markdown(f"**{p['address']}** (BIN: {p['bin']})")
+                with col_p2:
+                    if st.button(f"🔄 Load", key=f"load_{p['id']}", use_container_width=True):
+                        st.session_state.bin_input = p['bin']
+                        st.session_state.device_list = p['device_list']
+                        st.session_state.job_desc_input = p['job_description']
                         st.rerun()
                 with col_p3:
                     if st.button(f"🗑️", key=f"del_{p['id']}", use_container_width=True):
                         delete_project(p['id'])
 
-# TAB: MAIN GENERATOR
-with tab_main:
     # SECCIÓN 1 (CORREGIDA - SIN ERRORES DE SESIÓN)
     st.markdown("<h4 style='color: #2D3748;'>1️⃣ Project Information</h4>", unsafe_allow_html=True)
     col_info1, col_info2 = st.columns([1, 2])
@@ -654,3 +726,5 @@ with tab_main:
                                 mime=mime_type,
                                 use_container_width=True
                             )
+
+st.markdown('</div>', unsafe_allow_html=True)
