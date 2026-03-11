@@ -41,9 +41,14 @@ h1, h2, h3, h4, h5, h6, p, span, div {
 
 /* Controlar el ancho de la app y centrar el contenedor principal */
 .block-container {
-    padding-top: 2rem !important;
-    max-width: 1200px !important; /* Limita el ancho para que no se salga de la pantalla */
-    margin: 0 auto !important; /* Centra el contenido */
+    padding-top: 1rem !important; /* Lo bajamos a 1rem o 0.5rem para quitar espacio arriba */
+    max-width: 1200px !important; 
+    margin: 0 auto !important; 
+}
+
+/* Jalar las pestañas (Tabs) hacia arriba para reducir el hueco blanco */
+div[data-testid="stTabs"] {
+    margin-top: -30px !important; /* Ajusta este número si quieres que suba más o menos */
 }
 
 /* Ocultar la línea de decoración superior por defecto de Streamlit */
@@ -380,20 +385,19 @@ if not st.session_state.user:
 # ============================================================
 # ENCABEZADO SUPERIOR (LIMPIO)
 # ============================================================
-col_logo, col_logout = st.columns([4, 1])
+col_logo, col_logout = st.columns([3, 1])
 
 with col_logo:
     if os.path.exists("logo.png"):
         st.image("logo.png", width=280)
-        # Eslogan en color oscuro
+        # Eslogan principal (cuando hay logo)
         st.markdown("<p style='color: #2D3748; font-size: 16px; margin-top: -90px; margin-bottom: 20px; font-weight: 500;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
     else:
-        st.markdown("<h1 style='color: #FF6B00; margin: 0;'>🔥 Fire Form Pro</h1>", unsafe_allow_html=True)
-        # Eslogan en color oscuro
+        # PLAN DE RESPALDO (si no encuentra el logo, SOLO muestra el eslogan, ya no el título)
         st.markdown("<p style='color: #2D3748; font-size: 16px; margin-top: 5px; margin-bottom: 20px; font-weight: 500;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
 
 with col_logout:
-    st.markdown(f"<div style='text-align: right; margin-bottom: 10px;'><span style='color: #4A5568; font-weight: 600;'>👤 {st.session_state.user.email}</span></div>", unsafe_allow_html=True)
+    st.markdown(f"<div style='text-align: right; margin-top: 25px; margin-bottom: 10px;'><span style='color: #4A5568; font-weight: 600;'>👤 {st.session_state.user.email}</span></div>", unsafe_allow_html=True)
     if st.button("🚪 Logout", use_container_width=True, type="secondary"):
         logout()
 
