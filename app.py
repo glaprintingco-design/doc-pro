@@ -15,20 +15,18 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Estilo CSS Moderno (Márgenes ajustados a 1100px)
+# Estilo CSS Moderno (Compacto a 1100px)
 modern_styles = """
 <style>
-/* Ocultar elementos por defecto de Streamlit */
+/* Ocultar elementos por defecto */
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
 header {visibility: hidden;}
 
-/* Fondo general */
 .stApp {
     background-color: #F4F7F9;
 }
 
-/* Forzar colores de texto */
 h1, h2, h3, h4, h5, h6, p, span, div {
     color: #2D3748;
 }
@@ -39,7 +37,7 @@ h1, h2, h3, h4, h5, h6, p, span, div {
     font-weight: 600 !important;
 }
 
-/* Reducir padding superior y ajustar el contenedor base */
+/* Ajuste de márgenes centrado */
 .block-container {
     padding-top: 1rem !important;
     padding-bottom: 1rem !important;
@@ -47,14 +45,13 @@ h1, h2, h3, h4, h5, h6, p, span, div {
     padding-right: 5% !important;
 }
 
-/* Contenedor interno para el contenido: Compactado a 1100px */
 .main-content {
     max-width: 1100px; 
     margin: 0 auto;
     padding: 0 1rem;
 }
 
-/* Botones principales */
+/* Botones principales (Naranja) */
 .stButton > button[kind="primary"], .stDownloadButton > button {
     background: linear-gradient(135deg, #FF6B00 0%, #E65100 100%) !important;
     color: white !important;
@@ -69,24 +66,25 @@ h1, h2, h3, h4, h5, h6, p, span, div {
 .stButton > button[kind="primary"]:hover, .stDownloadButton > button:hover {
     box-shadow: 0 6px 15px rgba(255, 107, 0, 0.4) !important;
     transform: translateY(-2px) !important;
-    color: white !important;
 }
 
-/* Botón Logout */
+/* Botón Logout (Transparente en Header) */
 .stButton > button[key="logout_btn"] {
-    background: rgba(255,255,255,0.25) !important;
+    background: rgba(255,255,255,0.2) !important;
     backdrop-filter: blur(10px) !important;
     border: 1px solid rgba(255,255,255,0.4) !important;
     color: white !important;
     border-radius: 8px !important;
 }
 
-/* Tarjetas */
+.stButton > button[key="logout_btn"]:hover {
+    background: rgba(255,255,255,0.3) !important;
+}
+
 [data-testid="stExpander"], [data-testid="stDataEditor"] {
     background-color: white !important;
     border-radius: 12px !important;
     border: 1px solid #E2E8F0 !important;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.02) !important;
 }
 
 .stTabs [data-baseweb="tab"] {
@@ -246,11 +244,11 @@ def login_ui_centered():
     with col2:
         if os.path.exists("logo.png"):
             st.image("logo.png", width=250)
+            st.markdown("<p style='color: #718096 !important; font-size: 14px; margin-top: -80px; margin-bottom: 2rem;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
         else:
-            st.markdown("<h1 style='color: #FF6B00; text-align: center;'>🔥 Fire Form Pro</h1>", unsafe_allow_html=True)
-            
-        tab1, tab2 = st.tabs(["🔑 Sign In", "📝 Create Account"])
+            st.markdown("<h1 style='color: #FF6B00; margin-bottom: 0;'>🔥 Fire Form Pro</h1>", unsafe_allow_html=True)
         
+        tab1, tab2 = st.tabs(["🔑 Sign In", "📝 Create Account"])
         with tab1:
             email = st.text_input("Email", key="login_email")
             password = st.text_input("Password", type="password", key="login_password")
@@ -261,52 +259,58 @@ def login_ui_centered():
                         st.session_state.user = response.user
                         st.rerun()
                 except Exception:
-                    st.error("⚠️ Invalid email or password.")
-        
-        with tab2:
-            new_email = st.text_input("Email", key="signup_email")
-            new_pass = st.text_input("Password", type="password", key="signup_password")
-            if st.button("Create Account →", use_container_width=True, type="primary"):
-                try:
-                    res = supabase.auth.sign_up({"email": new_email.strip(), "password": new_pass})
-                    if res.user:
-                        st.success("✅ Check your email to confirm.")
-                        supabase.table("profiles").insert({"id": res.user.id, "email": new_email}).execute()
-                except Exception as e:
-                    st.error(f"Error: {e}")
+                    st.error("⚠️ Invalid credentials.")
 
 if not st.session_state.user:
     login_ui_centered()
     st.stop()
 
 # ============================================================
-# CABECERA PRINCIPAL (HEADER)
+# CABECERA PRINCIPAL (RESTABLECIDA CON LOGO Y ESLOGAN)
 # ============================================================
-st.markdown(f"""
+st.markdown("""
 <div style="background: linear-gradient(135deg, #FF6B00 0%, #E65100 100%); 
-            padding: 2rem 0; 
+            padding: 2.5rem 0; 
             margin: -1rem 0 1.5rem 0;
             box-shadow: 0 4px 20px rgba(255, 107, 0, 0.2);">
     <div style="max-width: 1100px; margin: 0 auto; padding: 0 2rem;">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h1 style="color: white; margin: 0; font-size: 2.2rem;">🔥 Fire Form Pro</h1>
-            <div style="text-align: right;">
-                <span style="color: white; font-weight: 600; display: block;">👤 {st.session_state.user.email}</span>
-            </div>
-        </div>
-    </div>
-</div>
 """, unsafe_allow_html=True)
 
-# Botón Logout (Streamlit no permite botones dentro de f-strings HTML fácilmente)
-col_logout_1, col_logout_2 = st.columns([5, 1])
-with col_logout_2:
+col_h_izq, col_h_der = st.columns([3, 1])
+
+with col_h_izq:
+    if os.path.exists("logo.png"):
+        st.image("logo.png", width=280)
+        # Eslogan debajo del logo con margen negativo para alinearlo como antes
+        st.markdown("<p style='color: white; font-size: 14px; margin-top: -90px; margin-bottom: -15px; margin-left: 8px; font-weight: 500; letter-spacing: 0.3px;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
+    else:
+        st.markdown("<h1 style='color: white; margin: 0; font-size: 2.6rem; font-weight: 700;'>🔥 Fire Form Pro</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='color: rgba(255,255,255,0.9); font-size: 14px; margin-top: 8px;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
+
+with col_h_der:
+    st.markdown(f"""
+    <div style='text-align: right; margin-bottom: 12px;'>
+        <div style='background: rgba(255,255,255,0.2); 
+                    backdrop-filter: blur(10px); 
+                    padding: 10px 20px; 
+                    border-radius: 25px; 
+                    display: inline-block;
+                    border: 1px solid rgba(255,255,255,0.3);'>
+            <span style='color: white !important; font-weight: 600; font-size: 14px;'>👤 {st.session_state.user.email}</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
     if st.button("🚪 Logout", key="logout_btn", use_container_width=True):
         logout()
+
+st.markdown("</div></div>", unsafe_allow_html=True)
 
 # Contenedor para el contenido principal
 st.markdown('<div class="main-content">', unsafe_allow_html=True)
 
+# ============================================================
+# APP PRINCIPAL (PESTAÑAS)
+# ============================================================
 profile = fetch_user_profile(st.session_state.user.id)
 tabs = st.tabs(["🏗️ Project Builder", "👤 Profile Settings"])
 
@@ -315,7 +319,7 @@ tabs = st.tabs(["🏗️ Project Builder", "👤 Profile Settings"])
 # ------------------------------------------------------------
 with tabs[1]:
     st.markdown("<br>", unsafe_allow_html=True)
-    st.info("💾 Data saved here auto-fills your FDNY forms on every project.")
+    st.info("💾 Data saved here is stored securely in the cloud and auto-fills your FDNY forms on every project.")
 
     with st.expander("🏢 FA Company / Expeditor Information", expanded=True):
         col1, col2 = st.columns(2)
@@ -364,15 +368,15 @@ with tabs[1]:
             e_license = st.text_input("License No",      value=profile.get("elec_license", ""),     key="e_license")
             e_exp     = st.text_input("Expiration",      value=profile.get("elec_expiration", ""),  key="e_exp")
 
-    col_def1, col_def2 = st.columns(2)
-    with col_def1:
+    col_cs1, col_cs2 = st.columns(2)
+    with col_cs1:
         with st.expander("🛠️ A-433 Defaults"):
             t_man   = st.text_input("Manufacturer",  value=profile.get("tech_manufacturer", ""), key="t_man")
             t_appr  = st.text_input("Approval",      value=profile.get("tech_approval", ""),     key="t_appr")
             t_gauge = st.text_input("Wire Gauge",    value=profile.get("tech_wire_gauge", ""),   key="t_gauge")
             t_wire  = st.text_input("Wire Type",     value=profile.get("tech_wire_type", ""),    key="t_wire")
-    with col_def2:
-        with st.expander("📡 Central Station"):
+    with col_cs2:
+        with st.expander("📡 Central Station Information"):
             cs_name  = st.text_input("CS Name",     value=profile.get("cs_name", ""),    key="cs_name")
             cs_code  = st.text_input("CS Code",     value=profile.get("cs_code", ""),    key="cs_code")
             cs_addr  = st.text_input("CS Address",  value=profile.get("cs_address", ""), key="cs_addr")
@@ -387,8 +391,8 @@ with tabs[1]:
             "company_email": c_email, "company_first_name": c_first, "company_last_name": c_last,
             "company_reg_no": c_reg, "company_cof_s97": c_cof, "company_expiration": c_exp,
             "arch_name": a_name, "arch_address": a_addr, "arch_city": a_city,
-            "arch_state": a_state, "arch_zip": a_zip, "arch_email": a_email, 
-            "arch_first_name": a_first, "arch_last_name": a_last, "arch_license": a_license, "arch_role": a_role,
+            "arch_state": a_state, "arch_zip": a_zip, "arch_email": a_email, "arch_first_name": a_first, 
+            "arch_last_name": a_last, "arch_license": a_license, "arch_role": a_role,
             "elec_name": e_name, "elec_address": e_addr, "elec_city": e_city, "elec_state": e_state, "elec_zip": e_zip,
             "elec_email": e_email, "elec_first_name": e_first, "elec_last_name": e_last, "elec_license": e_license, "elec_expiration": e_exp,
             "tech_manufacturer": t_man, "tech_approval": t_appr, "tech_wire_gauge": t_gauge, "tech_wire_type": t_wire,
@@ -429,26 +433,26 @@ with tabs[0]:
     st.markdown("<h4>1️⃣ Project Information</h4>", unsafe_allow_html=True)
     col_info1, col_info2 = st.columns([1, 2])
     with col_info1:
-        bin_number = st.text_input("Property BIN Number", value=st.session_state.get('bin_input', ''), key="bin_input")
+        bin_num = st.text_input("Property BIN Number", value=st.session_state.get('bin_input', ''), key="bin_input")
     with col_info2:
-        job_description = st.text_area("Job Description", value=st.session_state.get('job_desc_input', "Installation of Fire Alarm System."), key="job_desc_input", height=68)
+        job_desc = st.text_area("Job Description", value=st.session_state.get('job_desc_input', "Installation of Fire Alarm System."), key="job_desc_input", height=68)
 
     st.markdown("<h4>2️⃣ Device Schedule</h4>", unsafe_allow_html=True)
     col_dev_left, col_dev_right = st.columns([1, 2])
     with col_dev_left:
-        floor = st.selectbox("Floor", main.FULL_FLOOR_LIST)
-        category = st.selectbox("Category", list(main.MASTER_DEVICE_LIST.keys()))
-        device = st.selectbox("Device", main.MASTER_DEVICE_LIST.get(category, []))
-        qty = st.number_input("Qty", min_value=1, value=1)
-        if st.button("➕ Add Device", use_container_width=True, type="secondary"):
-            st.session_state.device_list.append({"device": device, "floor": floor, "qty": qty})
+        f_loc = st.selectbox("Floor", main.FULL_FLOOR_LIST)
+        f_cat = st.selectbox("Category", list(main.MASTER_DEVICE_LIST.keys()))
+        f_dev = st.selectbox("Device", main.MASTER_DEVICE_LIST.get(f_cat, []))
+        f_qty = st.number_input("Qty", min_value=1, value=1)
+        if st.button("➕ Add to Schedule", use_container_width=True, type="secondary"):
+            st.session_state.device_list.append({"device": f_dev, "floor": f_loc, "qty": f_qty})
             st.rerun()
 
     with col_dev_right:
         if st.session_state.device_list:
-            edited_list = st.data_editor(st.session_state.device_list, num_rows="dynamic", use_container_width=True, key="dev_editor")
-            if edited_list != st.session_state.device_list:
-                st.session_state.device_list = edited_list
+            edited = st.data_editor(st.session_state.device_list, num_rows="dynamic", use_container_width=True, key="editor")
+            if edited != st.session_state.device_list:
+                st.session_state.device_list = edited
             if st.button("🗑️ Clear List"):
                 st.session_state.device_list = []
                 st.rerun()
@@ -458,36 +462,36 @@ with tabs[0]:
     st.markdown("<hr>", unsafe_allow_html=True)
     st.markdown("<h4 style='text-align: center;'>3️⃣ Document Generation</h4>", unsafe_allow_html=True)
     
-    col_chk1, col_chk2, col_chk3, col_chk4 = st.columns(4)
-    g_tm1 = col_chk1.checkbox("📄 TM-1", value=True)
-    g_a433 = col_chk2.checkbox("📋 A-433", value=True)
-    g_b45 = col_chk3.checkbox("🔍 B-45", value=True)
-    g_rep = col_chk4.checkbox("📊 Report", value=True)
+    c_chk1, c_chk2, c_chk3, c_chk4 = st.columns(4)
+    g_tm1 = c_chk1.checkbox("📄 TM-1", value=True)
+    g_a433 = c_chk2.checkbox("📋 A-433", value=True)
+    g_b45 = c_chk3.checkbox("🔍 B-45", value=True)
+    g_rep = c_chk4.checkbox("📊 Report", value=True)
 
     if st.button("🔥 GENERATE DOCUMENTS", type="primary", use_container_width=True):
-        if not bin_number:
-            st.error("BIN required.")
+        if not bin_num:
+            st.error("BIN number is required.")
         else:
             with st.spinner("Generating..."):
                 sync_profile_to_main(profile)
-                info = main.obtener_datos_completos(bin_number)
+                info = main.obtener_datos_completos(bin_num)
                 if info:
-                    full_data = {**info, "job_desc": job_description, "devices": st.session_state.device_list}
-                    save_project(st.session_state.user.id, bin_number, f"{info.get('house')} {info.get('street')}", st.session_state.device_list, job_description)
+                    full_data = {**info, "job_desc": job_desc, "devices": st.session_state.device_list}
+                    save_project(st.session_state.user.id, bin_num, f"{info.get('house')} {info.get('street')}", st.session_state.device_list, job_desc)
                     
                     files = []
                     if g_tm1:
-                        main.generar_tm1(full_data, "tm-1-application-for-plan-examination-doc-review.pdf", f"TM1_{bin_number}.pdf")
-                        files.append(f"TM1_{bin_number}.pdf")
+                        main.generar_tm1(full_data, "tm-1-application-for-plan-examination-doc-review.pdf", f"TM1_{bin_num}.pdf")
+                        files.append(f"TM1_{bin_num}.pdf")
                     if g_a433:
-                        main.generar_a433(full_data, "application-a-433-c.pdf", f"A433_{bin_number}.pdf")
-                        files.append(f"A433_{bin_number}.pdf")
+                        main.generar_a433(full_data, "application-a-433-c.pdf", f"A433_{bin_num}.pdf")
+                        files.append(f"A433_{bin_num}.pdf")
                     if g_b45:
-                        main.generar_b45(full_data, "b45-inspection-request.pdf", f"B45_{bin_number}.pdf")
-                        files.append(f"B45_{bin_number}.pdf")
+                        main.generar_b45(full_data, "b45-inspection-request.pdf", f"B45_{bin_num}.pdf")
+                        files.append(f"B45_{bin_num}.pdf")
                     if g_rep:
-                        main.generar_reporte_auditoria(full_data, f"REPORT_{bin_number}.txt")
-                        files.append(f"REPORT_{bin_number}.txt")
+                        main.generar_reporte_auditoria(full_data, f"REPORT_{bin_num}.txt")
+                        files.append(f"REPORT_{bin_num}.txt")
 
                     zip_buffer = BytesIO()
                     file_dict = {}
@@ -499,18 +503,17 @@ with tabs[0]:
                                     file_dict[f] = b
                                     zf.writestr(f, b)
                                 os.remove(f)
-                    st.session_state.generated_data = {"archivos": file_dict, "zip": zip_buffer.getvalue(), "bin": bin_number}
+                    st.session_state.generated_data = {"archivos": file_dict, "zip": zip_buffer.getvalue(), "bin": bin_num}
                 else:
-                    st.error("BIN data not found.")
+                    st.error("Could not fetch data for this BIN.")
 
     if st.session_state.generated_data:
         dat = st.session_state.generated_data
         st.success(f"✅ Documents ready for BIN {dat['bin']}!")
-        st.download_button("📦 Download All ZIP", data=dat["zip"], file_name=f"Fire_Forms_{dat['bin']}.zip", use_container_width=True, type="primary")
+        st.download_button("📦 Download All (ZIP)", data=dat["zip"], file_name=f"Fire_Forms_{dat['bin']}.zip", use_container_width=True, type="primary")
         
-        # Individuales
-        cols = st.columns(len(dat['archivos']))
+        cols_dl = st.columns(len(dat['archivos']))
         for i, (name, b) in enumerate(dat['archivos'].items()):
-            cols[i].download_button(f"📄 {name.split('_')[0]}", data=b, file_name=name, use_container_width=True)
+            cols_dl[i].download_button(f"📄 {name.split('_')[0]}", data=b, file_name=name, use_container_width=True)
 
 st.markdown('</div>', unsafe_allow_html=True)
