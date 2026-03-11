@@ -584,8 +584,15 @@ with tabs[0]:
 
     # --- ONBOARDING: AVISO INTELIGENTE SI EL PERFIL ESTÁ VACÍO ---
     if not profile.get("company_name"):
-        st.warning("👋 **Welcome to Fire Form Pro!** To get the most out of your free forms, please go to the **Profile Settings** tab first and fill in your company details. This ensures your PDFs are fully auto-filled and ready to submit.")
-        st.markdown("<br>", unsafe_allow_html=True)
+        aviso_urgente = """
+        <div style="background-color: #FFF5F5; border: 2px solid #FC8181; border-left: 8px solid #E53E3E; padding: 16px; border-radius: 8px; margin-bottom: 25px; box-shadow: 0 4px 6px rgba(229, 62, 62, 0.1);">
+            <h4 style="color: #E53E3E; margin-top: 0; margin-bottom: 8px; font-size: 18px;">🚨 Action Required: Complete Your Profile First</h4>
+            <p style="color: #2D3748; margin-bottom: 0; font-size: 15px;">
+                <b>Welcome to Fire Form Pro!</b> Before generating your first PDF, please go to the <b>Profile Settings</b> tab to enter your company details and license numbers. <br><i>If you skip this step, your forms will be generated with blank company fields.</i>
+            </p>
+        </div>
+        """
+        st.markdown(aviso_urgente, unsafe_allow_html=True)
 
     # SECCIÓN 1 (CORREGIDA - SIN ERRORES DE SESIÓN)
     st.markdown("<h4 style='color: #2D3748;'>1️⃣ Project Information</h4>", unsafe_allow_html=True)
