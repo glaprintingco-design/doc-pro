@@ -313,6 +313,45 @@ def delete_project(project_id):
     except:
         pass
 
+# --- NUEVAS FUNCIONES PARA PAYPAL Y SUSCRIPCIONES ---
+import streamlit.components.v1 as components
+from datetime import datetime
+
+def check_subscription(user_id):
+    """Verifica el estado del plan del usuario en Supabase."""
+    try:
+        # Intenta obtener la suscripción de la tabla (asume que la tabla existe en Supabase)
+        response = supabase.table("user_subscriptions").select("*").eq("user_id", user_id).execute()
+        
+        # Si el usuario tiene un registro
+        if response.data:
+            sub_data = response.data[0]
+            
+            # Lógica simple para resetear el contador si cambió de mes (opcional, pero buena práctica)
+            # Por ahora confiaremos en la base de datos.
+            return sub_data
+            
+    except Exception as e:
+        # st.error(f"Error reading subscription: {e}") # Descomentar para depurar
+        pass
+        
+    # Si no existe registro o hay error, asume que es un usuario 'free' nuevo con 0 usos
+    return {"plan_type": "free", "forms_generated_this_month": 0}
+
+def increment_free_usage(user_id, current_usage):
+    """Suma 1 al contador de usos del mes para usuarios free."""
+    try:
+        nuevo_uso = current_usage + 1
+        # Usamos upsert por si el registro no existía
+        supabase.table("user_subscriptions").upsert({
+            "user_id": user_id,
+            "plan_type": "free",
+            "forms_generated_this_month": nuevo_uso,
+            "last_reset_date": "now()"
+        }).execute()
+    except Exception as e:
+        pass
+
 
 # ============================================================
 # PANTALLA DE LOGIN (TARJETA MODERNA)
@@ -633,67 +672,119 @@ with tabs[0]:
         
     st.markdown("<br>", unsafe_allow_html=True)
     
+    # --- LÓGICA DE SUSCRIPCIÓN ANTES DE GENERAR ---
+    sub_data = check_subscription(st.session_state.user.id)
+    is_pro = sub_data.get("plan_type") == "pro"
+    usos_mes = sub_data.get("forms_generated_this_month", 0)
+    
     col_gen1, col_gen2, col_gen3 = st.columns([1, 2, 1])
     with col_gen2:
-        if st.button("🔥 GENERATE DOCUMENTS", type="primary", use_container_width=True):
-            if not bin_number:
-                st.error("⚠️ Please enter a BIN number.")
-            elif not (gen_tm1 or gen_a433 or gen_b45 or gen_report):
-                st.warning("⚠️ Select at least one form.")
-            else:
-                with st.spinner("Fetching property data & generating..."):
-                    try:
-                        sync_profile_to_main(profile)
-                        info = main.obtener_datos_completos(bin_number)
-                        
-                        if info:
-                            address_full = f"{info.get('house')} {info.get('street')}, {info.get('borough')}"
-                            save_project(
-                                st.session_state.user.id, 
-                                bin_number, 
-                                address_full, 
-                                st.session_state.device_list, 
-                                job_desc
-                            )
-                        
-                            job_specs = {"job_desc": job_desc, "devices": st.session_state.device_list}
-                            full_data = {**info, **job_specs}
-                            generated_files = []
-
-                            if gen_tm1:
-                                main.generar_tm1(full_data, "tm-1-application-for-plan-examination-doc-review.pdf", f"TM1_{bin_number}.pdf")
-                                generated_files.append(f"TM1_{bin_number}.pdf")
-                            if gen_a433:
-                                main.generar_a433(full_data, "application-a-433-c.pdf", f"A433_{bin_number}.pdf")
-                                generated_files.append(f"A433_{bin_number}.pdf")
-                            if gen_b45:
-                                main.generar_b45(full_data, "b45-inspection-request.pdf", f"B45_{bin_number}.pdf")
-                                generated_files.append(f"B45_{bin_number}.pdf")
-                            if gen_report:
-                                main.generar_reporte_auditoria(full_data, f"REPORT_{bin_number}.txt")
-                                generated_files.append(f"REPORT_{bin_number}.txt")
-
-                            file_data_dict = {}
-                            zip_buffer = BytesIO()
+        # Si es free y ya usó sus 2 oportunidades, BLOQUEAR
+        if not is_pro and usos_mes >= 2:
+            st.warning("⚠️ You have reached your free limit (2 forms/month).")
+            st.markdown("### Upgrade to Pro for unlimited forms ($349/year)")
+            
+            # Inyectamos el botón de PayPal
+            usuario_actual_id = st.session_state.user.id
+            paypal_html = f"""
+            <div id="paypal-button-container-P-73L06517ME334400KNGY24TI" style="text-align: center;"></div>
+            <script src="https://www.paypal.com/sdk/js?client-id=AeCRCUKXnF3G_15llpYzaFzgqbaOeay3eWcO6fXMcaoRA6Cy7v2iXO5FOQPaqenMndAzHRR_YArdquue&vault=true&intent=subscription" data-sdk-integration-source="button-factory"></script>
+            <script>
+              paypal.Buttons({{
+                  style: {{
+                      shape: 'rect',
+                      color: 'gold',
+                      layout: 'vertical',
+                      label: 'subscribe'
+                  }},
+                  createSubscription: function(data, actions) {{
+                    return actions.subscription.create({{
+                      plan_id: 'P-73L06517ME334400KNGY24TI',
+                      custom_id: '{usuario_actual_id}' 
+                    }});
+                  }},
+                  onApprove: function(data, actions) {{
+                    // Muestra un mensaje y recarga la app para que detecte la cuenta Pro
+                    alert("Thank you for upgrading! Your Pro account is now active.");
+                    window.parent.location.reload();
+                  }}
+              }}).render('#paypal-button-container-P-73L06517ME334400KNGY24TI');
+            </script>
+            """
+            components.html(paypal_html, height=150)
+            
+        else:
+            # Mostrar indicador de usos si es free
+            if not is_pro:
+                st.info(f"💡 Free Account: You have used {usos_mes} out of 2 forms this month.")
+                
+            if st.button("🔥 GENERATE DOCUMENTS", type="primary", use_container_width=True):
+                if not bin_number:
+                    st.error("⚠️ Please enter a BIN number.")
+                elif not (gen_tm1 or gen_a433 or gen_b45 or gen_report):
+                    st.warning("⚠️ Select at least one form.")
+                else:
+                    with st.spinner("Fetching property data & generating..."):
+                        try:
+                            sync_profile_to_main(profile)
+                            info = main.obtener_datos_completos(bin_number)
                             
-                            with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
-                                for file_name in generated_files:
-                                    if os.path.exists(file_name):
-                                        with open(file_name, "rb") as f:
-                                            file_bytes = f.read()
-                                            file_data_dict[file_name] = file_bytes
-                                        zip_file.writestr(file_name, file_bytes)
-                                        os.remove(file_name)
+                            if info:
+                                # Si es cuenta Free, sumar 1 al uso ANTES de generar
+                                if not is_pro:
+                                    increment_free_usage(st.session_state.user.id, usos_mes)
+                                    
+                                address_full = f"{info.get('house')} {info.get('street')}, {info.get('borough')}"
+                                save_project(
+                                    st.session_state.user.id, 
+                                    bin_number, 
+                                    address_full, 
+                                    st.session_state.device_list, 
+                                    job_desc
+                                )
+                            
+                                job_specs = {"job_desc": job_desc, "devices": st.session_state.device_list}
+                                full_data = {**info, **job_specs}
+                                generated_files = []
 
-                            st.session_state.generated_data = {
-                                "archivos": file_data_dict,
-                                "zip_buffer": zip_buffer.getvalue(),
-                                "bin": bin_number
-                            }
-                        else:
-                            st.error("❌ Could not retrieve data for this BIN.")
-                    except Exception as e:
-                        st.error(f"❌ Error: {e}")
+                                if gen_tm1:
+                                    main.generar_tm1(full_data, "tm-1-application-for-plan-examination-doc-review.pdf", f"TM1_{bin_number}.pdf")
+                                    generated_files.append(f"TM1_{bin_number}.pdf")
+                                if gen_a433:
+                                    main.generar_a433(full_data, "application-a-433-c.pdf", f"A433_{bin_number}.pdf")
+                                    generated_files.append(f"A433_{bin_number}.pdf")
+                                if gen_b45:
+                                    main.generar_b45(full_data, "b45-inspection-request.pdf", f"B45_{bin_number}.pdf")
+                                    generated_files.append(f"B45_{bin_number}.pdf")
+                                if gen_report:
+                                    main.generar_reporte_auditoria(full_data, f"REPORT_{bin_number}.txt")
+                                    generated_files.append(f"REPORT_{bin_number}.txt")
+
+                                file_data_dict = {}
+                                zip_buffer = BytesIO()
+                                
+                                with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
+                                    for file_name in generated_files:
+                                        if os.path.exists(file_name):
+                                            with open(file_name, "rb") as f:
+                                                file_bytes = f.read()
+                                                file_data_dict[file_name] = file_bytes
+                                            zip_file.writestr(file_name, file_bytes)
+                                            os.remove(file_name)
+
+                                st.session_state.generated_data = {
+                                    "archivos": file_data_dict,
+                                    "zip_buffer": zip_buffer.getvalue(),
+                                    "bin": bin_number
+                                }
+                                
+                                # Si generó exitosamente, forzamos un rerun para actualizar el contador en pantalla
+                                st.rerun() 
+                                
+                            else:
+                                st.error("❌ Could not retrieve data for this BIN.")
+                        except Exception as e:
+                            st.error(f"❌ Error: {e}")
 
         # Bloque de descargas
         if "generated_data" in st.session_state and st.session_state.generated_data:
