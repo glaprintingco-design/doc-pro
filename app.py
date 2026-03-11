@@ -150,6 +150,20 @@ h1, h2, h3, h4, h5, h6, p, span, div {
 .stAlert {
     border-radius: 10px !important;
 }
+
+/* Forzar el fondo blanco y texto oscuro en el menú desplegable de los Selectbox */
+div[data-baseweb="popover"] div, 
+ul[role="listbox"], 
+ul[role="listbox"] li {
+    background-color: white !important;
+    color: #2D3748 !important;
+}
+
+/* Efecto hover (gris claro) al pasar el mouse por las opciones del menú */
+ul[role="listbox"] li:hover {
+    background-color: #F4F7F9 !important;
+    color: #FF6B00 !important;
+}
 </style>
 """
 st.markdown(modern_styles, unsafe_allow_html=True)
@@ -715,4 +729,3 @@ with tabs[0]:
                             )
 
 st.markdown('</div>', unsafe_allow_html=True)
-
