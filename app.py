@@ -372,7 +372,7 @@ with col_logo:
     if os.path.exists("logo.png"):
         st.image("logo.png", width=280)
         # Eslogan en color oscuro
-        st.markdown("<p style='color: #2D3748; font-size: 16px; margin-top: -45px; margin-bottom: 20px; font-weight: 500;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
+        st.markdown("<p style='color: #2D3748; font-size: 16px; margin-top: -90px; margin-bottom: 20px; font-weight: 500;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
     else:
         st.markdown("<h1 style='color: #FF6B00; margin: 0;'>🔥 Fire Form Pro</h1>", unsafe_allow_html=True)
         # Eslogan en color oscuro
@@ -715,3 +715,4 @@ with tabs[0]:
                             )
 
 st.markdown('</div>', unsafe_allow_html=True)
+
