@@ -582,6 +582,11 @@ with tabs[0]:
                     if st.button(f"🗑️", key=f"del_{p['id']}", use_container_width=True):
                         delete_project(p['id'])
 
+    # --- ONBOARDING: AVISO INTELIGENTE SI EL PERFIL ESTÁ VACÍO ---
+    if not profile.get("company_name"):
+        st.warning("👋 **Welcome to Fire Form Pro!** To get the most out of your free forms, please go to the **Profile Settings** tab first and fill in your company details. This ensures your PDFs are fully auto-filled and ready to submit.")
+        st.markdown("<br>", unsafe_allow_html=True)
+
     # SECCIÓN 1 (CORREGIDA - SIN ERRORES DE SESIÓN)
     st.markdown("<h4 style='color: #2D3748;'>1️⃣ Project Information</h4>", unsafe_allow_html=True)
     col_info1, col_info2 = st.columns([1, 2])
