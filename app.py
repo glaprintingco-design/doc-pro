@@ -780,12 +780,19 @@ with tabs[0]:
                             sync_profile_to_main(profile)
                             info = main.obtener_datos_completos(bin_number)
                             
-                            if info:
+                           if info:
                                 # Si es cuenta Free, sumar 1 al uso ANTES de generar
                                 if not is_pro:
                                     increment_free_usage(st.session_state.user.id, usos_mes)
                                     
                                 address_full = f"{info.get('house')} {info.get('street')}, {info.get('borough')}"
+                                
+                                # --- NUEVO: Crear nombre seguro para los archivos ---
+                                safe_address = f"{info.get('house')} {info.get('street')}".replace("/", "-").replace("\\", "-").strip()
+                                if not safe_address:
+                                    safe_address = bin_number # Respaldo por si no hay dirección
+                                # ----------------------------------------------------
+
                                 save_project(
                                     st.session_state.user.id, 
                                     bin_number, 
@@ -799,17 +806,21 @@ with tabs[0]:
                                 generated_files = []
 
                                 if gen_tm1:
-                                    main.generar_tm1(full_data, "tm-1-application-for-plan-examination-doc-review.pdf", f"TM1_{bin_number}.pdf")
-                                    generated_files.append(f"TM1_{bin_number}.pdf")
+                                    fname = f"TM-1 - {safe_address}.pdf"
+                                    main.generar_tm1(full_data, "tm-1-application-for-plan-examination-doc-review.pdf", fname)
+                                    generated_files.append(fname)
                                 if gen_a433:
-                                    main.generar_a433(full_data, "application-a-433-c.pdf", f"A433_{bin_number}.pdf")
-                                    generated_files.append(f"A433_{bin_number}.pdf")
+                                    fname = f"A-433 - {safe_address}.pdf"
+                                    main.generar_a433(full_data, "application-a-433-c.pdf", fname)
+                                    generated_files.append(fname)
                                 if gen_b45:
-                                    main.generar_b45(full_data, "b45-inspection-request.pdf", f"B45_{bin_number}.pdf")
-                                    generated_files.append(f"B45_{bin_number}.pdf")
+                                    fname = f"B-45 - {safe_address}.pdf"
+                                    main.generar_b45(full_data, "b45-inspection-request.pdf", fname)
+                                    generated_files.append(fname)
                                 if gen_report:
-                                    main.generar_reporte_auditoria(full_data, f"REPORT_{bin_number}.txt")
-                                    generated_files.append(f"REPORT_{bin_number}.txt")
+                                    fname = f"REPORT - {safe_address}.txt"
+                                    main.generar_reporte_auditoria(full_data, fname)
+                                    generated_files.append(fname)
 
                                 file_data_dict = {}
                                 zip_buffer = BytesIO()
@@ -826,7 +837,8 @@ with tabs[0]:
                                 st.session_state.generated_data = {
                                     "archivos": file_data_dict,
                                     "zip_buffer": zip_buffer.getvalue(),
-                                    "bin": bin_number
+                                    "bin": bin_number,
+                                    "address": safe_address
                                 }
                                 
                                 # Si generó exitosamente, forzamos un rerun para actualizar el contador en pantalla
@@ -842,12 +854,13 @@ with tabs[0]:
             st.markdown("<hr style='margin: 2rem 0;'>", unsafe_allow_html=True)
             datos = st.session_state.generated_data
             
-            st.success(f"✅ {len(datos['archivos'])} documents ready for BIN {datos['bin']}!")
+            dir_lista = datos.get('address', datos['bin'])
+            st.success(f"✅ {len(datos['archivos'])} documents ready for {dir_lista}!")
             
             st.download_button(
                 label="📦 Download All as ZIP",
                 data=datos["zip_buffer"],
-                file_name=f"FDNY_Forms_{datos['bin']}.zip",
+                file_name=f"FDNY_Forms - {dir_lista}.zip",
                 mime="application/zip",
                 use_container_width=True,
                 type="primary"
@@ -864,7 +877,7 @@ with tabs[0]:
                         with cols[j]:
                             mime_type = "text/plain" if f_name.endswith(".txt") else "application/pdf"
                             icon = "📊" if f_name.endswith(".txt") else "📄"
-                            short_name = f_name.split('_')[0]
+                            short_name = f_name.split(' - ')[0]
                             
                             st.download_button(
                                 label=f"{icon} {short_name}",
