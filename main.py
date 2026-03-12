@@ -50,6 +50,7 @@ API_KEY_NYC = CONFIG_DATA.get("api_keys", {}).get("nyc_open_data_key", "")
 APP_TOKEN_SOCRATA = CONFIG_DATA.get("api_keys", {}).get("nyc_socrata_token", "")
 
 COMPANY = CONFIG_DATA.get("fire_alarm_company", {})
+EXPEDITOR = CONFIG_DATA.get("expeditor", {})
 ARCHITECT = CONFIG_DATA.get("architect_applicant", {})
 ELECTRICIAN = CONFIG_DATA.get("electrical_contractor", {})
 TECH_DEFAULTS = CONFIG_DATA.get("technical_defaults", {})
@@ -481,11 +482,11 @@ def generar_tm1(datos, input_pdf, output_pdf):
             "City": ARCHITECT.get("City"), "State": ARCHITECT.get("State"), "Zip": ARCHITECT.get("Zip"),
             "bsn_phone": str(ARCHITECT.get("Phone")), "EMail": ARCHITECT.get("Email"), 
             "License Number": ARCHITECT.get("License No"), "undefined_5": "/On",
-            "Lastnamefilingrep": COMPANY.get("Last Name"), "firstnamefilingrep": COMPANY.get("First Name"),
-            "Filing Rep Tel": COMPANY.get("Phone"), "Reg No": COMPANY.get("Reg No"),
-            "Business Name_3": COMPANY.get("Company Name"), "Business Address_2": COMPANY.get("Address"),
-            "City_2": COMPANY.get("City"), "State_2": COMPANY.get("State"), "Zip_2": COMPANY.get("Zip"),
-            "EMail_2": COMPANY.get("Email"), "undefined_16": "/On", "2025": "/On", "Code Section": "BC 907"
+            "Lastnamefilingrep": EXPEDITOR.get("Last Name"), "firstnamefilingrep": EXPEDITOR.get("First Name"),
+            "Filing Rep Tel": EXPEDITOR.get("Phone"), "Reg No": EXPEDITOR.get("Reg No"),
+            "Business Name_3": EXPEDITOR.get("Company Name"), "Business Address_2": EXPEDITOR.get("Address"),
+            "City_2": EXPEDITOR.get("City"), "State_2": EXPEDITOR.get("State"), "Zip_2": EXPEDITOR.get("Zip"),
+            "EMail_2": EXPEDITOR.get("Email"), "undefined_16": "/On", "2025": "/On", "Code Section": "BC 907"
         }
         
         # Una sola línea hace toda la magia
@@ -586,19 +587,20 @@ def generar_a433(datos, input_pdf, output_pdf):
 def generar_b45(datos, input_pdf, output_pdf):
     print("📄 4. Generating B-45...")
     try:
-        emp = COMPANY
+        exp = EXPEDITOR  # <--- Cambiamos 'emp = COMPANY' por esto
         campos = {
             "adress": f"{datos['house']} {datos['street']}, {datos['borough']}, NY {datos['zip']}",
-            "name": f"{emp.get('First Name')} {emp.get('Last Name')}", "title": "Expeditor",
-            "lic": emp.get("Reg No"), "company": emp.get("Company Name"), 
-            "caddress": f"{emp.get('Address')}, {emp.get('City')}, {emp.get('State')} {emp.get('Zip')}",
-            "cphone": emp.get("Phone"), "email": emp.get("Email"), "pname": f"{emp.get('First Name')} {emp.get('Last Name')}", "date1": fecha_hoy
+            "name": f"{exp.get('First Name')} {exp.get('Last Name')}", "title": "Expeditor",
+            "lic": exp.get("Reg No"), "company": exp.get("Company Name"), 
+            "caddress": f"{exp.get('Address')}, {exp.get('City')}, {exp.get('State')} {exp.get('Zip')}",
+            "cphone": exp.get("Phone"), "email": exp.get("Email"), "pname": f"{exp.get('First Name')} {exp.get('Last Name')}", "date1": fecha_hoy
         }
         
         # Una sola línea hace toda la magia (ya incluye el desbloqueo de ReadOnly)
         rellenar_pdf_inteligente(input_pdf, output_pdf, campos)
         print("   ✅ B-45 Generated.")
     except Exception as e: print(f"   ❌ B-45 Error: {e}")
+    
 # ==========================================
 # 6. REPORTE DE AUDITORÍA
 # ==========================================
@@ -606,7 +608,7 @@ def generar_reporte_auditoria(datos, nombre_archivo="REPORTE_LOGICA.txt"):
     print(f"📄 5. Generating Audit Report...")
     try:
         with open(nombre_archivo, "w", encoding="utf-8") as f:
-            f.write("AUTOMATED GENERATION REPORT - FDNY SYSTEM\n")
+            f.write("AUTOMATED GENERATION REPORT n")
             f.write("=================================================\n")
             f.write(f"DATE: {fecha_hoy}\n")
             f.write(f"BIN: {datos.get('bin')}\n")
@@ -615,7 +617,29 @@ def generar_reporte_auditoria(datos, nombre_archivo="REPORTE_LOGICA.txt"):
             f.write("-------------------------------------------------\n")
             f.write(f"1. CONSTRUCTION CLASS:\n   - Original Value (DB): {datos.get('raw_construction_class', 'N/A')}\n   - Final Value on PDF:  {datos.get('construction_class')}\n   - System Note:         {datos.get('debug_nota_const', '')}\n\n")
             f.write(f"2. OCCUPANCY GROUP:\n   - Original Value (DB): {datos.get('raw_occupancy', 'N/A')}\n   - Final Value on PDF:  {datos.get('occupancy_group')}\n   - System Note:         {datos.get('debug_nota_occ', '')}\n\n")
-            f.write("LEGAL DISCLAIMER:\nThis form has been pre-filled using public data from BIS/DOB/PLUTO.\nThe Architect/Engineer of Record is responsible for verifying the accuracy\nof this data before signing and sealing the final documents.\n")
+            
+            # --- NUEVO DISCLAIMER LEGAL ROBUSTO ---
+            f.write("=================================================\n")
+            f.write("LEGAL DISCLAIMER & TERMS OF USE:\n")
+            f.write("-------------------------------------------------\n")
+            f.write("1. NO GOVERNMENT AFFILIATION:\n")
+            f.write("   Fire Form Pro is an independent software tool. It is NOT affiliated with,\n")
+            f.write("   endorsed by, or connected to the NYC Fire Department (FDNY), the \n")
+            f.write("   Department of Buildings (DOB), or any other government agency.\n\n")
+            
+            f.write("2. DATA ACCURACY AND PUBLIC RECORDS:\n")
+            f.write("   Property and ownership data are automatically retrieved from public NYC\n")
+            f.write("   databases (BIS, DOB NOW, PLUTO, Geoclient) based on the provided BIN.\n")
+            f.write("   Due to filing delays, database inconsistencies, and historical variations,\n")
+            f.write("   this information is provided 'AS IS' and is NOT guaranteed to be 100%\n")
+            f.write("   accurate or current.\n\n")
+            
+            f.write("3. PROFESSIONAL RESPONSIBILITY:\n")
+            f.write("   These generated documents are intended solely as a drafting aid. The\n")
+            f.write("   Architect, Engineer of Record, Expeditor, and/or Contractor assume full\n")
+            f.write("   and strict responsibility for verifying, correcting, and validating all\n")
+            f.write("   fields prior to signing, sealing, and submitting these forms to the FDNY.\n")
+            
         print(f"   ✅ Report Generated: {nombre_archivo}")
     except Exception as e: print(f"   ❌ Report Error: {e}")    
 
