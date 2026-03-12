@@ -504,8 +504,8 @@ with tabs[1]:
             x_first = st.text_input("First Name",     value=profile.get("exp_first_name", ""), key="x_first")
             x_last  = st.text_input("Last Name",      value=profile.get("exp_last_name", ""),  key="x_last")
             x_reg   = st.text_input("FDNY Reg No.",   value=profile.get("exp_reg_no", ""),     key="x_reg")
-   
-   with st.expander("📐 Architect / Engineer Information"):
+
+    with st.expander("📐 Architect / Engineer Information"):
         col1, col2 = st.columns(2)
         with col1:
             a_name    = st.text_input("Company Name",   value=profile.get("arch_name", ""),        key="a_name")
@@ -553,7 +553,7 @@ with tabs[1]:
             cs_state = st.text_input("CS State",   value=profile.get("cs_state", ""),   key="cs_state")
             cs_zip   = st.text_input("CS Zip",     value=profile.get("cs_zip", ""),     key="cs_zip")
             cs_phone = st.text_input("CS Phone",   value=profile.get("cs_phone", ""),   key="cs_phone")
-
+            
     st.markdown("<br>", unsafe_allow_html=True)
     col_save1, col_save2, col_save3 = st.columns([1, 1, 1])
     with col_save2:
