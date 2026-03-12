@@ -593,7 +593,7 @@ def generar_b45(datos, input_pdf, output_pdf):
             "name": f"{exp.get('First Name')} {exp.get('Last Name')}", "title": "Expeditor",
             "lic": exp.get("Reg No"), "company": exp.get("Company Name"), 
             "caddress": f"{exp.get('Address')}, {exp.get('City')}, {exp.get('State')} {exp.get('Zip')}",
-            "aphone": exp.get("Phone"), "email": exp.get("Email"), "pname": f"{exp.get('First Name')} {exp.get('Last Name')}", "date1": fecha_hoy
+            "cphone": exp.get("Phone"), "email": exp.get("Email"), "pname": f"{exp.get('First Name')} {exp.get('Last Name')}", "date1": fecha_hoy
         }
         
         # Una sola línea hace toda la magia (ya incluye el desbloqueo de ReadOnly)
