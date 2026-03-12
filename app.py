@@ -237,9 +237,25 @@ def sync_profile_to_main(profile):
         "Email":        profile.get("company_email", ""),
         "First Name":   profile.get("company_first_name", ""),
         "Last Name":    profile.get("company_last_name", ""),
-        "Reg No":       profile.get("company_reg_no", ""),
         "COF S97":      profile.get("company_cof_s97", ""),
         "Expiration":   profile.get("company_expiration", ""),
+    })
+    
+    # --- NUEVO BLOQUE PARA EL EXPEDITOR ---
+    if not hasattr(main, 'EXPEDITOR'):
+        main.EXPEDITOR = {}
+        
+    main.EXPEDITOR.update({
+        "Company Name": profile.get("exp_name", ""),
+        "Address":      profile.get("exp_address", ""),
+        "City":         profile.get("exp_city", ""),
+        "State":        profile.get("exp_state", "NY"),
+        "Zip":          profile.get("exp_zip", ""),
+        "Phone":        profile.get("exp_phone", ""),
+        "Email":        profile.get("exp_email", ""),
+        "First Name":   profile.get("exp_first_name", ""),
+        "Last Name":    profile.get("exp_last_name", ""),
+        "Reg No":       profile.get("exp_reg_no", ""),
     })
     main.ARCHITECT.update({
         "Company Name": profile.get("arch_name", ""),
@@ -458,24 +474,38 @@ with tabs[1]:
     st.markdown("<br>", unsafe_allow_html=True)
     st.info("💾 Data saved here is stored securely in the cloud and auto-fills your FDNY forms on every project.")
 
-    with st.expander("🏢 FA Company / Expeditor Information", expanded=True):
+    with st.expander("🏢 Fire Alarm Vendor Information", expanded=True):
         col1, col2 = st.columns(2)
         with col1:
-            c_name  = st.text_input("Company Name",  value=profile.get("company_name", ""),       key="c_name")
+            c_name  = st.text_input("Company Name",   value=profile.get("company_name", ""),       key="c_name")
             c_addr  = st.text_input("Address",        value=profile.get("company_address", ""),    key="c_addr")
             c_city  = st.text_input("City",           value=profile.get("company_city", ""),       key="c_city")
-            c_state = st.text_input("State",          value=profile.get("company_state", "NY"),      key="c_state")
+            c_state = st.text_input("State",          value=profile.get("company_state", "NY"),    key="c_state")
             c_zip   = st.text_input("Zip Code",       value=profile.get("company_zip", ""),        key="c_zip")
             c_phone = st.text_input("Phone",          value=profile.get("company_phone", ""),      key="c_phone")
         with col2:
             c_email = st.text_input("Email",          value=profile.get("company_email", ""),      key="c_email")
             c_first = st.text_input("First Name",     value=profile.get("company_first_name", ""), key="c_first")
             c_last  = st.text_input("Last Name",      value=profile.get("company_last_name", ""),  key="c_last")
-            c_reg   = st.text_input("Reg No",         value=profile.get("company_reg_no", ""),     key="c_reg")
             c_cof   = st.text_input("COF S97",        value=profile.get("company_cof_s97", ""),    key="c_cof")
             c_exp   = st.text_input("Exp. Date",      value=profile.get("company_expiration", ""), key="c_exp")
 
-    with st.expander("📐 Architect / Engineer Information"):
+    with st.expander("📑 Filing Representative / Expeditor"):
+        col1, col2 = st.columns(2)
+        with col1:
+            x_name  = st.text_input("Company Name",   value=profile.get("exp_name", ""),       key="x_name")
+            x_addr  = st.text_input("Address",        value=profile.get("exp_address", ""),    key="x_addr")
+            x_city  = st.text_input("City",           value=profile.get("exp_city", ""),       key="x_city")
+            x_state = st.text_input("State",          value=profile.get("exp_state", "NY"),    key="x_state")
+            x_zip   = st.text_input("Zip Code",       value=profile.get("exp_zip", ""),        key="x_zip")
+            x_phone = st.text_input("Phone",          value=profile.get("exp_phone", ""),      key="x_phone")
+        with col2:
+            x_email = st.text_input("Email",          value=profile.get("exp_email", ""),      key="x_email")
+            x_first = st.text_input("First Name",     value=profile.get("exp_first_name", ""), key="x_first")
+            x_last  = st.text_input("Last Name",      value=profile.get("exp_last_name", ""),  key="x_last")
+            x_reg   = st.text_input("FDNY Reg No.",   value=profile.get("exp_reg_no", ""),     key="x_reg")
+   
+   with st.expander("📐 Architect / Engineer Information"):
         col1, col2 = st.columns(2)
         with col1:
             a_name    = st.text_input("Company Name",   value=profile.get("arch_name", ""),        key="a_name")
@@ -531,10 +561,19 @@ with tabs[1]:
             full_update = {
                 "id": st.session_state.user.id,
                 "updated_at": "now()",
+                # Fire Alarm Vendor
                 "company_name": c_name, "company_address": c_addr, "company_city": c_city,
                 "company_state": c_state, "company_zip": c_zip, "company_phone": c_phone,
                 "company_email": c_email, "company_first_name": c_first, "company_last_name": c_last,
-                "company_reg_no": c_reg, "company_cof_s97": c_cof, "company_expiration": c_exp,
+                "company_cof_s97": c_cof, "company_expiration": c_exp,
+                
+                # Expeditor (Nuevos campos)
+                "exp_name": x_name, "exp_address": x_addr, "exp_city": x_city,
+                "exp_state": x_state, "exp_zip": x_zip, "exp_phone": x_phone,
+                "exp_email": x_email, "exp_first_name": x_first, "exp_last_name": x_last,
+                "exp_reg_no": x_reg,
+                
+                # Resto de los campos
                 "arch_name": a_name, "arch_address": a_addr, "arch_city": a_city,
                 "arch_state": a_state, "arch_zip": a_zip, "arch_phone": a_phone,
                 "arch_email": a_email, "arch_first_name": a_first, "arch_last_name": a_last,
