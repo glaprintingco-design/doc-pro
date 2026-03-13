@@ -381,11 +381,22 @@ def login_ui_centered():
         
         if os.path.exists("logo.png"):
             st.image("logo.png", width=250)
-            st.markdown("<p style='color: #718096 !important; font-size: 15px; margin-top: -90px; margin-bottom: 2rem;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
+            st.markdown("<p style='color: #718096 !important; font-size: 15px; margin-top: -90px; margin-bottom: 1rem;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
         else:
             st.markdown("<h1 style='color: #FF6B00; margin-bottom: 0;'>🔥 Fire Form Pro</h1>", unsafe_allow_html=True)
-            st.markdown("<p style='color: #718096; font-size: 15px; margin-bottom: 2rem;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
+            st.markdown("<p style='color: #718096; font-size: 15px; margin-bottom: 1rem;'>Automated form generation for the NYC Fire Alarm Industry</p>", unsafe_allow_html=True)
             
+        # --- NUEVO: BLOQUE DE VALOR (HOOK) ---
+        hook_html = """
+        <div style="background-color: #FFFaf0; border-left: 4px solid #FF6B00; padding: 12px 16px; border-radius: 4px; margin-bottom: 25px;">
+            <p style="color: #4A5568; font-size: 14.5px; margin: 0; font-style: italic;">
+                "Stop fighting with PDFs. Turn an hour of manual FDNY paperwork into <b>20-second</b> job."
+            </p>
+        </div>
+        """
+        st.markdown(hook_html, unsafe_allow_html=True)
+        # -------------------------------------
+        
         tab1, tab2 = st.tabs(["🔑 Sign In", "📝 Create Account"])
         
         with tab1:
