@@ -390,7 +390,7 @@ def login_ui_centered():
         hook_html = """
         <div style="background-color: #FFFaf0; border-left: 4px solid #FF6B00; padding: 12px 16px; border-radius: 4px; margin-bottom: 55px;">
             <p style="color: #4A5568; font-size: 14.5px; margin: 0; font-style: italic;">
-                "Stop fighting with PDFs. Turn an hour of manual FDNY paperwork into <b>20-second</b> job."
+                "FDNY paperwork is painful. It doesn’t have to be. Do it in <b>20 seconds</b>."
             </p>
         </div>
         """
