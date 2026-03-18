@@ -486,8 +486,7 @@ with tabs[1]:
     st.markdown("<h3 style='color: #2D3748;'>🔍 Property Lookup</h3>", unsafe_allow_html=True)
     st.markdown("<p style='color: #718096;'>Scan NYC databases to uncover property details.</p>", unsafe_allow_html=True)
     
-    with st.container():
-        st.markdown("<div style='background-color: white; padding: 1.5rem; border-radius: 12px; border: 1px solid #E2E8F0;'>", unsafe_allow_html=True)
+    with st.container(border=True):
         
         # 1. Buscador Dual (Radio Buttons)
         search_type = st.radio("Search Method", ["By BIN", "By Address"], horizontal=True)
@@ -548,6 +547,12 @@ with tabs[1]:
                     st.markdown("<hr style='border-color: #E2E8F0; margin: 1.5rem 0;'>", unsafe_allow_html=True)
                     st.markdown("<h4 style='color: #2D3748;'>🏢 Property Overview</h4>", unsafe_allow_html=True)
                     
+                    # --- Fila 1: Dirección y BIN ---
+                    address_str = f"{info.get('house', '')} {info.get('street', '')}, {info.get('borough', '')}, NY {info.get('zip', '')}"
+                    st.markdown(f"<p style='font-size: 1.1rem; margin-bottom: 0;'><b>Address:</b> {address_str}</p>", unsafe_allow_html=True)
+                    st.markdown(f"<p style='font-size: 1.1rem; margin-bottom: 1.5rem;'><b>BIN:</b> {final_bin}</p>", unsafe_allow_html=True)
+                    
+                    # --- Fila 2: Métricas Principales ---
                     col_m1, col_m2, col_m3, col_m4 = st.columns(4)
                     col_m1.metric("Block / Lot", f"{info.get('block', 'N/A')} / {info.get('lot', 'N/A')}")
                     col_m2.metric("Height", f"{info.get('height', '0')} ft")
@@ -555,7 +560,25 @@ with tabs[1]:
                     col_m4.metric("Const. Class", info.get('construction_class', 'N/A'))
                     
                     st.markdown("<br>", unsafe_allow_html=True)
-                    st.markdown("<h4 style='color: #2D3748;'>🔥 FDNY Radar (Fire Alarm Focus)</h4>", unsafe_allow_html=True)
+                    
+                    # --- Fila 3: Landmark, Flood, Owner ---
+                    col_m5, col_m6, col_m7 = st.columns([1, 1, 2])
+                    col_m5.metric("Landmark", info.get('landmarked', 'No'))
+                    col_m6.metric("Flood Zone", info.get('flood_zone', 'No'))
+                    
+                    # Lógica para mostrar el dueño (Business name o nombre personal)
+                    owner_name = info.get('owner_business')
+                    if not owner_name:
+                        owner_name = f"{info.get('owner_first', '')} {info.get('owner_last', '')}".strip()
+                    if not owner_name:
+                        owner_name = "N/A"
+                        
+                    col_m7.metric("Property Owner", owner_name)
+                    # El disclaimer (advertencia) del DOB
+                    col_m7.markdown("<p style='font-size: 12px; color: #A0AEC0; margin-top: -15px;'><i>* Owner data from DOB/BIS records may be outdated or inaccurate.</i></p>", unsafe_allow_html=True)
+                    
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    st.markdown("<h4 style='color: #2D3748;'>FDNY Details</h4>", unsafe_allow_html=True)
                     
                     st.markdown(f"""
                     <div style="background-color: #F0FFF4; border-left: 4px solid #38A169; padding: 12px 16px; border-radius: 4px; margin-bottom: 20px;">
