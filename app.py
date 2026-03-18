@@ -506,22 +506,37 @@ with tabs[1]:
             with col_a3:
                 borough = st.selectbox("Borough", ["Manhattan", "Bronx", "Brooklyn", "Queens", "Staten Island"], key="intel_boro")
             
-            st.info("💡 Note: In this version, please use 'By BIN'. Address-to-BIN API logic will be connected soon.")
 
         st.markdown("</div>", unsafe_allow_html=True)
         st.markdown("<br>", unsafe_allow_html=True)
 
-        # 2. Botón de Acción y Animación de Carga
-        if st.button("🚀 Run Deep Property Scan", type="primary", use_container_width=True):
-            if not bin_to_search:
-                st.error("⚠️ Please enter a valid BIN.")
+        # 2. Botón de Acción y Lógica de Búsqueda
+        if st.button("Run Property Lookup", type="primary", use_container_width=True):
+            final_bin = ""
+            
+            # --- FASE 1: RESOLVER EL BIN ---
+            if search_type == "By BIN":
+                final_bin = bin_input.strip()
+                if not final_bin:
+                    st.error("⚠️ Please enter a valid BIN.")
             else:
-                with st.status("🕵️‍♂️ Scanning City Databases...", expanded=True) as status:
+                if not house or not street or not borough:
+                    st.error("⚠️ Please fill in House No., Street, and Borough.")
+                else:
+                    with st.spinner("🌍 Translating Address to BIN using NYC Geoclient..."):
+                        # Llamamos a la nueva función de main.py
+                        final_bin = main.obtener_bin_por_direccion(house, street, borough)
+                        if not final_bin:
+                            st.error("❌ Could not find a valid BIN for this exact address. Please check spelling or use 'By BIN'.")
+            
+            # --- FASE 2: CORRER EL ESCÁNER SI TENEMOS BIN ---
+            if final_bin:
+                with st.status(f"🕵️‍♂️ Scanning City Databases for BIN: {final_bin}...", expanded=True) as status:
                     st.write("⏳ Fetching DOB & Geoclient data...")
-                    info = main.obtener_datos_completos(bin_to_search)
+                    info = main.obtener_datos_completos(final_bin)
                     
                     st.write("⏳ Scanning FDNY records for Fire Alarm accounts...")
-                    import time; time.sleep(2) 
+                    import time; time.sleep(2) # Simulación temporal del PDF
                     
                     loa_account_found = "40012345" 
                     violaciones_activas = "None detected in preliminary scan."
@@ -555,12 +570,12 @@ with tabs[1]:
                     col_link1, col_link2 = st.columns(2)
                     
                     with col_link1:
-                        dob_url = f"https://a810-bisweb.nyc.gov/bisweb/COsByLocationServlet?requestid=1&allbin={bin_to_search}"
+                        dob_url = f"https://a810-bisweb.nyc.gov/bisweb/COsByLocationServlet?requestid=1&allbin={final_bin}"
                         st.link_button("🏛️ 1. View Certificate of Occupancy (DOB)", dob_url, use_container_width=True)
                         
                         fdny_report_url = "https://fires.fdnycloud.org/CitizenAccess/Report/ReportParameter.aspx?module=&reportID=1423&reportType=LINK_REPORT_LIST"
                         st.link_button("📄 2. Generate Full FDNY Profile", fdny_report_url, use_container_width=True)
-                        st.caption(f"Input BIN **{bin_to_search}** manually if requested.")
+                        st.caption(f"Input BIN **{final_bin}** manually if requested.")
 
                     with col_link2:
                         caphome_url = "https://fires.fdnycloud.org/CitizenAccess/Cap/CapHome.aspx?module=BFP&TabName=BFP"
@@ -570,11 +585,11 @@ with tabs[1]:
                     try:
                         supabase.table("property_searches").insert({
                             "user_id": st.session_state.user.id,
-                            "bin": bin_to_search,
+                            "bin": final_bin,
                             "loa_account_found": loa_account_found
                         }).execute()
                     except Exception as e:
-                        pass 
+                        pass
 
 
 # ------------------------------------------------------------
