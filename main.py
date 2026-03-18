@@ -222,6 +222,37 @@ def traducir_datos(ocupacion_old, construccion_old, job_description="", building
 # ==========================================
 # 2. FETCH DATA
 # ==========================================
+def obtener_bin_por_direccion(house, street, borough):
+    print(f"🌍 Resolving Address to BIN: {house} {street}, {borough}...")
+    try:
+        url_geo = "https://api.nyc.gov/geoclient/v2/address"
+        params = {
+            "houseNumber": house,
+            "street": street,
+            "borough": borough
+        }
+        headers = {"Ocp-Apim-Subscription-Key": API_KEY_NYC}
+        
+        r = requests.get(url_geo, params=params, headers=headers, timeout=10)
+        
+        if r.status_code == 200:
+            data = r.json().get('address', {})
+            # Geoclient devuelve el BIN en este campo exacto
+            bin_number = data.get('buildingIdentificationNumber', '')
+            
+            # Los BINs válidos tienen 7 dígitos (evitamos códigos de error raros de Geoclient)
+            if bin_number and len(str(bin_number)) == 7:
+                print(f"   ✅ Address resolved to BIN: {bin_number}")
+                return str(bin_number)
+            else:
+                print(f"   ⚠️ BIN not found or invalid format: {bin_number}")
+        else:
+            print(f"   ❌ Geoclient API Error {r.status_code}")
+    except Exception as e:
+        print(f"   ❌ Connection failed: {e}")
+        
+    return None
+    
 def consultar_dob_now(bin_number, headers_soc):
     print(f"   🚀 Querying DOB NOW (Fresh Data)...")
     dob_now_data = {}
