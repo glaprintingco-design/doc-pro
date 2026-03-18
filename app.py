@@ -531,14 +531,8 @@ with tabs[1]:
             # --- FASE 2: CORRER EL ESCÁNER SI TENEMOS BIN ---
             if final_bin:
                 with st.status(f"🕵️‍♂️ Scanning City Databases for BIN: {final_bin}...", expanded=True) as status:
-                    st.write("⏳ Fetching DOB & Geoclient data...")
+                    st.write("⏳ Fetching DOB, PLUTO & Geoclient data...")
                     info = main.obtener_datos_completos(final_bin)
-                    
-                    st.write("⏳ Scanning FDNY records for Fire Alarm accounts...")
-                    import time; time.sleep(2) # Simulación temporal del PDF
-                    
-                    loa_account_found = "40012345" 
-                    violaciones_activas = "None detected in preliminary scan."
                     
                     status.update(label="✅ Scan Complete!", state="complete", expanded=False)
                 
@@ -578,16 +572,6 @@ with tabs[1]:
                     col_m7.markdown("<p style='font-size: 12px; color: #A0AEC0; margin-top: -15px;'><i>* Owner data from DOB/BIS records may be outdated or inaccurate.</i></p>", unsafe_allow_html=True)
                     
                     st.markdown("<br>", unsafe_allow_html=True)
-                    st.markdown("<h4 style='color: #2D3748;'>FDNY Details</h4>", unsafe_allow_html=True)
-                    
-                    st.markdown(f"""
-                    <div style="background-color: #F0FFF4; border-left: 4px solid #38A169; padding: 12px 16px; border-radius: 4px; margin-bottom: 20px;">
-                        <p style="color: #2D3748; margin: 0;"><b>Letter of Approval Account:</b> <span style="font-family: monospace; font-size: 16px; color: #E53E3E;">{loa_account_found}</span></p>
-                        <p style="color: #4A5568; font-size: 14px; margin-top: 5px; margin-bottom: 0;"><b>Recent Violations:</b> {violaciones_activas}</p>
-                    </div>
-                    """, unsafe_allow_html=True)
-                    
-                    st.markdown("<br>", unsafe_allow_html=True)
                     st.markdown("<h4 style='color: #2D3748;'>⚡ Quick Actions (Smart Links)</h4>", unsafe_allow_html=True)
                     
                     col_link1, col_link2 = st.columns(2)
@@ -602,14 +586,14 @@ with tabs[1]:
 
                     with col_link2:
                         caphome_url = "https://fires.fdnycloud.org/CitizenAccess/Cap/CapHome.aspx?module=BFP&TabName=BFP"
-                        st.link_button("🔥 3. Download LOA (FDNY CapHome)", caphome_url, use_container_width=True)
-                        st.caption(f"**Instructions:** Click above, paste account **{loa_account_found}**, click the record, and go to 'Supporting Documents'.")
+                        st.link_button("🔥 3. FDNY LOA Lookup", caphome_url, use_container_width=True)
+                        st.caption("Access the FDNY portal to manually search for Letter of Approval accounts or violations.")
                     
                     try:
                         supabase.table("property_searches").insert({
                             "user_id": st.session_state.user.id,
                             "bin": final_bin,
-                            "loa_account_found": loa_account_found
+                            "loa_account_found": "Manual Search" 
                         }).execute()
                     except Exception as e:
                         pass
