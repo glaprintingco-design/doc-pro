@@ -476,15 +476,15 @@ st.markdown('<div class="main-content">', unsafe_allow_html=True)
 # APP PRINCIPAL (PESTAÑAS)
 # ============================================================
 profile = fetch_user_profile(st.session_state.user.id)
-tabs = st.tabs(["🏗️ Project Builder", "🏢 Property Intel", "👤 Profile Settings"])
+tabs = st.tabs(["🏗️ Project Builder", "🏢 Property Lookup", "👤 Profile Settings"])
 
 # ------------------------------------------------------------
 # TAB 1: PROPERTY INTELLIGENCE (NUEVO MÓDULO)
 # ------------------------------------------------------------
 with tabs[1]:
     st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("<h3 style='color: #2D3748;'>🔍 Property Intelligence & FDNY Radar</h3>", unsafe_allow_html=True)
-    st.markdown("<p style='color: #718096;'>Scan NYC databases to uncover property details, C of O, and Fire Alarm records before filing.</p>", unsafe_allow_html=True)
+    st.markdown("<h3 style='color: #2D3748;'>🔍 Property Lookup</h3>", unsafe_allow_html=True)
+    st.markdown("<p style='color: #718096;'>Scan NYC databases to uncover property details.</p>", unsafe_allow_html=True)
     
     with st.container():
         st.markdown("<div style='background-color: white; padding: 1.5rem; border-radius: 12px; border: 1px solid #E2E8F0;'>", unsafe_allow_html=True)
