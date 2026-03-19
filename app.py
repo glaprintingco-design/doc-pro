@@ -541,10 +541,13 @@ with tabs[1]:
                     st.markdown("<hr style='border-color: #E2E8F0; margin: 1.5rem 0;'>", unsafe_allow_html=True)
                     st.markdown("<h4 style='color: #2D3748;'>🏢 Property Overview</h4>", unsafe_allow_html=True)
                     
-                    # --- Fila 1: Dirección y BIN ---
+                    # --- Fila 1: Dirección, BIN y DCP ---
                     address_str = f"{info.get('house', '')} {info.get('street', '')}, {info.get('borough', '')}, NY {info.get('zip', '')}"
                     st.markdown(f"<p style='font-size: 1.1rem; margin-bottom: 0;'><b>Address:</b> {address_str}</p>", unsafe_allow_html=True)
-                    st.markdown(f"<p style='font-size: 1.1rem; margin-bottom: 1.5rem;'><b>BIN:</b> {final_bin}</p>", unsafe_allow_html=True)
+                    
+                    col_top1, col_top2 = st.columns(2)
+                    col_top1.markdown(f"<p style='font-size: 1.1rem; margin-bottom: 0;'><b>BIN:</b> {final_bin}</p>", unsafe_allow_html=True)
+                    col_top2.markdown(f"<p style='font-size: 1rem; margin-bottom: 1.5rem; color: #718096;'><b>DCP Address Range:</b> {info.get('dcp_address', 'N/A')}</p>", unsafe_allow_html=True)
                     
                     # --- Fila 2: Métricas Principales ---
                     col_m1, col_m2, col_m3, col_m4 = st.columns(4)
@@ -555,39 +558,67 @@ with tabs[1]:
                     
                     st.markdown("<br>", unsafe_allow_html=True)
                     
-                    # --- Fila 3: Landmark, Flood, Owner ---
-                    col_m5, col_m6, col_m7 = st.columns([1, 1, 2])
+                    # --- Fila 3: Landmark, Flood, Occupancy, Owner ---
+                    col_m5, col_m6, col_m7, col_m8 = st.columns([1, 1, 1, 2])
                     col_m5.metric("Landmark", info.get('landmarked', 'No'))
                     col_m6.metric("Flood Zone", info.get('flood_zone', 'No'))
+                    col_m7.metric("Occupancy", info.get('occupancy_group', 'N/A'))
                     
-                    # Lógica para mostrar el dueño (Business name o nombre personal)
-                    owner_name = info.get('owner_business')
-                    if not owner_name:
-                        owner_name = f"{info.get('owner_first', '')} {info.get('owner_last', '')}".strip()
-                    if not owner_name:
-                        owner_name = "N/A"
-                        
-                    col_m7.metric("Property Owner", owner_name)
-                    # El disclaimer (advertencia) del DOB
-                    col_m7.markdown("<p style='font-size: 12px; color: #A0AEC0; margin-top: -15px;'><i>* Owner data from DOB/BIS records may be outdated or inaccurate.</i></p>", unsafe_allow_html=True)
+                    owner_name = info.get('owner_business') or f"{info.get('owner_first', '')} {info.get('owner_last', '')}".strip() or "N/A"
+                    col_m8.metric("Property Owner", owner_name)
                     
                     st.markdown("<br>", unsafe_allow_html=True)
+
+                    # --- Fila 4: Sprinklers, Elevators, Coordinates ---
+                    col_m9, col_m10, col_m11 = st.columns([1, 1, 2])
+                    col_m9.metric("Sprinklers (History)", info.get('has_sprinklers', 'Unknown'))
+                    col_m10.metric("Elevators (History)", info.get('has_elevators', 'Unknown'))
+                    col_m11.metric("X / Y Coordinates", f"{info.get('x_coord', 'N/A')} / {info.get('y_coord', 'N/A')}")
+
+                    # --- SECCIÓN CONDICIONAL: TRABAJOS DE FIRE ALARM ---
+                    if info.get("fire_alarm_jobs"):
+                        st.markdown("<br>", unsafe_allow_html=True)
+                        st.markdown("""
+                        <div style='background-color: #FFF5F5; border-left: 4px solid #E53E3E; padding: 10px 15px; margin-bottom: 15px;'>
+                            <h5 style='color: #C53030; margin:0;'>🚨 Historical Fire Alarm Jobs Detected</h5>
+                        </div>
+                        """, unsafe_allow_html=True)
+                        
+                        # Mostrar la tabla limpia en Streamlit
+                        st.dataframe(
+                            info["fire_alarm_jobs"],
+                            use_container_width=True,
+                            hide_index=True
+                        )
+                    
+                    # --- DISCLAIMER ---
+                    st.markdown("""
+                    <div style='background-color: #F7FAFC; padding: 12px; border-radius: 6px; border-left: 4px solid #A0AEC0; margin-top: 25px; margin-bottom: 20px;'>
+                        <p style='font-size: 12px; color: #4A5568; margin: 0; line-height: 1.4;'>
+                        <b>* Accuracy Disclaimer:</b> Property ownership, structural data, and historical jobs are retrieved in real-time from public NYC APIs (DOB NOW, BIS, PLUTO). Due to filing delays or database inconsistencies, this information is provided "AS IS". Always verify critical details.
+                        </p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
                     st.markdown("<h4 style='color: #2D3748;'>⚡ Quick Actions (Smart Links)</h4>", unsafe_allow_html=True)
                     
-                    col_link1, col_link2 = st.columns(2)
+                    col_link1, col_link2, col_link3 = st.columns(3)
                     
                     with col_link1:
                         dob_url = f"https://a810-bisweb.nyc.gov/bisweb/COsByLocationServlet?requestid=1&allbin={final_bin}"
-                        st.link_button("🏛️ 1. View Certificate of Occupancy (DOB)", dob_url, use_container_width=True)
-                        
-                        fdny_report_url = "https://fires.fdnycloud.org/CitizenAccess/Report/ReportParameter.aspx?module=&reportID=1423&reportType=LINK_REPORT_LIST"
-                        st.link_button("📄 2. Generate Full FDNY Profile", fdny_report_url, use_container_width=True)
-                        st.caption(f"Input BIN **{final_bin}** manually if requested.")
-
+                        st.link_button("🏛️ View C of O (DOB)", dob_url, use_container_width=True)
                     with col_link2:
-                        caphome_url = "https://fires.fdnycloud.org/CitizenAccess/Cap/CapHome.aspx?module=BFP&TabName=BFP"
-                        st.link_button("🔥 3. FDNY LOA Lookup", caphome_url, use_container_width=True)
-                        st.caption("Access the FDNY portal to manually search for Letter of Approval accounts or violations.")
+                        fdny_url = "https://fires.fdnycloud.org/CitizenAccess/Report/ReportParameter.aspx?module=&reportID=1423&reportType=LINK_REPORT_LIST"
+                        st.link_button("📄 Full FDNY Profile", fdny_url, use_container_width=True)
+                    with col_link3:
+                        # ZOLA Link usando el BBL
+                        bbl = info.get('bbl_full', '')
+                        zola_url = f"https://zola.planning.nyc.gov/lot/{bbl}" if bbl else "https://zola.planning.nyc.gov/"
+                        st.link_button("🗺️ NYC ZOLA Map", zola_url, use_container_width=True)
+
+                    # Botón extra abajo para CapHome
+                    caphome_url = "https://fires.fdnycloud.org/CitizenAccess/Cap/CapHome.aspx?module=BFP&TabName=BFP"
+                    st.link_button("🔥 FDNY CapHome Portal (LOA Search)", caphome_url, use_container_width=True)
                     
                     try:
                         supabase.table("property_searches").insert({
@@ -595,8 +626,7 @@ with tabs[1]:
                             "bin": final_bin,
                             "loa_account_found": "Manual Search" 
                         }).execute()
-                    except Exception as e:
-                        pass
+                    except Exception: pass
 
 
 # ------------------------------------------------------------
