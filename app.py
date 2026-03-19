@@ -7,17 +7,8 @@ from io import BytesIO
 import time
 import extra_streamlit_components as stx
 
-cookie_manager = stx.CookieManager()
-
-# --- LA SOLUCIÓN: GUARDAR COOKIES EN EL FLUJO PRINCIPAL ---
-if st.session_state.get("guardar_cookies"):
-    cookie_manager.set("sb_access", st.session_state.temp_access, max_age=2592000, key="set_access_cookie")
-    cookie_manager.set("sb_refresh", st.session_state.temp_refresh, max_age=2592000, key="set_refresh_cookie")
-    st.session_state.guardar_cookies = False
-# ----------------------------------------------------------
-
 # ============================================================
-# CONFIGURACIÓN Y TEMA VISUAL (UI PRO)
+# 1. CONFIGURACIÓN Y TEMA VISUAL (DEBE IR PRIMERO)
 # ============================================================
 st.set_page_config(
     page_title="Fire Form Pro", 
@@ -26,8 +17,25 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+# ============================================================
+# 2. INICIALIZACIÓN DE COOKIES Y "EL FRENO"
+# ============================================================
+cookie_manager = stx.CookieManager()
 
+# --- EL FRENO OBLIGATORIO ---
+# Si get_all() devuelve None, significa que Chrome aún no le manda los datos a Python.
+# Forzamos una recarga rápida antes de intentar leer o guardar nada.
+if cookie_manager.get_all() is None:
+    time.sleep(0.5)
+    st.rerun()
+# ----------------------------
 
+# --- LA SOLUCIÓN: GUARDAR COOKIES EN EL FLUJO PRINCIPAL ---
+if st.session_state.get("guardar_cookies"):
+    cookie_manager.set("sb_access", st.session_state.temp_access, max_age=2592000, key="set_access_cookie")
+    cookie_manager.set("sb_refresh", st.session_state.temp_refresh, max_age=2592000, key="set_refresh_cookie")
+    st.session_state.guardar_cookies = False
+# ----------------------------------------------------------
 
 # Estilo CSS Moderno (Light Theme + Naranja Fire Alarm)
 modern_styles = """
