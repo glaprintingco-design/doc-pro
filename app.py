@@ -4,6 +4,9 @@ import main
 import os
 import zipfile
 from io import BytesIO
+from streamlit_cookies_controller import CookieController # <-- NUEVO
+
+controller = CookieController()
 
 # ============================================================
 # CONFIGURACIÓN Y TEMA VISUAL (UI PRO)
@@ -176,6 +179,11 @@ st.markdown(modern_styles, unsafe_allow_html=True)
 # ============================================================
 # INICIALIZACIÓN Y VARIABLES
 # ============================================================
+from streamlit_cookies_controller import CookieController
+
+# Inicializar el controlador de cookies para mantener la sesión
+controller = CookieController() 
+
 main.API_KEY_NYC = st.secrets.get("NYC_API_KEY", "")
 main.APP_TOKEN_SOCRATA = st.secrets.get("SOCRATA_TOKEN", "")
 
@@ -191,14 +199,30 @@ if "supabase" not in st.session_state:
 
 supabase = st.session_state.supabase
 
+# --- LÓGICA DE SESIÓN PERSISTENTE (COOKIES) ---
 if "user" not in st.session_state:
     st.session_state.user = None
-    try:
-        session = supabase.auth.get_session()
-        if session and session.user:
-            st.session_state.user = session.user
-    except Exception:
-        pass
+    
+    # 1. Intentar leer las cookies guardadas en el navegador
+    access_token = controller.get('sb_access')
+    refresh_token = controller.get('sb_refresh')
+    
+    # 2. Si existen cookies, restauramos la sesión mágicamente
+    if access_token and refresh_token:
+        try:
+            session_data = supabase.auth.set_session(access_token, refresh_token)
+            if session_data and session_data.user:
+                st.session_state.user = session_data.user
+        except Exception:
+            pass
+    else:
+        # 3. Fallback: Si no hay cookies, intentamos la lectura de sesión normal
+        try:
+            session = supabase.auth.get_session()
+            if session and session.user:
+                st.session_state.user = session.user
+        except Exception:
+            pass
 
 if "device_list" not in st.session_state:
     st.session_state.device_list = []
@@ -214,6 +238,9 @@ def logout():
         supabase.auth.sign_out()
     except Exception:
         pass
+        
+    controller.remove('sb_access')
+    controller.remove('sb_refresh')    
     st.session_state.user = None
     st.session_state.device_list = []
     st.session_state.generated_data = None
@@ -414,6 +441,13 @@ def login_ui_centered():
                             response = supabase.auth.sign_in_with_password({"email": email.strip(), "password": password})
                             if response.user:
                                 st.session_state.user = response.user
+                                
+                                # --- NUEVO: Guardar en Cookies por 30 días ---
+                                if response.session:
+                                    controller.set('sb_access', response.session.access_token, max_age=2592000)
+                                    controller.set('sb_refresh', response.session.refresh_token, max_age=2592000)
+                                # ---------------------------------------------
+                                
                                 st.rerun()
                         except Exception as e:
                             st.error("⚠️ Invalid email or password.")
