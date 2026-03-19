@@ -17,6 +17,45 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+import base64
+import json
+
+# ============================================================
+# 1.5 PWA MANIFEST (CONVERTIR A APP NATIVA PARA CELULARES)
+# ============================================================
+manifest = {
+    "name": "Fire Form Pro",
+    "short_name": "FireForm",
+    "description": "Automated form generation for the NYC Fire Alarm Industry",
+    "theme_color": "#FF6B00",
+    "background_color": "#F4F7F9",
+    "display": "standalone", # Esto quita la barra del navegador (URL)
+    "start_url": "/",
+    "icons": [
+        {
+            "src": "app_icon.png", # Usará el mismo logo que ya subiste
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "app_icon.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}
+
+# Convertimos el diccionario a un texto JSON y lo codificamos en Base64
+manifest_json = json.dumps(manifest)
+b64_manifest = base64.b64encode(manifest_json.encode()).decode()
+
+# Inyectamos el manifest de forma invisible en la página
+st.markdown(
+    f'<link rel="manifest" href="data:application/manifest+json;base64,{b64_manifest}">',
+    unsafe_allow_html=True
+)
+
+
 # ============================================================
 # 2. INICIALIZACIÓN DE COOKIES Y "PANTALLA DE CARGA"
 # ============================================================
