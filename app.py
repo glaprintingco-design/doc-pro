@@ -20,6 +20,11 @@ if st.session_state.get("guardar_cookies"):
 # CONFIGURACIÓN Y TEMA VISUAL (UI PRO)
 # ============================================================
 st.set_page_config(
+    page_title="Fire Form Pro", 
+    layout="wide", 
+    page_icon="app_icon.png",
+    initial_sidebar_state="collapsed"
+)
 
 
 
@@ -986,7 +991,7 @@ with tabs[0]:
             if not is_pro:
                 st.info(f"💡 Free Account: You have used {usos_mes} out of 2 forms this month.")
                 
-            if st.button("🔥 GENERATE DOCUMENTS", type="primary", use_container_width=True):
+            if st.button("GENERATE DOCUMENTS", type="primary", use_container_width=True):
                 if not bin_number:
                     st.error("⚠️ Please enter a BIN number.")
                 elif not (gen_tm1 or gen_a433 or gen_b45 or gen_report):
