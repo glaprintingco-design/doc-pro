@@ -297,7 +297,6 @@ def obtener_datos_completos(bin_number):
         "owner_first": "", "owner_last": "", "owner_business": "", "owner_address": "", 
         "owner_phone": "", "owner_email": "", "owner_city": "", "owner_state": "NY", 
         "owner_zip": "", "has_digital_co": False,
-        # --- NUEVOS CAMPOS ---
         "x_coord": "", "y_coord": "", "dcp_address": "", 
         "has_sprinklers": "Unknown", "has_elevators": "Unknown",
         "fire_alarm_jobs": []
@@ -321,23 +320,18 @@ def obtener_datos_completos(bin_number):
             info["bbl_full"] = d.get("bbl", "").strip()
             info["tax_class"] = d.get("rpadBuildingClassificationCode", "").strip()
             
-            # Nuevos datos Geoclient
             info["x_coord"] = d.get("xCoordinate", "")
             info["y_coord"] = d.get("yCoordinate", "")
             
-            # Rango DCP
             low_hn = str(d.get("giLowHouseNumber1", "")).strip()
             high_hn = str(d.get("giHighHouseNumber1", "")).strip()
             if low_hn and high_hn and low_hn != high_hn:
                 info["dcp_address"] = f"{low_hn}-{high_hn} {info['street']}"
             else:
                 info["dcp_address"] = f"{info['house']} {info['street']}"
-                
-            print(f"   ✅ [Geoclient] Address Found: {info['dcp_address']}")
-    except Exception as e:
-        print(f"   ❌ [Geoclient] Error: {e}")
+    except Exception as e: print(f"   ❌ [Geoclient] Error: {e}")
 
-    # --- NIVEL 2: PLUTO ---
+    # --- NIVEL 2: PLUTO (Respaldo Fuerte para Coordenadas) ---
     if info["bbl_full"]:
         try:
             r_pluto = requests.get("https://data.cityofnewyork.us/resource/64uk-42ks.json", 
@@ -348,6 +342,11 @@ def obtener_datos_completos(bin_number):
                 if pluto.get("pfirm15_flag") == "1": info["flood_zone"] = "Yes"
                 info["owner_business_backup"] = pluto.get("ownername", "").strip()
                 if not info["tax_class"]: info["tax_class"] = pluto.get("bldgclass", "").strip()
+                
+                # PLAN B PARA COORDENADAS: Si Geoclient falló, PLUTO las tiene
+                if not info["x_coord"]: info["x_coord"] = str(pluto.get("xcoord", "")).strip()
+                if not info["y_coord"]: info["y_coord"] = str(pluto.get("ycoord", "")).strip()
+                
                 if not info["house"] and pluto.get("address"):
                     addr_raw = pluto.get("address").split(" ", 1)
                     info["house"], info["street"] = addr_raw[0], (addr_raw[1] if len(addr_raw) > 1 else "")
@@ -358,7 +357,7 @@ def obtener_datos_completos(bin_number):
     if dob_now_info: info.update(dob_now_info)
     if buscar_co_dob_now(bin_number, headers_socrata): info["has_digital_co"] = True
 
-    # --- NIVEL 3: ESCANEO HISTÓRICO BIS (Buscador de Fire Alarm) ---
+    # --- NIVEL 3: ESCANEO HISTÓRICO BIS ---
     try:
         r_bis = requests.get("https://data.cityofnewyork.us/resource/ic3t-wcy2.json", 
                            params={"bin__": bin_number, "$order": "latest_action_date DESC", "$limit": 100}, 
@@ -368,7 +367,6 @@ def obtener_datos_completos(bin_number):
             raw_h, raw_s, raw_c, raw_o, desc_total = "0", "0", "", "", ""
             
             for job in jobs:
-                # Datos del dueño
                 if not info["owner_business"] and not info["owner_last"]:
                     bn = str(job.get("owner_s_business_name") or "").strip()
                     if bn:
@@ -380,30 +378,30 @@ def obtener_datos_completos(bin_number):
                         info["owner_city"] = job.get("owner_s_city", info["borough"])
                         info["owner_zip"] = job.get("owner_s_zip", info["zip"])
 
-                # Datos técnicos
                 if raw_h == "0": raw_h = str(job.get("existing_height") or "0")
                 if raw_s == "0": raw_s = str(job.get("existingno_of_stories") or "0")
                 if not raw_c: raw_c = job.get("existing_construction_class", "")
                 if not raw_o: raw_o = job.get("existing_occupancy", "")
                 if info["landmarked"] == "No" and job.get("landmarked") in ["Y", "YES"]: info["landmarked"] = "Yes"
 
-                # --- ESCÁNER DE PALABRAS CLAVE ---
                 job_desc_individual = str(job.get("job_description") or "").upper()
                 desc_total += " " + job_desc_individual
                 
                 if "SPRINKLER" in job_desc_individual: info["has_sprinklers"] = "Yes"
                 if "ELEVATOR" in job_desc_individual: info["has_elevators"] = "Yes"
                 
-                # Buscar trabajos de Fire Alarm
-                if "FIRE ALARM" in job_desc_individual or "SMOKE" in job_desc_individual:
+                # --- NUEVO: LINK EXACTO AL TRABAJO EN BIS ---
+                if "FIRE ALARM" in job_desc_individual or " FA " in job_desc_individual:
                     job_num = job.get("job__", "")
-                    # Evitar duplicados en la lista
                     if job_num and not any(j["Job #"] == job_num for j in info["fire_alarm_jobs"]):
+                        # Construimos la URL que apunta directamente al Job
+                        job_url = f"https://a810-bisweb.nyc.gov/bisweb/JobsQueryByNumberServlet?passjobnumber={job_num}&passdocnumber=01"
                         info["fire_alarm_jobs"].append({
                             "Job #": job_num,
                             "Status": job.get("job_status", "N/A"),
-                            "Date": job.get("latest_action_date", "N/A")[:10], # Solo la fecha YYYY-MM-DD
-                            "Description": job_desc_individual.capitalize()[:60] + "..." # Cortar descripciones muy largas
+                            "Date": job.get("latest_action_date", "N/A")[:10],
+                            "Description": job_desc_individual.capitalize()[:60] + "...",
+                            "DOB Link": job_url  # <-- El link mágico
                         })
 
             info["height"], info["stories"] = raw_h, raw_s
