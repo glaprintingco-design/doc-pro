@@ -20,23 +20,7 @@ st.set_page_config(
 # Inicializar el controlador de cookies en lo más alto y darle un nombre único
 controller = CookieController(key="auth_cookies")
 
-# ============================================================
-# CONFIGURACIÓN DE APP NATIVA (PWA / MOBILE)
-# ============================================================
-native_app_meta = """
-<head>
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="mobile-web-app-capable" content="yes">
-    
-    <meta name="apple-mobile-web-app-title" content="Fire Form Pro">
-    <meta name="application-name" content="Fire Form Pro">
-    
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    
-    <meta name="theme-color" content="#FF6B00">
-</head>
-"""
-st.markdown(native_app_meta, unsafe_allow_html=True)
+
 
 # Estilo CSS Moderno (Light Theme + Naranja Fire Alarm)
 modern_styles = """
@@ -435,7 +419,7 @@ def login_ui_centered():
         hook_html = """
         <div style="background-color: #FFFaf0; border-left: 4px solid #FF6B00; padding: 12px 16px; border-radius: 4px; margin-bottom: 55px;">
             <p style="color: #4A5568; font-size: 14.5px; margin: 0; font-style: italic;">
-                "FDNY paperwork is painful. It doesn’t have to be. Do it in <b>20 seconds</b>."
+                "Your NYC property research and automation tool. Get the intel you need and generate forms in <b>20 seconds</b>."
             </p>
         </div>
         """
