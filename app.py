@@ -4,9 +4,8 @@ import main
 import os
 import zipfile
 from io import BytesIO
+import time
 from streamlit_cookies_controller import CookieController # <-- NUEVO
-
-controller = CookieController()
 
 # ============================================================
 # CONFIGURACIÓN Y TEMA VISUAL (UI PRO)
@@ -14,9 +13,30 @@ controller = CookieController()
 st.set_page_config(
     page_title="Fire Form Pro", 
     layout="wide", 
-    page_icon="🔥",
+    page_icon="app_icon.png", # Asegúrate de que siga apuntando a tu logo
     initial_sidebar_state="collapsed"
 )
+
+# Inicializar el controlador de cookies en lo más alto y darle un nombre único
+controller = CookieController(key="auth_cookies")
+
+# ============================================================
+# CONFIGURACIÓN DE APP NATIVA (PWA / MOBILE)
+# ============================================================
+native_app_meta = """
+<head>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    
+    <meta name="apple-mobile-web-app-title" content="Fire Form Pro">
+    <meta name="application-name" content="Fire Form Pro">
+    
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <meta name="theme-color" content="#FF6B00">
+</head>
+"""
+st.markdown(native_app_meta, unsafe_allow_html=True)
 
 # Estilo CSS Moderno (Light Theme + Naranja Fire Alarm)
 modern_styles = """
@@ -180,10 +200,7 @@ st.markdown(modern_styles, unsafe_allow_html=True)
 # INICIALIZACIÓN Y VARIABLES
 # ============================================================
 from streamlit_cookies_controller import CookieController
-
-# Inicializar el controlador de cookies para mantener la sesión
-controller = CookieController() 
-
+ 
 main.API_KEY_NYC = st.secrets.get("NYC_API_KEY", "")
 main.APP_TOKEN_SOCRATA = st.secrets.get("SOCRATA_TOKEN", "")
 
@@ -244,6 +261,7 @@ def logout():
     st.session_state.user = None
     st.session_state.device_list = []
     st.session_state.generated_data = None
+    time.sleep(0.5)
     st.rerun()
 
 def fetch_user_profile(user_id):
@@ -446,6 +464,8 @@ def login_ui_centered():
                                 if response.session:
                                     controller.set('sb_access', response.session.access_token, max_age=2592000)
                                     controller.set('sb_refresh', response.session.refresh_token, max_age=2592000)
+                                
+                                    time.sleep(0.5)
                                 # ---------------------------------------------
                                 
                                 st.rerun()
