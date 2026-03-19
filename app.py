@@ -11,8 +11,8 @@ cookie_manager = stx.CookieManager()
 
 # --- LA SOLUCIÓN: GUARDAR COOKIES EN EL FLUJO PRINCIPAL ---
 if st.session_state.get("guardar_cookies"):
-    cookie_manager.set("sb_access", st.session_state.temp_access, max_age=2592000)
-    cookie_manager.set("sb_refresh", st.session_state.temp_refresh, max_age=2592000)
+    cookie_manager.set("sb_access", st.session_state.temp_access, max_age=2592000, key="set_access_cookie")
+    cookie_manager.set("sb_refresh", st.session_state.temp_refresh, max_age=2592000, key="set_refresh_cookie")
     st.session_state.guardar_cookies = False
 # ----------------------------------------------------------
 
@@ -243,8 +243,8 @@ def logout():
     except Exception:
         pass
         
-    cookie_manager.delete("sb_access")
-    cookie_manager.delete("sb_refresh")
+    cookie_manager.delete("sb_access", key="del_access_cookie")
+    cookie_manager.delete("sb_refresh", key="del_refresh_cookie")
     
     st.session_state.user = None
     st.session_state.device_list = []
