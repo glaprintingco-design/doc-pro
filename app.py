@@ -5,7 +5,13 @@ import os
 import zipfile
 from io import BytesIO
 import time
-from streamlit_cookies_controller import CookieController # <-- NUEVO
+import extra_streamlit_components as stx
+
+@st.cache_resource
+def get_cookie_manager():
+    return stx.CookieManager()
+
+cookie_manager = get_cookie_manager()
 
 # ============================================================
 # CONFIGURACIÓN Y TEMA VISUAL (UI PRO)
@@ -17,8 +23,6 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Inicializar el controlador de cookies en lo más alto y darle un nombre único
-controller = CookieController(key="auth_cookies")
 
 
 
@@ -183,7 +187,6 @@ st.markdown(modern_styles, unsafe_allow_html=True)
 # ============================================================
 # INICIALIZACIÓN Y VARIABLES
 # ============================================================
-from streamlit_cookies_controller import CookieController
  
 main.API_KEY_NYC = st.secrets.get("NYC_API_KEY", "")
 main.APP_TOKEN_SOCRATA = st.secrets.get("SOCRATA_TOKEN", "")
@@ -204,11 +207,9 @@ supabase = st.session_state.supabase
 if "user" not in st.session_state:
     st.session_state.user = None
     
-    # 1. Intentar leer las cookies guardadas en el navegador
-    access_token = controller.get('sb_access')
-    refresh_token = controller.get('sb_refresh')
+    access_token = cookie_manager.get(cookie="sb_access")
+    refresh_token = cookie_manager.get(cookie="sb_refresh")
     
-    # 2. Si existen cookies, restauramos la sesión mágicamente
     if access_token and refresh_token:
         try:
             session_data = supabase.auth.set_session(access_token, refresh_token)
@@ -217,7 +218,6 @@ if "user" not in st.session_state:
         except Exception:
             pass
     else:
-        # 3. Fallback: Si no hay cookies, intentamos la lectura de sesión normal
         try:
             session = supabase.auth.get_session()
             if session and session.user:
@@ -240,8 +240,8 @@ def logout():
     except Exception:
         pass
         
-    controller.remove('sb_access')
-    controller.remove('sb_refresh')    
+    cookie_manager.delete("sb_access")
+    cookie_manager.delete("sb_refresh")
     st.session_state.user = None
     st.session_state.device_list = []
     st.session_state.generated_data = None
@@ -446,8 +446,8 @@ def login_ui_centered():
                                 
                                 # --- NUEVO: Guardar en Cookies por 30 días ---
                                 if response.session:
-                                    controller.set('sb_access', response.session.access_token, max_age=2592000)
-                                    controller.set('sb_refresh', response.session.refresh_token, max_age=2592000)
+                                    cookie_manager.set("sb_access", response.session.access_token, max_age=2592000)
+                                    cookie_manager.set("sb_refresh", response.session.refresh_token, max_age=2592000)
                                 
                                     time.sleep(0.5)
                                 # ---------------------------------------------
