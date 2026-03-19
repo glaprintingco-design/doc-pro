@@ -5,3 +5,4 @@ pypdf
 customtkinter
 supabase
 PyMuPDF
+streamlit-cookies-controller
