@@ -9,15 +9,17 @@ import extra_streamlit_components as stx
 
 cookie_manager = stx.CookieManager()
 
+# --- LA SOLUCIÓN: GUARDAR COOKIES EN EL FLUJO PRINCIPAL ---
+if st.session_state.get("guardar_cookies"):
+    cookie_manager.set("sb_access", st.session_state.temp_access, max_age=2592000)
+    cookie_manager.set("sb_refresh", st.session_state.temp_refresh, max_age=2592000)
+    st.session_state.guardar_cookies = False
+# ----------------------------------------------------------
+
 # ============================================================
 # CONFIGURACIÓN Y TEMA VISUAL (UI PRO)
 # ============================================================
 st.set_page_config(
-    page_title="Fire Form Pro", 
-    layout="wide", 
-    page_icon="app_icon.png", # Asegúrate de que siga apuntando a tu logo
-    initial_sidebar_state="collapsed"
-)
 
 
 
@@ -238,10 +240,12 @@ def logout():
         
     cookie_manager.delete("sb_access")
     cookie_manager.delete("sb_refresh")
+    
     st.session_state.user = None
     st.session_state.device_list = []
     st.session_state.generated_data = None
-    time.sleep(0.5)
+    st.session_state.guardar_cookies = False # Limpieza por seguridad
+    time.sleep(0.5) # Le damos medio segundo a JS para borrar la cookie
     st.rerun()
 
 def fetch_user_profile(user_id):
@@ -436,21 +440,24 @@ def login_ui_centered():
                 else:
                     with st.spinner("Authenticating..."):
                         try:
+                            # 1. Intentamos el login
                             response = supabase.auth.sign_in_with_password({"email": email.strip(), "password": password})
+                            
                             if response.user:
                                 st.session_state.user = response.user
                                 
-                                # --- NUEVO: Guardar en Cookies por 30 días ---
+                                # 2. Preparamos las cookies para que se guarden en el recargo
                                 if response.session:
-                                    cookie_manager.set("sb_access", response.session.access_token, max_age=2592000)
-                                    cookie_manager.set("sb_refresh", response.session.refresh_token, max_age=2592000)
+                                    st.session_state.temp_access = response.session.access_token
+                                    st.session_state.temp_refresh = response.session.refresh_token
+                                    st.session_state.guardar_cookies = True
                                 
-                                    time.sleep(0.5)
-                                # ---------------------------------------------
-                                
+                                # 3. Recargamos la app
                                 st.rerun()
                         except Exception as e:
-                            st.error("⚠️ Invalid email or password.")
+                            # Imprimimos el error REAL por si algo más falla (y no un mensaje ciego)
+                            st.error(f"⚠️ Invalid email or password: {e}")
+                          
         
         with tab2:
             st.markdown("<br>", unsafe_allow_html=True)
