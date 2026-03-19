@@ -8,7 +8,7 @@ import time
 import extra_streamlit_components as stx
 
 # ============================================================
-# 1. CONFIGURACIÓN Y TEMA VISUAL (DEBE IR PRIMERO)
+# 1. CONFIGURACIÓN Y TEMA VISUAL (SIEMPRE PRIMERO)
 # ============================================================
 st.set_page_config(
     page_title="Fire Form Pro", 
@@ -18,16 +18,25 @@ st.set_page_config(
 )
 
 # ============================================================
-# 2. INICIALIZACIÓN DE COOKIES Y "EL FRENO"
+# 2. INICIALIZACIÓN DE COOKIES Y "PANTALLA DE CARGA"
 # ============================================================
 cookie_manager = stx.CookieManager()
 
-# --- EL FRENO OBLIGATORIO ---
-# Si get_all() devuelve None, significa que Chrome aún no le manda los datos a Python.
-# Forzamos una recarga rápida antes de intentar leer o guardar nada.
-if cookie_manager.get_all() is None:
-    time.sleep(0.5)
-    st.rerun()
+# Le preguntamos al manager si ya terminó de conectarse a Chrome
+cookies_list = cookie_manager.get_all()
+
+# Si es None, significa que estamos en la primera milésima de segundo.
+if cookies_list is None:
+    # Mostramos una pantalla de carga bonita para ocultar el "parpadeo"
+    st.markdown("""
+        <div style='height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center;'>
+            <h2 style='color: #FF6B00; margin-bottom: 10px;'>🔥 Fire Form Pro</h2>
+            <p style='color: #718096; font-size: 16px;'>Establishing secure connection...</p>
+        </div>
+    """, unsafe_allow_html=True)
+    # st.stop() detiene la ejecución del resto del código (no dibuja el login)
+    # PERO permite que el CookieManager termine de cargar por debajo.
+    st.stop() 
 # ----------------------------
 
 # --- LA SOLUCIÓN: GUARDAR COOKIES EN EL FLUJO PRINCIPAL ---
@@ -36,6 +45,51 @@ if st.session_state.get("guardar_cookies"):
     cookie_manager.set("sb_refresh", st.session_state.temp_refresh, max_age=2592000, key="set_refresh_cookie")
     st.session_state.guardar_cookies = False
 # ----------------------------------------------------------
+
+# ============================================================
+# 3. INICIALIZACIÓN DE BASE DE DATOS Y USUARIO
+# ============================================================
+main.API_KEY_NYC = st.secrets.get("NYC_API_KEY", "")
+main.APP_TOKEN_SOCRATA = st.secrets.get("SOCRATA_TOKEN", "")
+
+SUPABASE_URL = st.secrets.get("SUPABASE_URL", "https://uhhiqkymipbcepqzwtvg.supabase.co")
+SUPABASE_KEY = st.secrets.get("SUPABASE_KEY", "sb_publishable_mvqOWXc5s4b3_IMe4gGexw_sU3B2DRL")
+
+if "supabase" not in st.session_state:
+    try:
+        st.session_state.supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    except Exception as e:
+        st.error(f"❌ Failed to connect to Supabase: {e}")
+        st.stop()
+
+supabase = st.session_state.supabase
+
+# --- LÓGICA DE SESIÓN PERSISTENTE ---
+if "user" not in st.session_state or st.session_state.user is None:
+    # Ya sabemos que cookies_list NO es None aquí, así que es seguro leer
+    access_token = cookie_manager.get("sb_access")
+    refresh_token = cookie_manager.get("sb_refresh")
+    
+    if access_token and refresh_token:
+        try:
+            session_data = supabase.auth.set_session(access_token, refresh_token)
+            if session_data and session_data.user:
+                st.session_state.user = session_data.user
+        except Exception:
+            pass
+    else:
+        try:
+            session = supabase.auth.get_session()
+            if session and session.user:
+                st.session_state.user = session.user
+        except Exception:
+            pass
+
+if "device_list" not in st.session_state:
+    st.session_state.device_list = []
+
+if "generated_data" not in st.session_state:
+    st.session_state.generated_data = None
 
 # Estilo CSS Moderno (Light Theme + Naranja Fire Alarm)
 modern_styles = """
