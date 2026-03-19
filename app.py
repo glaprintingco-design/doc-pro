@@ -7,11 +7,7 @@ from io import BytesIO
 import time
 import extra_streamlit_components as stx
 
-@st.cache_resource
-def get_cookie_manager():
-    return stx.CookieManager()
-
-cookie_manager = get_cookie_manager()
+cookie_manager = stx.CookieManager()
 
 # ============================================================
 # CONFIGURACIÓN Y TEMA VISUAL (UI PRO)
