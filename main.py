@@ -289,7 +289,6 @@ def buscar_co_dob_now(bin_number, headers_soc):
 def obtener_datos_completos(bin_number):
     print(f"📡 1. Fetching master data for BIN: {bin_number}...")
     
-    # Estructura base de datos
     info = {
         "bin": bin_number, "house": "", "street": "", "borough": "", "zip": "", 
         "block": "", "lot": "", "bbl_full": "", "tax_class": "",
@@ -297,21 +296,23 @@ def obtener_datos_completos(bin_number):
         "landmarked": "No", "flood_zone": "No", 
         "owner_first": "", "owner_last": "", "owner_business": "", "owner_address": "", 
         "owner_phone": "", "owner_email": "", "owner_city": "", "owner_state": "NY", 
-        "owner_zip": "", "has_digital_co": False
+        "owner_zip": "", "has_digital_co": False,
+        # --- NUEVOS CAMPOS ---
+        "x_coord": "", "y_coord": "", "dcp_address": "", 
+        "has_sprinklers": "Unknown", "has_elevators": "Unknown",
+        "fire_alarm_jobs": []
     }
 
     headers_socrata = {"X-App-Token": APP_TOKEN_SOCRATA}
     
-    # --- NIVEL 1: GEOCLIENT (Dirección Oficial) ---
+    # --- NIVEL 1: GEOCLIENT (Coordenadas y Rangos) ---
     try:
-        # Importante: API_KEY_NYC debe ser inyectada desde app.py usando st.secrets
         url_geo = "https://api.nyc.gov/geoclient/v2/bin"
         r_geo = requests.get(url_geo, params={"bin": bin_number}, 
                              headers={"Ocp-Apim-Subscription-Key": API_KEY_NYC}, timeout=10)
         
         if r_geo.status_code == 200:
             d = r_geo.json().get('bin', {})
-            # Usamos .strip() para evitar espacios que rompan el PDF
             info["house"] = (d.get("giLowHouseNumber1") or d.get("houseNumber", "")).strip()
             info["street"] = (d.get("giStreetName1") or d.get("streetName", "")).strip()
             info["borough"] = d.get("firstBoroughName", "").strip()
@@ -319,14 +320,24 @@ def obtener_datos_completos(bin_number):
             info["lot"] = d.get("bblTaxLot", "").strip()
             info["bbl_full"] = d.get("bbl", "").strip()
             info["tax_class"] = d.get("rpadBuildingClassificationCode", "").strip()
-            print(f"   ✅ [Geoclient] Address Found: {info['house']} {info['street']}")
-        else:
-            print(f"   ⚠️ [Geoclient] Error {r_geo.status_code}: Verify NYC API Key.")
             
+            # Nuevos datos Geoclient
+            info["x_coord"] = d.get("xCoordinate", "")
+            info["y_coord"] = d.get("yCoordinate", "")
+            
+            # Rango DCP
+            low_hn = str(d.get("giLowHouseNumber1", "")).strip()
+            high_hn = str(d.get("giHighHouseNumber1", "")).strip()
+            if low_hn and high_hn and low_hn != high_hn:
+                info["dcp_address"] = f"{low_hn}-{high_hn} {info['street']}"
+            else:
+                info["dcp_address"] = f"{info['house']} {info['street']}"
+                
+            print(f"   ✅ [Geoclient] Address Found: {info['dcp_address']}")
     except Exception as e:
-        print(f"   ❌ [Geoclient] Connection failed: {e}")
+        print(f"   ❌ [Geoclient] Error: {e}")
 
-    # --- NIVEL 2: PLUTO / SOCRATA (Respaldo de Dirección y ZIP) ---
+    # --- NIVEL 2: PLUTO ---
     if info["bbl_full"]:
         try:
             r_pluto = requests.get("https://data.cityofnewyork.us/resource/64uk-42ks.json", 
@@ -337,42 +348,34 @@ def obtener_datos_completos(bin_number):
                 if pluto.get("pfirm15_flag") == "1": info["flood_zone"] = "Yes"
                 info["owner_business_backup"] = pluto.get("ownername", "").strip()
                 if not info["tax_class"]: info["tax_class"] = pluto.get("bldgclass", "").strip()
-                
-                # FALLBACK: Si Geoclient falló, intentamos reconstruir la dirección desde PLUTO
                 if not info["house"] and pluto.get("address"):
                     addr_raw = pluto.get("address").split(" ", 1)
-                    info["house"] = addr_raw[0]
-                    info["street"] = addr_raw[1] if len(addr_raw) > 1 else ""
-                    print(f"   🔄 [PLUTO] Address recovered via BBL: {info['house']} {info['street']}")
-        except Exception as e:
-            print(f"   ⚠️ [PLUTO] Fallback failed: {e}")
+                    info["house"], info["street"] = addr_raw[0], (addr_raw[1] if len(addr_raw) > 1 else "")
+        except Exception: pass
 
-    # --- CONSULTAS DE DOB NOW (Dueños y C.O.) ---
+    # --- DOB NOW ---
     dob_now_info = consultar_dob_now(bin_number, headers_socrata)
     if dob_now_info: info.update(dob_now_info)
     if buscar_co_dob_now(bin_number, headers_socrata): info["has_digital_co"] = True
 
-    # --- NIVEL 3: ESCANEO HISTÓRICO BIS (Para Altura, Pisos y Dueños antiguos) ---
-    print(f"   📡 [BIS] Scanning job history...")
+    # --- NIVEL 3: ESCANEO HISTÓRICO BIS (Buscador de Fire Alarm) ---
     try:
         r_bis = requests.get("https://data.cityofnewyork.us/resource/ic3t-wcy2.json", 
-                           params={"bin__": bin_number, "$order": "latest_action_date DESC", "$limit": 50}, 
+                           params={"bin__": bin_number, "$order": "latest_action_date DESC", "$limit": 100}, 
                            headers=headers_socrata, timeout=10)
         if r_bis.status_code == 200:
             jobs = r_bis.json()
-            raw_h, raw_s, raw_c, raw_o, desc = "0", "0", "", "", ""
+            raw_h, raw_s, raw_c, raw_o, desc_total = "0", "0", "", "", ""
             
             for job in jobs:
-                # Si aún no tenemos dueño, lo buscamos en el historial
+                # Datos del dueño
                 if not info["owner_business"] and not info["owner_last"]:
                     bn = str(job.get("owner_s_business_name") or "").strip()
                     if bn:
                         info["owner_business"] = bn
                         info["owner_first"] = str(job.get("owner_s_first_name") or "").strip()
                         info["owner_last"] = str(job.get("owner_s_last_name") or "").strip()
-                        info["owner_phone"] = str(job.get("owner_sphone__") or "").replace("-","")
-                        oh = job.get("owner_s_house_number", ""); os = job.get("owner_s_street_name", "")
-                        # Si no hay dirección de dueño, usamos la de la propiedad
+                        oh, os = job.get("owner_s_house_number", ""), job.get("owner_s_street_name", "")
                         info["owner_address"] = f"{oh} {os}" if oh else f"{info['house']} {info['street']}"
                         info["owner_city"] = job.get("owner_s_city", info["borough"])
                         info["owner_zip"] = job.get("owner_s_zip", info["zip"])
@@ -382,24 +385,36 @@ def obtener_datos_completos(bin_number):
                 if raw_s == "0": raw_s = str(job.get("existingno_of_stories") or "0")
                 if not raw_c: raw_c = job.get("existing_construction_class", "")
                 if not raw_o: raw_o = job.get("existing_occupancy", "")
-                desc += " " + str(job.get("job_description") or "")
                 if info["landmarked"] == "No" and job.get("landmarked") in ["Y", "YES"]: info["landmarked"] = "Yes"
 
+                # --- ESCÁNER DE PALABRAS CLAVE ---
+                job_desc_individual = str(job.get("job_description") or "").upper()
+                desc_total += " " + job_desc_individual
+                
+                if "SPRINKLER" in job_desc_individual: info["has_sprinklers"] = "Yes"
+                if "ELEVATOR" in job_desc_individual: info["has_elevators"] = "Yes"
+                
+                # Buscar trabajos de Fire Alarm
+                if "FIRE ALARM" in job_desc_individual or "SMOKE" in job_desc_individual:
+                    job_num = job.get("job__", "")
+                    # Evitar duplicados en la lista
+                    if job_num and not any(j["Job #"] == job_num for j in info["fire_alarm_jobs"]):
+                        info["fire_alarm_jobs"].append({
+                            "Job #": job_num,
+                            "Status": job.get("job_status", "N/A"),
+                            "Date": job.get("latest_action_date", "N/A")[:10], # Solo la fecha YYYY-MM-DD
+                            "Description": job_desc_individual.capitalize()[:60] + "..." # Cortar descripciones muy largas
+                        })
+
             info["height"], info["stories"] = raw_h, raw_s
-            
-            # Traducción inteligente (Asegúrate de tener esta función en main.py)
-            trad = traducir_datos(raw_o, raw_c, desc, info["tax_class"])
+            trad = traducir_datos(raw_o, raw_c, desc_total, info["tax_class"])
             info["occupancy_group"] = trad["occ"]
             info["construction_class"] = trad["const"]
             info["raw_occupancy"], info["raw_construction_class"] = raw_o, raw_c
-            info["debug_nota_occ"] = info["debug_nota_const"] = trad["nota"]
-    except Exception as e:
-        print(f"   ⚠️ [BIS] History scan error: {e}")
+            info["debug_nota_occ"], info["debug_nota_const"] = trad["nota"], trad["nota"]
+    except Exception as e: print(f"   ⚠️ [BIS] Error: {e}")
 
-    # Limpieza final
-    if not info["owner_business"]: 
-        info["owner_business"] = info.get("owner_business_backup", "")
-        
+    if not info["owner_business"]: info["owner_business"] = info.get("owner_business_backup", "")
     return info
     
 def rellenar_pdf_inteligente(input_pdf, output_pdf, campos):
