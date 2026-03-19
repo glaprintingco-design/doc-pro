@@ -573,7 +573,10 @@ with tabs[1]:
                     col_m9, col_m10, col_m11 = st.columns([1, 1, 2])
                     col_m9.metric("Sprinklers (History)", info.get('has_sprinklers', 'Unknown'))
                     col_m10.metric("Elevators (History)", info.get('has_elevators', 'Unknown'))
-                    col_m11.metric("X / Y Coordinates", f"{info.get('x_coord', 'N/A')} / {info.get('y_coord', 'N/A')}")
+                    
+                    x_c = info.get('x_coord') or 'N/A'
+                    y_c = info.get('y_coord') or 'N/A'
+                    col_m11.metric("X / Y Coordinates", f"{x_c} / {y_c}")
 
                     # --- SECCIÓN CONDICIONAL: TRABAJOS DE FIRE ALARM ---
                     if info.get("fire_alarm_jobs"):
@@ -584,11 +587,14 @@ with tabs[1]:
                         </div>
                         """, unsafe_allow_html=True)
                         
-                        # Mostrar la tabla limpia en Streamlit
+                        # --- NUEVO: TABLA CON LINKS CLICABLES ---
                         st.dataframe(
                             info["fire_alarm_jobs"],
                             use_container_width=True,
-                            hide_index=True
+                            hide_index=True,
+                            column_config={
+                                "DOB Link": st.column_config.LinkColumn("Action", display_text="View in BIS 🔗")
+                            }
                         )
                     
                     # --- DISCLAIMER ---
@@ -611,9 +617,17 @@ with tabs[1]:
                         fdny_url = "https://fires.fdnycloud.org/CitizenAccess/Report/ReportParameter.aspx?module=&reportID=1423&reportType=LINK_REPORT_LIST"
                         st.link_button("📄 Full FDNY Profile", fdny_url, use_container_width=True)
                     with col_link3:
-                        # ZOLA Link usando el BBL
+                        # --- NUEVO: LÓGICA PARA ZOLA MAP ---
                         bbl = info.get('bbl_full', '')
-                        zola_url = f"https://zola.planning.nyc.gov/lot/{bbl}" if bbl else "https://zola.planning.nyc.gov/"
+                        if bbl and len(bbl) == 10:
+                            # BBL = 1 dígito de borough + 5 de block + 4 de lot
+                            boro = bbl[0]
+                            block = str(int(bbl[1:6])) # int() remueve los ceros a la izquierda
+                            lot = str(int(bbl[6:10]))
+                            zola_url = f"https://zola.planning.nyc.gov/lot/{boro}/{block}/{lot}"
+                        else:
+                            zola_url = "https://zola.planning.nyc.gov/"
+                            
                         st.link_button("🗺️ NYC ZOLA Map", zola_url, use_container_width=True)
 
                     # Botón extra abajo para CapHome
