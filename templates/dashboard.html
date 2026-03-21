@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | Fire Form Pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <link href="/static/style.css" rel="stylesheet">
+    
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#1a202c">
+    <link rel="apple-touch-icon" href="/static/app_icon.png">
+    
+    <script src="https://www.paypal.com/sdk/js?client-id=AeCRCUKXnF3G_15llpYzaFzgqbaOeay3eWcO6fXMcaoRA6Cy7v2iXO5FOQPaqenMndAzHRR_YArdquue&vault=true&intent=subscription" data-sdk-integration-source="button-factory"></script>
+</head>
+<body>
+
+    <div class="d-md-none d-flex justify-content-between align-items-center p-3 text-white" style="background-color: #1a202c;">
+        <h5 class="m-0 fw-bold" style="color: var(--nyc-orange);">Fire Form Pro</h5>
+        <button class="btn btn-outline-light btn-sm" onclick="toggleSidebar()"><i class="bi bi-list fs-4"></i></button>
+    </div>
+
+    <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+    <div class="sidebar">
+        <div class="brand text-center d-none d-md-block">
+            <img src="/static/logo.png" alt="Fire Form Pro" style="max-height: 170px; width: auto;">
+        </div>
+        <ul class="nav flex-column">
+            <li class="nav-item"><a class="nav-link active" onclick="switchTab('tab-lookup', this)"><i class="bi bi-search"></i> Property Lookup</a></li>
+            <li class="nav-item"><a class="nav-link" onclick="switchTab('tab-builder', this)"><i class="bi bi-hammer"></i> Project Builder</a></li>
+            <li class="nav-item"><a class="nav-link" onclick="switchTab('tab-profile', this)"><i class="bi bi-person-badge"></i> Profile Settings</a></li>
+            <li class="nav-item mt-5"><a class="nav-link" href="/logout"><i class="bi bi-door-open"></i> Logout</a></li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+        <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+            <h2 class="fw-bold m-0" id="page-title" style="color: var(--nyc-blue);">Property Lookup</h2>
+            <span class="badge bg-white text-dark border p-2 shadow-sm d-none d-sm-inline-block"><i class="bi bi-person-circle text-muted"></i> {{ session.get('user_email', 'User') }}</span>
+        </div>
+
+        <div id="tab-lookup" class="tab-content-view active">
+            <p class="text-muted mb-4">Scan NYC databases to uncover property details.</p>
+            
+            <div class="card-custom">
+                <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
+                    <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#search-bin" type="button">By BIN</button></li>
+                    <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#search-address" type="button">By Address</button></li>
+                </ul>
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="search-bin">
+                        <div class="row g-2 align-items-end">
+                            <div class="col-md-9"><label class="form-label">Property BIN Number</label><input type="text" id="lookup_bin" class="form-control" placeholder="e.g. 3335982"></div>
+                            <div class="col-md-3"><button class="btn btn-primary-custom w-100" onclick="runPropertyLookup('bin')">Run Lookup</button></div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="search-address">
+                        <div class="row g-2 align-items-end">
+                            <div class="col-md-2"><label class="form-label">House No.</label><input type="text" id="lookup_house" class="form-control" placeholder="164"></div>
+                            <div class="col-md-4"><label class="form-label">Street Name</label><input type="text" id="lookup_street" class="form-control" placeholder="Atlantic Ave"></div>
+                            <div class="col-md-3">
+                                <label class="form-label">Borough</label>
+                                <select id="lookup_boro" class="form-select">
+                                    <option>Manhattan</option><option>Brooklyn</option><option>Queens</option><option>Bronx</option><option>Staten Island</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3"><button class="btn btn-primary-custom w-100" onclick="runPropertyLookup('address')">Run Lookup</button></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="lookup-results" style="display: none;">
+                <hr class="my-4">
+                <h4 class="fw-bold mb-3">🏢 Property Overview</h4>
+                <div class="card-custom">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5 class="fw-bold mb-0" id="res_address">Loading...</h5>
+                            <p class="text-muted" id="res_dcp">DCP Address: Loading...</p>
+                        </div>
+                        <div class="col-md-6 text-md-start text-md-end mt-2 mt-md-0">
+                            <h5 class="fw-bold mb-0">BIN: <span id="res_bin" class="text-primary">Loading...</span></h5>
+                        </div>
+                    </div>
+                    
+                    <div class="row g-3 mb-3">
+                        <div class="col-6 col-md-3"><div class="metric-box"><div class="metric-label">Block / Lot</div><div class="metric-value" id="res_blocklot">- / -</div></div></div>
+                        <div class="col-6 col-md-3"><div class="metric-box"><div class="metric-label">Height</div><div class="metric-value" id="res_height">- ft</div></div></div>
+                        <div class="col-6 col-md-3"><div class="metric-box"><div class="metric-label">Stories</div><div class="metric-value" id="res_stories">-</div></div></div>
+                        <div class="col-6 col-md-3"><div class="metric-box"><div class="metric-label">Const. Class</div><div class="metric-value" id="res_const">-</div></div></div>
+                    </div>
+                    <div class="row g-3 mb-4">
+                        <div class="col-6 col-md-3"><div class="metric-box"><div class="metric-label">Landmark</div><div class="metric-value" id="res_landmark">-</div></div></div>
+                        <div class="col-6 col-md-3"><div class="metric-box"><div class="metric-label">Flood Zone</div><div class="metric-value" id="res_flood">-</div></div></div>
+                        <div class="col-6 col-md-3"><div class="metric-box"><div class="metric-label">Occupancy</div><div class="metric-value" id="res_occ">-</div></div></div>
+                        <div class="col-6 col-md-3"><div class="metric-box"><div class="metric-label">Property Owner</div><div class="metric-value text-truncate" id="res_owner">-</div></div></div>
+                    </div>
+
+                    <h5 class="fw-bold mb-3">⚡ Quick Actions (Smart Links)</h5>
+                    <div class="row g-2">
+                        <div class="col-md-4"><a id="link_dob" href="#" target="_blank" class="btn btn-secondary-custom w-100">🏛️ View C of O (DOB)</a></div>
+                        <div class="col-md-4"><a href="https://fires.fdnycloud.org/CitizenAccess/Report/ReportParameter.aspx?module=&reportID=1423&reportType=LINK_REPORT_LIST" target="_blank" class="btn btn-secondary-custom w-100">📄 Full FDNY Profile</a></div>
+                        <div class="col-md-4"><a id="link_zola" href="#" target="_blank" class="btn btn-secondary-custom w-100">🗺️ NYC ZOLA Map</a></div>
+                        <div class="col-md-12"><a href="https://fires.fdnycloud.org/CitizenAccess/Cap/CapHome.aspx?module=BFP&TabName=BFP" target="_blank" class="btn btn-outline-danger w-100 mt-2 fw-bold">🔥 FDNY CapHome Portal (LOA Search)</a></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-builder" class="tab-content-view">
+            
+            <div class="alert alert-danger shadow-sm border-start border-danger border-4" role="alert">
+                <h5 class="alert-heading fw-bold"><i class="bi bi-exclamation-triangle-fill"></i> Action Required: Complete Your Profile First</h5>
+                <p class="mb-0">Before generating your first PDF, please go to the <b>Profile Settings</b> tab to enter your company details and license numbers.</p>
+            </div>
+
+            <div class="accordion mb-4" id="historyAccordion">
+                <div class="accordion-item">
+                    <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#historyCol">📂 Recent Projects / History</button></h2>
+                    <div id="historyCol" class="accordion-collapse collapse"><div class="accordion-body text-muted">No saved projects yet.</div></div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-5">
+                    <div class="card-custom">
+                        <div class="section-title">1️⃣ Project Information</div>
+                        <div class="mb-3"><label class="form-label">Property BIN Number</label><input type="text" id="builder_bin" class="form-control" placeholder="e.g. 1012345"></div>
+                        <div class="mb-3"><label class="form-label">TM-1 Job Description</label><textarea id="builder_desc" class="form-control" rows="4">Installation of Fire Alarm System.</textarea></div>
+                    </div>
+
+                    <div class="card-custom">
+                        <div class="section-title text-center">3️⃣ Document Generation</div>
+                        <div class="d-flex flex-wrap justify-content-between mb-4">
+                            <div class="form-check"><input class="form-check-input" type="checkbox" id="chk_tm1" checked><label class="form-check-label fw-bold">📄 TM-1</label></div>
+                            <div class="form-check"><input class="form-check-input" type="checkbox" id="chk_a433" checked><label class="form-check-label fw-bold">📋 A-433</label></div>
+                            <div class="form-check"><input class="form-check-input" type="checkbox" id="chk_b45" checked><label class="form-check-label fw-bold">🔍 B-45</label></div>
+                            <div class="form-check"><input class="form-check-input" type="checkbox" id="chk_report" checked><label class="form-check-label fw-bold">📊 Report</label></div>
+                        </div>
+
+                        <div id="generate-action-area">
+                            <button class="btn btn-primary-custom w-100" id="btn-generate" onclick="generateDocuments()">GENERATE DOCUMENTS</button>
+                        </div>
+
+                        <div id="paypal-upgrade-container" style="display: none; text-align: center; margin-top: 15px;">
+                            <div class="alert alert-warning border-warning border-start border-4 text-start shadow-sm mb-3">
+                                <b><i class="bi bi-lock-fill"></i> Limit Reached</b><br>
+                                You have reached your free limit (2 forms/month). Upgrade to Pro for unlimited generation.
+                            </div>
+                            <div id="paypal-button-container-P-73L06517ME334400KNGY24TI"></div>
+                        </div>
+
+                        <div id="generate-status" class="mt-3 text-center"></div>
+                    </div>
+                </div>
+
+                <div class="col-lg-7">
+                    <div class="card-custom h-100">
+                        <div class="section-title">2️⃣ Device Schedule <span class="text-muted fw-normal" style="font-size:0.9rem;">(A-433 Optional)</span></div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-6 col-md-3"><label class="form-label">Floor</label><select id="dev_floor" class="form-select"><option>Cellar</option><option>Basement</option><option>1st Floor</option><option>2nd Floor</option><option>Roof</option></select></div>
+                            <div class="col-6 col-md-5">
+                                <label class="form-label">Device Type</label>
+                                <select id="dev_type" class="form-select">
+                                    <optgroup label="Initiating"><option>Smoke Detector</option><option>Manual Pull Station</option><option>Water Flow Vane Switch</option></optgroup>
+                                    <optgroup label="Signals"><option>Horn Strobe</option><option>Speaker Strobe</option></optgroup>
+                                    <optgroup label="Firepanel"><option>Fire Alarm Control</option></optgroup>
+                                </select>
+                            </div>
+                            <div class="col-6 col-md-2"><label class="form-label">Qty</label><input type="number" id="dev_qty" class="form-control" value="1" min="1"></div>
+                            <div class="col-6 col-md-2 d-flex align-items-end"><button class="btn btn-secondary-custom w-100" onclick="addDevice()">➕ Add</button></div>
+                        </div>
+                        <div class="table-responsive border rounded"><table class="table table-sm table-hover mb-0"><thead class="table-light"><tr><th>Qty</th><th>Type</th><th>Floor</th><th></th></tr></thead><tbody id="device-table-body"></tbody></table></div>
+                        <p id="empty-device-msg" class="text-center text-muted mt-4">No devices added yet</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-profile" class="tab-content-view">
+            <div class="alert alert-info"><i class="bi bi-floppy"></i> Data saved here is stored securely in the cloud and auto-fills your FDNY forms on every project.</div>
+
+            <div class="accordion" id="settingsAccordion">
+                
+                <div class="accordion-item mb-3 border rounded">
+                    <h2 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#c_vendor">🏢 Fire Alarm Vendor Information</button></h2>
+                    <div id="c_vendor" class="accordion-collapse collapse show"><div class="accordion-body row g-3">
+                        <div class="col-md-6"><label class="form-label">Company Name</label><input type="text" id="c_name" class="form-control"></div>
+                        <div class="col-md-6"><label class="form-label">Email</label><input type="email" id="c_email" class="form-control"></div>
+                        <div class="col-md-6"><label class="form-label">Address</label><input type="text" id="c_addr" class="form-control"></div>
+                        <div class="col-md-3"><label class="form-label">First Name</label><input type="text" id="c_first" class="form-control"></div>
+                        <div class="col-md-3"><label class="form-label">Last Name</label><input type="text" id="c_last" class="form-control"></div>
+                        <div class="col-md-4"><label class="form-label">City</label><input type="text" id="c_city" class="form-control"></div>
+                        <div class="col-md-2"><label class="form-label">State</label><input type="text" id="c_state" class="form-control" value="NY"></div>
+                        <div class="col-md-6"><label class="form-label">COF S97</label><input type="text" id="c_cof" class="form-control"></div>
+                        <div class="col-md-4"><label class="form-label">Zip Code</label><input type="text" id="c_zip" class="form-control"></div>
+                        <div class="col-md-2"><label class="form-label">Phone</label><input type="text" id="c_phone" class="form-control"></div>
+                        <div class="col-md-6"><label class="form-label">Exp. Date</label><input type="text" id="c_exp" class="form-control"></div>
+                    </div></div>
+                </div>
+
+                <div class="accordion-item mb-3 border rounded">
+                    <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#c_expeditor">📑 Filing Representative / Expeditor</button></h2>
+                    <div id="c_expeditor" class="accordion-collapse collapse"><div class="accordion-body row g-3">
+                        <div class="col-md-6"><label class="form-label">Company Name</label><input type="text" id="x_name" class="form-control"></div>
+                        <div class="col-md-6"><label class="form-label">Email</label><input type="email" id="x_email" class="form-control"></div>
+                        <div class="col-md-6"><label class="form-label">Address</label><input type="text" id="x_addr" class="form-control"></div>
+                        <div class="col-md-3"><label class="form-label">First Name</label><input type="text" id="x_first" class="form-control"></div>
+                        <div class="col-md-3"><label class="form-label">Last Name</label><input type="text" id="x_last" class="form-control"></div>
+                        <div class="col-md-4"><label class="form-label">City</label><input type="text" id="x_city" class="form-control"></div>
+                        <div class="col-md-2"><label class="form-label">State</label><input type="text" id="x_state" class="form-control" value="NY"></div>
+                        <div class="col-md-6"><label class="form-label">FDNY Reg No.</label><input type="text" id="x_reg" class="form-control"></div>
+                        <div class="col-md-4"><label class="form-label">Zip Code</label><input type="text" id="x_zip" class="form-control"></div>
+                        <div class="col-md-2"><label class="form-label">Phone</label><input type="text" id="x_phone" class="form-control"></div>
+                    </div></div>
+                </div>
+
+                <div class="accordion-item mb-3 border rounded">
+                    <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#c_arch">📐 Architect / Engineer Information</button></h2>
+                    <div id="c_arch" class="accordion-collapse collapse"><div class="accordion-body row g-3">
+                        <div class="col-md-6"><label class="form-label">Company Name</label><input type="text" id="a_name" class="form-control"></div>
+                        <div class="col-md-6"><label class="form-label">Email</label><input type="email" id="a_email" class="form-control"></div>
+                        <div class="col-md-6"><label class="form-label">Address</label><input type="text" id="a_addr" class="form-control"></div>
+                        <div class="col-md-3"><label class="form-label">First Name</label><input type="text" id="a_first" class="form-control"></div>
+                        <div class="col-md-3"><label class="form-label">Last Name</label><input type="text" id="a_last" class="form-control"></div>
+                        <div class="col-md-4"><label class="form-label">City</label><input type="text" id="a_city" class="form-control"></div>
+                        <div class="col-md-2"><label class="form-label">State</label><input type="text" id="a_state" class="form-control"></div>
+                        <div class="col-md-3"><label class="form-label">License No</label><input type="text" id="a_license" class="form-control"></div>
+                        <div class="col-md-3"><label class="form-label">Role</label><select id="a_role" class="form-select"><option>PE</option><option>RA</option></select></div>
+                        <div class="col-md-4"><label class="form-label">Zip Code</label><input type="text" id="a_zip" class="form-control"></div>
+                        <div class="col-md-2"><label class="form-label">Phone</label><input type="text" id="a_phone" class="form-control"></div>
+                    </div></div>
+                </div>
+
+                <div class="accordion-item mb-3 border rounded">
+                    <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#c_elec">⚡ Electrical Contractor Information</button></h2>
+                    <div id="c_elec" class="accordion-collapse collapse"><div class="accordion-body row g-3">
+                        <div class="col-md-6"><label class="form-label">Company Name</label><input type="text" id="e_name" class="form-control"></div>
+                        <div class="col-md-6"><label class="form-label">Email</label><input type="email" id="e_email" class="form-control"></div>
+                        <div class="col-md-6"><label class="form-label">Address</label><input type="text" id="e_addr" class="form-control"></div>
+                        <div class="col-md-3"><label class="form-label">First Name</label><input type="text" id="e_first" class="form-control"></div>
+                        <div class="col-md-3"><label class="form-label">Last Name</label><input type="text" id="e_last" class="form-control"></div>
+                        <div class="col-md-4"><label class="form-label">City</label><input type="text" id="e_city" class="form-control"></div>
+                        <div class="col-md-2"><label class="form-label">State</label><input type="text" id="e_state" class="form-control"></div>
+                        <div class="col-md-3"><label class="form-label">License No</label><input type="text" id="e_license" class="form-control"></div>
+                        <div class="col-md-3"><label class="form-label">Expiration</label><input type="text" id="e_exp" class="form-control"></div>
+                        <div class="col-md-4"><label class="form-label">Zip Code</label><input type="text" id="e_zip" class="form-control"></div>
+                        <div class="col-md-2"><label class="form-label">Phone</label><input type="text" id="e_phone" class="form-control"></div>
+                    </div></div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="accordion-item border rounded">
+                            <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#c_defaults">🛠️ A-433 Defaults</button></h2>
+                            <div id="c_defaults" class="accordion-collapse collapse"><div class="accordion-body row g-2">
+                                <div class="col-12"><label class="form-label">Default Manufacturer</label><input type="text" id="t_man" class="form-control"></div>
+                                <div class="col-12"><label class="form-label">BSA/MEA/COA Approval</label><input type="text" id="t_appr" class="form-control"></div>
+                                <div class="col-12"><label class="form-label">Wire Gauge</label><input type="text" id="t_gauge" class="form-control"></div>
+                                <div class="col-12"><label class="form-label">Wire Type</label><input type="text" id="t_wire" class="form-control"></div>
+                            </div></div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="accordion-item border rounded">
+                            <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#c_cs">📡 Central Station Info</button></h2>
+                            <div id="c_cs" class="accordion-collapse collapse"><div class="accordion-body row g-2">
+                                <div class="col-8"><label class="form-label">CS Name</label><input type="text" id="cs_name" class="form-control"></div>
+                                <div class="col-4"><label class="form-label">CS Code</label><input type="text" id="cs_code" class="form-control"></div>
+                                <div class="col-12"><label class="form-label">CS Address</label><input type="text" id="cs_addr" class="form-control"></div>
+                                <div class="col-5"><label class="form-label">CS City</label><input type="text" id="cs_city" class="form-control"></div>
+                                <div class="col-3"><label class="form-label">State</label><input type="text" id="cs_state" class="form-control"></div>
+                                <div class="col-4"><label class="form-label">Zip</label><input type="text" id="cs_zip" class="form-control"></div>
+                                <div class="col-12"><label class="form-label">Phone</label><input type="text" id="cs_phone" class="form-control"></div>
+                            </div></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div> 
+            
+            <div class="text-center mt-4">
+                <button class="btn btn-primary-custom px-5" onclick="saveProfile(event)"><i class="bi bi-floppy me-2"></i> Save Profile</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // --- 1. NAVEGACIÓN Y MOBILE ---
+        function switchTab(tabId, element) {
+            document.querySelectorAll('.tab-content-view').forEach(t => t.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            document.querySelectorAll('.sidebar .nav-link').forEach(l => l.classList.remove('active'));
+            element.classList.add('active');
+            document.getElementById('page-title').innerText = element.innerText;
+            if(window.innerWidth <= 768) toggleSidebar(); // Ocultar sidebar en móvil tras hacer clic
+        }
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('show');
+            document.querySelector('.sidebar-overlay').classList.toggle('show');
+        }
+
+        // --- 2. PROPERTY LOOKUP LOGIC ---
+        async function runPropertyLookup(type) {
+            let payload = { type: type };
+            if(type === 'bin') { payload.bin = document.getElementById('lookup_bin').value; } 
+            else { payload.house = document.getElementById('lookup_house').value; payload.street = document.getElementById('lookup_street').value; payload.borough = document.getElementById('lookup_boro').value; }
+
+            document.getElementById('lookup-results').style.display = 'block';
+            document.getElementById('res_address').innerHTML = '<div class="spinner-border spinner-border-sm"></div> Scanning databases...';
+            
+            try {
+                const response = await fetch('/search_property', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+                const data = await response.json();
+                if(data.error) throw new Error(data.error);
+
+                document.getElementById('res_address').innerText = `${data.house || ''} ${data.street || ''}, ${data.borough || ''}`;
+                document.getElementById('res_dcp').innerText = `DCP Address: ${data.dcp_address || 'N/A'}`;
+                document.getElementById('res_bin').innerText = data.bin || 'N/A';
+                document.getElementById('res_blocklot').innerText = `${data.block || '-'}/${data.lot || '-'}`;
+                document.getElementById('res_height').innerText = `${data.height || '0'} ft`;
+                document.getElementById('res_stories').innerText = data.stories || '-';
+                document.getElementById('res_const').innerText = data.construction_class || '-';
+                document.getElementById('res_landmark').innerText = data.landmarked || 'No';
+                document.getElementById('res_flood').innerText = data.flood_zone || 'No';
+                document.getElementById('res_occ').innerText = data.occupancy_group || '-';
+                document.getElementById('res_owner').innerText = data.owner_business || `${data.owner_first || ''} ${data.owner_last || ''}`.trim() || 'N/A';
+
+                document.getElementById('link_dob').href = `https://a810-bisweb.nyc.gov/bisweb/COsByLocationServlet?requestid=1&allbin=${data.bin}`;
+                if(data.bbl_full && data.bbl_full.length === 10) {
+                    const boro = data.bbl_full[0]; const block = parseInt(data.bbl_full.substring(1,6)); const lot = parseInt(data.bbl_full.substring(6,10));
+                    document.getElementById('link_zola').href = `https://zola.planning.nyc.gov/lot/${boro}/${block}/${lot}`;
+                }
+                document.getElementById('builder_bin').value = data.bin;
+            } catch (err) { document.getElementById('res_address').innerHTML = `<span class="text-danger">❌ ${err.message}</span>`; }
+        }
+
+        // --- 3. DEVICE SCHEDULE LOGIC ---
+        let deviceList = [];
+        function addDevice() {
+            const floor = document.getElementById('dev_floor').value; const type = document.getElementById('dev_type').value; const qty = document.getElementById('dev_qty').value;
+            if (!floor || !type || !qty) return;
+            deviceList.push({ floor, device: type, qty: parseInt(qty) }); renderTable();
+        }
+        function removeDevice(index) { deviceList.splice(index, 1); renderTable(); }
+        function renderTable() {
+            const tbody = document.getElementById('device-table-body'); tbody.innerHTML = '';
+            document.getElementById('empty-device-msg').style.display = deviceList.length ? 'none' : 'block';
+            deviceList.forEach((d, i) => { tbody.innerHTML += `<tr><td>${d.qty}</td><td>${d.device}</td><td>${d.floor}</td><td><button class="btn btn-sm btn-outline-danger border-0" onclick="removeDevice(${i})"><i class="bi bi-trash"></i></button></td></tr>`; });
+        }
+
+        // --- 4. GENERATE DOCUMENTS & PAYPAL LOGIC ---
+        let isPaypalRendered = false; 
+        
+        async function generateDocuments() {
+            const bin = document.getElementById('builder_bin').value;
+            const statusDiv = document.getElementById('generate-status');
+            const btnGen = document.getElementById('btn-generate');
+            if(!bin) { statusDiv.innerHTML = '<span class="text-danger">⚠️ BIN required.</span>'; return; }
+
+            let forms = [];
+            if (document.getElementById('chk_tm1').checked) forms.push('TM-1');
+            if (document.getElementById('chk_a433').checked) forms.push('A-433');
+            if (document.getElementById('chk_b45').checked) forms.push('B-45');
+            if (document.getElementById('chk_report').checked) forms.push('REPORT');
+
+            const payload = { bin: bin, job_desc: document.getElementById('builder_desc').value, devices: deviceList, forms: forms };
+            
+            btnGen.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Generating...';
+            btnGen.disabled = true;
+
+            try {
+                const response = await fetch('/api/generate', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+                
+                // --- LÓGICA SI LLEGÓ AL LÍMITE (403) ---
+                if (response.status === 403) {
+                    document.getElementById('generate-action-area').style.display = 'none';
+                    document.getElementById('paypal-upgrade-container').style.display = 'block';
+                    
+                    if(!isPaypalRendered) {
+                        const currentUserId = "{{ session.get('user_id', '') }}";
+                        paypal.Buttons({
+                            style: { shape: 'rect', color: 'gold', layout: 'vertical', label: 'subscribe' },
+                            createSubscription: function(data, actions) {
+                                return actions.subscription.create({
+                                    plan_id: 'P-73L06517ME334400KNGY24TI',
+                                    custom_id: currentUserId 
+                                });
+                            },
+                            onApprove: function(data, actions) {
+                                alert("Thank you for upgrading! Your Pro account is now active.");
+                                window.location.reload();
+                            }
+                        }).render('#paypal-button-container-P-73L06517ME334400KNGY24TI');
+                        isPaypalRendered = true;
+                    }
+                    statusDiv.innerHTML = '';
+                    return;
+                }
+
+                if (!response.ok) throw new Error("Server error processing your forms.");
+                
+                // Si todo fue bien, descargamos
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = `FDNY_Forms_${bin}.zip`;
+                document.body.appendChild(a); a.click(); a.remove(); window.URL.revokeObjectURL(url);
+                statusDiv.innerHTML = '<span class="text-success fw-bold">✅ Success! ZIP downloaded.</span>';
+                
+                // Refrescamos el historial automáticamente
+                loadProjects(); 
+                
+            } catch (error) { 
+                statusDiv.innerHTML = `<span class="text-danger">❌ ${error.message}</span>`; 
+            } finally {
+                btnGen.innerHTML = 'GENERATE DOCUMENTS';
+                btnGen.disabled = false;
+            }
+        }
+
+        // --- 5. CARGAR Y GUARDAR PERFIL ---
+        const profileMap = {
+            'c_name': 'company_name', 'c_email': 'company_email', 'c_addr': 'company_address', 
+            'c_first': 'company_first_name', 'c_last': 'company_last_name', 'c_city': 'company_city', 
+            'c_state': 'company_state', 'c_cof': 'company_cof_s97', 'c_zip': 'company_zip', 
+            'c_phone': 'company_phone', 'c_exp': 'company_expiration',
+            
+            'x_name': 'exp_name', 'x_email': 'exp_email', 'x_addr': 'exp_address', 
+            'x_first': 'exp_first_name', 'x_last': 'exp_last_name', 'x_city': 'exp_city', 
+            'x_state': 'exp_state', 'x_reg': 'exp_reg_no', 'x_zip': 'exp_zip', 'x_phone': 'exp_phone',
+            
+            'a_name': 'arch_name', 'a_email': 'arch_email', 'a_addr': 'arch_address', 
+            'a_first': 'arch_first_name', 'a_last': 'arch_last_name', 'a_city': 'arch_city', 
+            'a_state': 'arch_state', 'a_license': 'arch_license', 'a_role': 'arch_role', 
+            'a_zip': 'arch_zip', 'a_phone': 'arch_phone',
+            
+            'e_name': 'elec_name', 'e_email': 'elec_email', 'e_addr': 'elec_address', 
+            'e_first': 'elec_first_name', 'e_last': 'elec_last_name', 'e_city': 'elec_city', 
+            'e_state': 'elec_state', 'e_license': 'elec_license', 'e_exp': 'elec_expiration', 
+            'e_zip': 'elec_zip', 'e_phone': 'elec_phone',
+            
+            't_man': 'tech_manufacturer', 't_appr': 'tech_approval', 
+            't_gauge': 'tech_wire_gauge', 't_wire': 'tech_wire_type',
+            
+            'cs_name': 'cs_name', 'cs_code': 'cs_code', 'cs_addr': 'cs_address', 
+            'cs_city': 'cs_city', 'cs_state': 'cs_state', 'cs_zip': 'cs_zip', 'cs_phone': 'cs_phone'
+        };
+
+        async function loadProfile() {
+            try {
+                const response = await fetch('/api/profile');
+                if (!response.ok) return;
+                
+                const data = await response.json();
+                if (Object.keys(data).length === 0) return;
+
+                for (const [htmlId, dbName] of Object.entries(profileMap)) {
+                    if (document.getElementById(htmlId) && data[dbName]) {
+                        document.getElementById(htmlId).value = data[dbName];
+                    }
+                }
+            } catch (e) { console.log("Error loading profile:", e); }
+        }
+
+        async function saveProfile(event) {
+            const btn = event ? event.target : document.querySelector('button[onclick="saveProfile(event)"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Saving...';
+            btn.disabled = true;
+
+            let payload = {};
+            for (const [htmlId, dbName] of Object.entries(profileMap)) {
+                payload[dbName] = document.getElementById(htmlId).value;
+            }
+
+            try {
+                const response = await fetch('/api/profile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    alert("✅ Profile saved successfully! Your forms will now auto-fill with this data.");
+                } else {
+                    alert("❌ Error saving profile: " + (data.error || "Unknown error"));
+                }
+            } catch (error) {
+                alert("❌ Connection error. Please check your internet and try again.");
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        // --- 6. HISTORIAL Y BORRADO DE PROYECTOS ---
+        async function loadProjects() {
+            try {
+                const response = await fetch('/api/projects');
+                if (!response.ok) return;
+                
+                const projects = await response.json();
+                const historyDiv = document.querySelector('#historyCol .accordion-body');
+                
+                if (projects.length === 0) {
+                    historyDiv.innerHTML = "No saved projects yet.";
+                    return;
+                }
+                
+                historyDiv.innerHTML = '';
+                projects.forEach(p => {
+                    historyDiv.innerHTML += `
+                        <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                            <div><strong>${p.address}</strong> <span class="text-muted" style="font-size: 0.85rem;">(BIN: ${p.bin})</span></div>
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-outline-primary" onclick="loadProjectToBuilder('${p.bin}', '${p.job_description.replace(/'/g, "\\'")}')">Load 🔄</button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteProject('${p.id}')"><i class="bi bi-trash"></i></button>
+                            </div>
+                        </div>
+                    `;
+                });
+            } catch (e) { console.log("Error loading projects:", e); }
+        }
+
+        function loadProjectToBuilder(bin, desc) {
+            document.getElementById('builder_bin').value = bin;
+            document.getElementById('builder_desc').value = desc;
+            document.querySelector('#historyAccordion .accordion-button').click();
+        }
+
+        async function deleteProject(projectId) {
+            if(!confirm("Are you sure you want to delete this project?")) return;
+            try {
+                const res = await fetch(`/api/projects/${projectId}`, { method: 'DELETE' });
+                if(res.ok) {
+                    loadProjects(); // Recargar la lista automáticamente
+                } else {
+                    alert("Failed to delete project.");
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        // Cargar datos apenas la página termina de renderizar
+        document.addEventListener('DOMContentLoaded', () => {
+            loadProfile(); 
+            loadProjects();
+        });
+    </script>
+</body>
+</html>
