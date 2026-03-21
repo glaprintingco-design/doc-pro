@@ -246,59 +246,110 @@ def obtener_datos_completos(bin_number):
         "owner_zip": "", "has_digital_co": False,
         "x_coord": "", "y_coord": "", "dcp_address": "",
         "has_sprinklers": "Unknown", "has_elevators": "Unknown",
-        "fire_alarm_jobs": []
+        "fire_alarm_jobs": [], "year_built": "",
+        "pluto_stories": "", "pluto_bldgclass": "", "pluto_units": "", "pluto_year": ""
     }
 
     headers_socrata = {"X-App-Token": APP_TOKEN_SOCRATA}
 
-    # --- NIVEL 1: GEOCLIENT ---
+    # --- NIVEL 1A: GEOCLIENT (fuente primaria) ---
+    geoclient_ok = False
     try:
         url_geo = "https://api.nyc.gov/geoclient/v2/bin"
         r_geo = requests.get(url_geo, params={"bin": bin_number},
                              headers={"Ocp-Apim-Subscription-Key": API_KEY_NYC}, timeout=10)
         if r_geo.status_code == 200:
             d = r_geo.json().get('bin', {})
-            info["house"] = (d.get("giLowHouseNumber1") or d.get("houseNumber", "")).strip()
-            info["street"] = (d.get("giStreetName1") or d.get("streetName", "")).strip()
-            info["borough"] = d.get("firstBoroughName", "").strip()
-            info["block"] = d.get("bblTaxBlock", "").strip()
-            info["lot"] = d.get("bblTaxLot", "").strip()
-            info["bbl_full"] = d.get("bbl", "").strip()
+            info["house"]     = (d.get("giLowHouseNumber1") or d.get("houseNumber", "")).strip()
+            info["street"]    = (d.get("giStreetName1") or d.get("streetName", "")).strip()
+            info["borough"]   = d.get("firstBoroughName", "").strip()
+            info["block"]     = d.get("bblTaxBlock", "").strip()
+            info["lot"]       = d.get("bblTaxLot", "").strip()
+            info["bbl_full"]  = d.get("bbl", "").strip()
             info["tax_class"] = d.get("rpadBuildingClassificationCode", "").strip()
-            info["x_coord"] = d.get("xCoordinate", "")
-            info["y_coord"] = d.get("yCoordinate", "")
-            low_hn = str(d.get("giLowHouseNumber1", "")).strip()
+            info["x_coord"]   = str(d.get("xCoordinate", "")).strip()
+            info["y_coord"]   = str(d.get("yCoordinate", "")).strip()
+            low_hn  = str(d.get("giLowHouseNumber1", "")).strip()
             high_hn = str(d.get("giHighHouseNumber1", "")).strip()
-            if low_hn and high_hn and low_hn != high_hn:
-                info["dcp_address"] = f"{low_hn}-{high_hn} {info['street']}"
-            else:
-                info["dcp_address"] = f"{info['house']} {info['street']}"
-    except Exception as e: print(f"   [ERROR] Geoclient: {e}")
+            info["dcp_address"] = f"{low_hn}-{high_hn} {info['street']}" if (low_hn and high_hn and low_hn != high_hn) else f"{info['house']} {info['street']}"
+            if info["bbl_full"]:
+                geoclient_ok = True
+                print(f"   ✅ Geoclient OK: {info['house']} {info['street']}, BBL={info['bbl_full']}")
+        else:
+            print(f"   ⚠️ Geoclient error {r_geo.status_code} — will try PLUTO direct BIN lookup")
+    except Exception as e:
+        print(f"   ⚠️ Geoclient failed: {e} — will try PLUTO direct BIN lookup")
 
-    # --- NIVEL 2: PLUTO ---
+    # --- NIVEL 1B: PLUTO DIRECTO POR BIN (fallback si Geoclient falla) ---
+    # pad_folio dataset tiene BIN → BBL directamente sin necesitar API key
+    if not geoclient_ok:
+        try:
+            r_pad = requests.get("https://data.cityofnewyork.us/resource/w4v2-rv29.json",
+                                 params={"bin": bin_number, "$limit": 1},
+                                 headers=headers_socrata, timeout=10)
+            if r_pad.status_code == 200 and r_pad.json():
+                pad = r_pad.json()[0]
+                bbl = str(pad.get("bbl", "")).strip()
+                if bbl:
+                    info["bbl_full"] = bbl
+                    info["house"]    = str(pad.get("lhnd", "") or pad.get("address", "")).split()[0] if pad.get("lhnd") or pad.get("address") else ""
+                    info["street"]   = str(pad.get("stname", "")).strip()
+                    info["borough"]  = str(pad.get("boro_nm", "")).strip().title()
+                    info["block"]    = bbl[1:6].lstrip("0") if len(bbl) == 10 else ""
+                    info["lot"]      = bbl[6:].lstrip("0") if len(bbl) == 10 else ""
+                    info["dcp_address"] = f"{info['house']} {info['street']}".strip()
+                    print(f"   ✅ PAD fallback OK: BBL={bbl}")
+        except Exception as e:
+            print(f"   ⚠️ PAD fallback failed: {e}")
+
+    # --- NIVEL 2: PLUTO (por BBL si disponible, también por BIN directo) ---
+    pluto_data = None
+    # Intento 1: por BBL (más preciso)
     if info["bbl_full"]:
         try:
             r_pluto = requests.get("https://data.cityofnewyork.us/resource/64uk-42ks.json",
-                                 params={"bbl": info["bbl_full"]}, headers=headers_socrata, timeout=10)
+                                   params={"bbl": info["bbl_full"]}, headers=headers_socrata, timeout=10)
             if r_pluto.status_code == 200 and r_pluto.json():
-                pluto = r_pluto.json()[0]
-                info["zip"] = str(pluto.get("zipcode", "")).strip()
-                if pluto.get("pfirm15_flag") == "1": info["flood_zone"] = "Yes"
-                info["owner_business_backup"] = pluto.get("ownername", "").strip()
-                if not info["tax_class"]: info["tax_class"] = pluto.get("bldgclass", "").strip()
-                if not info["x_coord"]: info["x_coord"] = str(pluto.get("xcoord", "")).strip()
-                if not info["y_coord"]: info["y_coord"] = str(pluto.get("ycoord", "")).strip()
-                if not info["house"] and pluto.get("address"):
-                    addr_raw = pluto.get("address").split(" ", 1)
-                    info["house"], info["street"] = addr_raw[0], (addr_raw[1] if len(addr_raw) > 1 else "")
-                # PLUTO FALLBACK: guardar datos técnicos para usar si BIS falla
-                info["pluto_stories"]  = str(pluto.get("numfloors", "")).strip()
-                info["pluto_year"]     = str(pluto.get("yearbuilt", "")).strip()
-                info["pluto_bldgclass"]= str(pluto.get("bldgclass", "")).strip()
-                info["pluto_landuse"]  = str(pluto.get("landuse", "")).strip()
-                info["pluto_units"]    = str(pluto.get("unitsres", "")).strip()
-                info["year_built"]     = info["pluto_year"]
-        except Exception: pass
+                pluto_data = r_pluto.json()[0]
+                print(f"   ✅ PLUTO by BBL OK")
+        except Exception as e:
+            print(f"   ⚠️ PLUTO by BBL failed: {e}")
+
+    # Intento 2: por BIN directo (si BBL falló)
+    if not pluto_data:
+        try:
+            r_pluto2 = requests.get("https://data.cityofnewyork.us/resource/64uk-42ks.json",
+                                    params={"bin": bin_number}, headers=headers_socrata, timeout=10)
+            if r_pluto2.status_code == 200 and r_pluto2.json():
+                pluto_data = r_pluto2.json()[0]
+                print(f"   ✅ PLUTO by BIN direct OK")
+        except Exception as e:
+            print(f"   ⚠️ PLUTO by BIN failed: {e}")
+
+    if pluto_data:
+        info["zip"]    = str(pluto_data.get("zipcode", "")).strip()
+        info["year_built"]     = str(pluto_data.get("yearbuilt", "")).strip()
+        info["pluto_year"]     = info["year_built"]
+        info["pluto_stories"]  = str(pluto_data.get("numfloors", "")).strip()
+        info["pluto_bldgclass"]= str(pluto_data.get("bldgclass", "")).strip()
+        info["pluto_units"]    = str(pluto_data.get("unitsres", "")).strip()
+        if pluto_data.get("pfirm15_flag") == "1": info["flood_zone"] = "Yes"
+        info["owner_business_backup"] = pluto_data.get("ownername", "").strip()
+        if not info["tax_class"]: info["tax_class"] = pluto_data.get("bldgclass", "").strip()
+        if not info["x_coord"]:  info["x_coord"] = str(pluto_data.get("xcoord", "")).strip()
+        if not info["y_coord"]:  info["y_coord"] = str(pluto_data.get("ycoord", "")).strip()
+        # Si aún no tenemos BBL, lo tomamos de PLUTO
+        if not info["bbl_full"]: info["bbl_full"] = str(pluto_data.get("bbl", "")).strip()
+        # Si aún no tenemos dirección, la reconstruimos desde PLUTO
+        if not info["house"] and pluto_data.get("address"):
+            addr_raw = pluto_data.get("address").split(" ", 1)
+            info["house"]  = addr_raw[0]
+            info["street"] = addr_raw[1] if len(addr_raw) > 1 else ""
+        if not info["borough"] and pluto_data.get("borocode"):
+            boro_map = {"1": "MANHATTAN", "2": "BRONX", "3": "BROOKLYN", "4": "QUEENS", "5": "STATEN ISLAND"}
+            info["borough"] = boro_map.get(str(pluto_data.get("borocode")), "")
+        if not info["dcp_address"]:
+            info["dcp_address"] = f"{info['house']} {info['street']}".strip()
 
     # --- DOB NOW ---
     dob_now_info = consultar_dob_now(bin_number, headers_socrata)
@@ -361,60 +412,48 @@ def obtener_datos_completos(bin_number):
     # --- FALLBACK PLUTO: Si BIS no devolvió datos técnicos, usamos PLUTO ---
     if not info["stories"] or info["stories"] == "0":
         info["stories"] = info.get("pluto_stories", "")
-    if not info["height"] or info["height"] == "0":
-        # PLUTO no tiene altura en pies pero al menos ponemos stories como indicador
-        pass
+    # Height fallback: si no vino de BIS, estimamos multiplicando stories × 10 ft
+    if (not info["height"] or info["height"] == "0") and info["stories"]:
+        try:
+            info["height"] = str(int(float(info["stories"])) * 10)
+            info["debug_nota_height"] = f"[Height estimated: {info['stories']} floors × 10ft]"
+        except: pass
+
     if not info["construction_class"]:
-        # Traducir el building class de PLUTO (ej: "D4" → construcción de ladrillo → III-B)
         pluto_class = info.get("pluto_bldgclass", "")
         if pluto_class:
-            # Mapa simplificado de building class PLUTO a construcción IBC
             bclass_map = {
-                "A": "V-B",   # Row houses de madera
-                "B": "III-B", # Edificios de 2 familias
-                "C": "III-B", # Walk-up apartments
-                "D": "I-B",   # Elevator apartments
-                "E": "I-B",   # Warehouses
-                "F": "I-B",   # Factory/industrial
-                "G": "I-B",   # Garages
-                "H": "I-B",   # Hotels
-                "I": "I-B",   # Hospitals/institutions
-                "J": "III-B", # Theatres
-                "K": "III-B", # Store buildings
-                "L": "III-B", # Loft buildings
-                "M": "III-B", # Religious
-                "N": "I-B",   # Asylums/special
-                "O": "I-B",   # Office buildings
-                "P": "I-B",   # Indoor public assembly
-                "Q": "I-B",   # Outdoor recreation
-                "R": "I-C",   # Condos
-                "S": "III-B", # Mixed residential/commercial
-                "T": "I-B",   # Transportation
-                "U": "I-B",   # Utility/infrastructure
-                "V": "V-B",   # Vacant land
-                "W": "I-B",   # Schools/educational
-                "Y": "I-B",   # Government
-                "Z": "I-B",   # Misc
+                "A": "V-B",   "B": "III-B", "C": "III-B", "D": "I-B",
+                "E": "I-B",   "F": "I-B",   "G": "I-B",   "H": "I-B",
+                "I": "I-B",   "J": "III-B", "K": "III-B", "L": "III-B",
+                "M": "III-B", "N": "I-B",   "O": "I-B",   "P": "I-B",
+                "Q": "I-B",   "R": "I-C",   "S": "III-B", "T": "I-B",
+                "U": "I-B",   "V": "V-B",   "W": "I-B",   "Y": "I-B",   "Z": "I-B",
             }
             first_letter = pluto_class[0].upper() if pluto_class else ""
-            if first_letter in bclass_map:
-                trad_fallback = traducir_datos("", "", "", info["tax_class"])
-                info["construction_class"] = trad_fallback["const"] or bclass_map[first_letter]
-                info["raw_construction_class"] = f"PLUTO:{pluto_class}"
-                info["debug_nota_const"] = f"[Fallback PLUTO bldgclass={pluto_class} → {info['construction_class']}]"
+            # Usar bclass_map como fuente principal, traducir_datos como verificación secundaria
+            mapped = bclass_map.get(first_letter, "")
+            trad_fallback = traducir_datos("", "", "", info["tax_class"])
+            info["construction_class"] = trad_fallback["const"] if trad_fallback["const"] else mapped
+            if not info["construction_class"]: info["construction_class"] = mapped
+            info["raw_construction_class"] = f"PLUTO:{pluto_class}"
+            info["debug_nota_const"] = f"[Fallback PLUTO bldgclass={pluto_class} → {info['construction_class']}]"
+
     if not info["occupancy_group"]:
-        # Re-intentar traducción solo con tax_class si BIS falló
         trad_fallback = traducir_datos("", "", "", info["tax_class"])
         if trad_fallback["occ"]:
             info["occupancy_group"] = trad_fallback["occ"]
             info["raw_occupancy"] = f"PLUTO_TAX:{info['tax_class']}"
             info["debug_nota_occ"] = trad_fallback["nota"]
 
-    # Asegurar que raw_occupancy y raw_construction_class siempre existen en info
-    if "raw_occupancy" not in info:
-        info["raw_occupancy"] = info.get("raw_occupancy", "")
-    if "raw_construction_class" not in info:
-        info["raw_construction_class"] = info.get("raw_construction_class", "")
+    # Garantizar que raw_occupancy y raw_construction_class siempre existen
+    if "raw_occupancy" not in info:         info["raw_occupancy"] = ""
+    if "raw_construction_class" not in info: info["raw_construction_class"] = ""
+    if "debug_nota_occ" not in info:         info["debug_nota_occ"] = ""
+    if "debug_nota_const" not in info:       info["debug_nota_const"] = ""
+    # Garantizar landmarked y flood_zone como strings limpios
+    if info["landmarked"] not in ["Yes", "No"]:  info["landmarked"] = "No"
+    if info["flood_zone"] not in ["Yes", "No"]:  info["flood_zone"] = "No"
 
     # BUG FIX #2: Si owner_city sigue vacío después de todo, usar el borough como fallback
     if not info["owner_city"] and info["borough"]:
@@ -505,12 +544,20 @@ def rellenar_pdf_inteligente(input_pdf, output_pdf, campos):
 def generar_tm1(datos, input_pdf, output_pdf):
     print(f"📄 2. Generating TM-1...")
     try:
-        lm_yes = "/On" if datos["landmarked"] == "Yes" else "/Off"
-        lm_no  = "/On" if datos["landmarked"] == "No" else "/Off"
-        fl_yes = "/On" if datos["flood_zone"] == "Yes" else "/Off"
-        fl_no  = "/On" if datos["flood_zone"] == "No" else "/Off"
+        # Usar .get() con default "No" para evitar KeyError si el campo no existe
+        landmarked  = datos.get("landmarked", "No")
+        flood_zone  = datos.get("flood_zone", "No")
+        lm_yes = "/On" if landmarked == "Yes" else "/Off"
+        lm_no  = "/On" if landmarked != "Yes" else "/Off"
+        fl_yes = "/On" if flood_zone == "Yes" else "/Off"
+        fl_no  = "/On" if flood_zone != "Yes" else "/Off"
 
-        # BUG FIX #5: ARCHITECT["Phone"] puede ser None → forzar str
+        # Limpiar "0" de height y stories para no escribir "0" en el PDF
+        stories = datos.get("stories", "")
+        height  = datos.get("height", "")
+        if stories == "0": stories = ""
+        if height  == "0": height  = ""
+
         arch_phone = str(ARCHITECT.get("Phone") or "")
 
         campos = {
@@ -528,8 +575,8 @@ def generar_tm1(datos, input_pdf, output_pdf):
 
             # --- BUILDING INFO ---
             "Classification":   datos.get("construction_class", ""),
-            "Stories":          datos.get("stories", ""),
-            "Height ft":        datos.get("height", ""),
+            "Stories":          stories,
+            "Height ft":        height,
             "Building Dominant Occupancy Group": datos.get("occupancy_group", ""),
             "Occupancy classification of the area of work": datos.get("occupancy_group", ""),
             "undefined_18": lm_yes, "undefined_181": lm_no,
