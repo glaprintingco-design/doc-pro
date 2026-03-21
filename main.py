@@ -291,6 +291,13 @@ def obtener_datos_completos(bin_number):
                 if not info["house"] and pluto.get("address"):
                     addr_raw = pluto.get("address").split(" ", 1)
                     info["house"], info["street"] = addr_raw[0], (addr_raw[1] if len(addr_raw) > 1 else "")
+                # PLUTO FALLBACK: guardar datos técnicos para usar si BIS falla
+                info["pluto_stories"]  = str(pluto.get("numfloors", "")).strip()
+                info["pluto_year"]     = str(pluto.get("yearbuilt", "")).strip()
+                info["pluto_bldgclass"]= str(pluto.get("bldgclass", "")).strip()
+                info["pluto_landuse"]  = str(pluto.get("landuse", "")).strip()
+                info["pluto_units"]    = str(pluto.get("unitsres", "")).strip()
+                info["year_built"]     = info["pluto_year"]
         except Exception: pass
 
     # --- DOB NOW ---
@@ -350,6 +357,64 @@ def obtener_datos_completos(bin_number):
             info["raw_occupancy"], info["raw_construction_class"] = raw_o, raw_c
             info["debug_nota_occ"], info["debug_nota_const"] = trad["nota"], trad["nota"]
     except Exception as e: print(f"   [WARNING] BIS Error: {e}")
+
+    # --- FALLBACK PLUTO: Si BIS no devolvió datos técnicos, usamos PLUTO ---
+    if not info["stories"] or info["stories"] == "0":
+        info["stories"] = info.get("pluto_stories", "")
+    if not info["height"] or info["height"] == "0":
+        # PLUTO no tiene altura en pies pero al menos ponemos stories como indicador
+        pass
+    if not info["construction_class"]:
+        # Traducir el building class de PLUTO (ej: "D4" → construcción de ladrillo → III-B)
+        pluto_class = info.get("pluto_bldgclass", "")
+        if pluto_class:
+            # Mapa simplificado de building class PLUTO a construcción IBC
+            bclass_map = {
+                "A": "V-B",   # Row houses de madera
+                "B": "III-B", # Edificios de 2 familias
+                "C": "III-B", # Walk-up apartments
+                "D": "I-B",   # Elevator apartments
+                "E": "I-B",   # Warehouses
+                "F": "I-B",   # Factory/industrial
+                "G": "I-B",   # Garages
+                "H": "I-B",   # Hotels
+                "I": "I-B",   # Hospitals/institutions
+                "J": "III-B", # Theatres
+                "K": "III-B", # Store buildings
+                "L": "III-B", # Loft buildings
+                "M": "III-B", # Religious
+                "N": "I-B",   # Asylums/special
+                "O": "I-B",   # Office buildings
+                "P": "I-B",   # Indoor public assembly
+                "Q": "I-B",   # Outdoor recreation
+                "R": "I-C",   # Condos
+                "S": "III-B", # Mixed residential/commercial
+                "T": "I-B",   # Transportation
+                "U": "I-B",   # Utility/infrastructure
+                "V": "V-B",   # Vacant land
+                "W": "I-B",   # Schools/educational
+                "Y": "I-B",   # Government
+                "Z": "I-B",   # Misc
+            }
+            first_letter = pluto_class[0].upper() if pluto_class else ""
+            if first_letter in bclass_map:
+                trad_fallback = traducir_datos("", "", "", info["tax_class"])
+                info["construction_class"] = trad_fallback["const"] or bclass_map[first_letter]
+                info["raw_construction_class"] = f"PLUTO:{pluto_class}"
+                info["debug_nota_const"] = f"[Fallback PLUTO bldgclass={pluto_class} → {info['construction_class']}]"
+    if not info["occupancy_group"]:
+        # Re-intentar traducción solo con tax_class si BIS falló
+        trad_fallback = traducir_datos("", "", "", info["tax_class"])
+        if trad_fallback["occ"]:
+            info["occupancy_group"] = trad_fallback["occ"]
+            info["raw_occupancy"] = f"PLUTO_TAX:{info['tax_class']}"
+            info["debug_nota_occ"] = trad_fallback["nota"]
+
+    # Asegurar que raw_occupancy y raw_construction_class siempre existen en info
+    if "raw_occupancy" not in info:
+        info["raw_occupancy"] = info.get("raw_occupancy", "")
+    if "raw_construction_class" not in info:
+        info["raw_construction_class"] = info.get("raw_construction_class", "")
 
     # BUG FIX #2: Si owner_city sigue vacío después de todo, usar el borough como fallback
     if not info["owner_city"] and info["borough"]:
