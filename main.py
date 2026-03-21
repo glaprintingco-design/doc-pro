@@ -445,88 +445,47 @@ def generar_tm1(datos, input_pdf, output_pdf):
         fl_yes = "/On" if datos["flood_zone"] == "Yes" else "/Off"
         fl_no  = "/On" if datos["flood_zone"] == "No" else "/Off"
 
-        # BUG FIX #5: ARCHITECT["Phone"] puede ser None → forzar str
-        arch_phone = str(ARCHITECT.get("Phone") or "")
-
         campos = {
-            # --- OWNER / APPLICANT (sufijos _3 y _4 en el TM-1) ---
-            "Last Name_3":      datos.get("owner_last", ""),
-            "First Name_2":     datos.get("owner_first", ""),
-            "Business Name_4":  datos.get("owner_business", ""),
-            "Business Address_3": datos.get("owner_address", ""),
-            "City_3":           datos.get("owner_city", ""),
-            "State_3":          datos.get("owner_state", "NY"),
-            "Zip_3":            datos.get("owner_zip", ""),
-            "Business Tel_2":   datos.get("owner_phone", ""),
-            "Mobile Tel":       datos.get("owner_phone", ""),
-            "EMail_3":          datos.get("owner_email", ""),
-
-            # --- BUILDING INFO ---
-            "Classification":   datos.get("construction_class", ""),
-            "Stories":          datos.get("stories", ""),
-            "Height ft":        datos.get("height", ""),
-            "Building Dominant Occupancy Group": datos.get("occupancy_group", ""),
-            "Occupancy classification of the area of work": datos.get("occupancy_group", ""),
-            "undefined_18": lm_yes, "undefined_181": lm_no,
-            "undefined_19": fl_yes, "undefined_191": fl_no,
-            "Initial Filing Date": fecha_hoy,
-            "Total Fee": "585.00",
-            "NEW SUBMISSION": "/On",
-            "Fire AlarmFire SuppressionARCS Electrical": "/On",
-            "undefined": "/On",
-            "BIN":          datos.get("bin", ""),
-            "Building No":  datos.get("house", ""),
-            "Street Name":  datos.get("street", ""),
-            "Borough":      datos.get("borough", ""),
-            "Block":        datos.get("block", ""),
-            "Lot":          datos.get("lot", ""),
-            "ZIP":          datos.get("zip", ""),
+            "Last Name_3": datos["owner_last"], "First Name_2": datos["owner_first"],
+            "Business Name_4": datos["owner_business"], "Business Address_3": datos["owner_address"],
+            "City_3": datos["owner_city"], "State_3": datos["owner_state"], "Zip_3": datos["owner_zip"],
+            "Business Tel_2": datos["owner_phone"], "Mobile Tel": datos["owner_phone"], "EMail_3": datos["owner_email"],
+            "Classification": datos["construction_class"], 
+            "Stories": datos["stories"], "Height ft": datos["height"],
+            "Building Dominant Occupancy Group": datos["occupancy_group"],
+            "Occupancy classification of the area of work": datos["occupancy_group"],
+            "undefined_18": lm_yes, "undefined_181": lm_no, "undefined_19": fl_yes, "undefined_191": fl_no,
+            "Initial Filing Date": fecha_hoy, "Total Fee": "585.00", "NEW SUBMISSION": "/On",
+            "Fire AlarmFire SuppressionARCS Electrical": "/On", "undefined": "/On",
+            "BIN": datos["bin"], "Building No": datos["house"], "Street Name": datos["street"],
+            "Borough": datos["borough"], "Block": datos["block"], "Lot": datos["lot"], "ZIP": datos["zip"],
             "Job Description": datos.get("job_desc", ""),
-
-            # --- ARCHITECT / PE (sin sufijo en el TM-1) ---
-            "Last Name":        ARCHITECT.get("Last Name", ""),
-            "Firstname":        ARCHITECT.get("First Name", ""),
-            "Business Name_2":  ARCHITECT.get("Company Name", ""),
-            "Business Address": ARCHITECT.get("Address", ""),
-            "City":             ARCHITECT.get("City", ""),
-            "State":            ARCHITECT.get("State", ""),
-            "Zip":              ARCHITECT.get("Zip", ""),
-            "bsn_phone":        arch_phone,
-            "EMail":            ARCHITECT.get("Email", ""),
-            "License Number":   ARCHITECT.get("License No", ""),
-            "undefined_5":      "/On",
-
-            # --- FILING REP / EXPEDITOR (sufijos _2 en el TM-1) ---
-            "Lastnamefilingrep":   EXPEDITOR.get("Last Name", ""),
-            "firstnamefilingrep":  EXPEDITOR.get("First Name", ""),
-            "Filing Rep Tel":      EXPEDITOR.get("Phone", ""),
-            "Reg No":              EXPEDITOR.get("Reg No", ""),
-            "Business Name_3":     EXPEDITOR.get("Company Name", ""),
-            "Business Address_2":  EXPEDITOR.get("Address", ""),
-            "City_2":              EXPEDITOR.get("City", ""),
-            "State_2":             EXPEDITOR.get("State", "NY"),
-            "Zip_2":               EXPEDITOR.get("Zip", ""),
-            "EMail_2":             EXPEDITOR.get("Email", ""),
-            "undefined_16": "/On",
-            "2025": "/On",
-            "Code Section": "BC 907"
+            "Last Name": ARCHITECT.get("Last Name"), "Firstname": ARCHITECT.get("First Name"),
+            "Business Name_2": ARCHITECT.get("Company Name"), "Business Address": ARCHITECT.get("Address"),
+            "City": ARCHITECT.get("City"), "State": ARCHITECT.get("State"), "Zip": ARCHITECT.get("Zip"),
+            "bsn_phone": str(ARCHITECT.get("Phone")), "EMail": ARCHITECT.get("Email"), 
+            "License Number": ARCHITECT.get("License No"), "undefined_5": "/On",
+            "Lastnamefilingrep": EXPEDITOR.get("Last Name"), "firstnamefilingrep": EXPEDITOR.get("First Name"),
+            "Filing Rep Tel": EXPEDITOR.get("Phone"), "Reg No": EXPEDITOR.get("Reg No"),
+            "Business Name_3": EXPEDITOR.get("Company Name"), "Business Address_2": EXPEDITOR.get("Address"),
+            "City_2": EXPEDITOR.get("City"), "State_2": EXPEDITOR.get("State"), "Zip_2": EXPEDITOR.get("Zip"),
+            "EMail_2": EXPEDITOR.get("Email"), "undefined_16": "/On", "2025": "/On", "Code Section": "BC 907"
         }
-
+        
+        # Una sola línea hace toda la magia
         rellenar_pdf_inteligente(input_pdf, output_pdf, campos)
         print("   ✅ TM-1 Generated.")
-    except Exception as e:
+    except Exception as e: 
         print(f"   ❌ TM-1 Error: {e}")
-        raise
-
 
 # ==========================================
-# 4. GENERADOR A-433
+# 4. GENERADOR A-433 (EL MÁS IMPORTANTE)
 # ==========================================
 def obtener_cols_derecha(fila, categoria, idx):
     if fila == 1: m, a = "Manufacturer", "BSA MEA COA or Agency Approval"
     elif 2 <= fila <= 16: m, a = f"Manufacturer_{fila}", f"BSA MEA COA or Agency Approval_{fila}"
     else: m, a = f"ManufacturerRow{fila}", f"BSA MEA COA or Agency Approval Row{fila}"
-
+    
     if categoria == 'Initiating': g, t = f"WireGuageInitiating{idx}", f"Insulation/WireType-Initiating{idx}"
     elif categoria == 'Supervisory': g, t = f"WireGuageSupervisory{idx}", f"Insulation/WireType-Initiating{10+idx}"
     elif categoria == 'Control': g, t = f"WireGuageControl{idx}", f"Insulation/WireType-Control{idx}"
@@ -539,71 +498,34 @@ def generar_a433(datos, input_pdf, output_pdf):
     print("📄 3. Generating A-433...")
     try:
         datos_instalacion = datos.get("devices", [])
-
+        
         def floor_sorter(f_name):
             try: return FULL_FLOOR_LIST.index(f_name)
             except ValueError: return 9999
-
+            
         pisos_trabajados = sorted(list(set(d['floor'] for d in datos_instalacion)), key=floor_sorter)
-
+        
         campos = {}
         campos.update({
-            "Building No":  datos.get("house", ""),
-            "Street Name":  datos.get("street", ""),
-            "Borough":      datos.get("borough", ""),
-            "State":        "NY",
-            "ZIP":          datos.get("zip", ""),
-            "Work on floor(s)": ", ".join(pisos_trabajados),
-            "New": "/On"
+            "Building No": datos.get("house", ""), "Street Name": datos.get("street", ""), 
+            "Borough": datos.get("borough", ""), "State": "NY", "ZIP": datos.get("zip", ""), 
+            "Work on floor(s)": ", ".join(pisos_trabajados), "New": "/On"
         })
-
-        # --- OWNER ---
         campos.update({
-            "Last Name":        datos.get("owner_last", ""),
-            "First Name":       datos.get("owner_first", ""),
-            "Business_Name":    datos.get("owner_business", ""),   # Así está en el PDF original
-            "Business Address": datos.get("owner_address", ""),
-            "City":             datos.get("owner_city", ""),
-            "State_2":          datos.get("owner_state", "NY"),
-            "Zip":              datos.get("owner_zip", ""),
-            "Business Tel":     datos.get("owner_phone", ""),
-            "Mobile Tel":       datos.get("owner_phone", ""),
-            "EMail":            datos.get("owner_email", ""),
+            "Last Name": datos["owner_last"], "First Name": datos["owner_first"],
+            "Business_Name": datos["owner_business"], "Business Address": datos["owner_address"],
+            "City": datos["owner_city"], "State_2": datos["owner_state"], "Zip": datos["owner_zip"],
+            "Business Tel": datos["owner_phone"], "Mobile Tel": datos["owner_phone"], "EMail": datos["owner_email"]
         })
 
         elec = ELECTRICIAN; emp = COMPANY; cs = CENTRAL_STATION; specs = TECH_DEFAULTS
+        campos.update({"First Name_2": elec.get("First Name"), "Last Name_2": elec.get("Last Name"), "Business Name_2": elec.get("Company Name"), "Business Address_2": elec.get("Address"), "City_2": elec.get("City"), "State_3": elec.get("State"), "Zip_2": elec.get("Zip"), "Business Tel_2": elec.get("Phone"), "License Number": elec.get("License No"), "Date of Expiration": elec.get("Expiration")})
+        campos.update({"First Name_3": emp.get("First Name"), "Last Name_3": emp.get("Last Name"), "Business Name_3": emp.get("Company Name"), "Business Address_3": emp.get("Address"), "City_3": emp.get("City"), "State_4": emp.get("State"), "Zip_3": emp.get("Zip"), "Business Tel_3": emp.get("Phone"), "COF S97": emp.get("COF S97"), "Date of Expiration_2": emp.get("Expiration")})
+        campos.update({"Business Name_4": cs.get("Company Name"), "Station Code": cs.get("CS Code"), "Business Address_4": cs.get("Address"), "City_4": cs.get("City"), "State_5": cs.get("State"), "Zip_4": cs.get("Zip"), "Business Tel_4": cs.get("Phone"), "New_2": "/On"})
 
-        # --- ELECTRICIAN ---
-        campos.update({
-            "First Name_2": elec.get("First Name", ""), "Last Name_2": elec.get("Last Name", ""),
-            "Business Name_2": elec.get("Company Name", ""), "Business Address_2": elec.get("Address", ""),
-            "City_2": elec.get("City", ""), "State_3": elec.get("State", ""), "Zip_2": elec.get("Zip", ""),
-            "Business Tel_2": elec.get("Phone", ""), "License Number": elec.get("License No", ""),
-            "Date of Expiration": elec.get("Expiration", "")
-        })
-
-        # --- COMPANY (Fire Alarm Vendor) ---
-        campos.update({
-            "First Name_3": emp.get("First Name", ""), "Last Name_3": emp.get("Last Name", ""),
-            "Business Name_3": emp.get("Company Name", ""), "Business Address_3": emp.get("Address", ""),
-            "City_3": emp.get("City", ""), "State_4": emp.get("State", ""), "Zip_3": emp.get("Zip", ""),
-            "Business Tel_3": emp.get("Phone", ""), "COF S97": emp.get("COF S97", ""),
-            "Date of Expiration_2": emp.get("Expiration", "")
-        })
-
-        # --- CENTRAL STATION ---
-        campos.update({
-            "Business Name_4": cs.get("Company Name", ""), "Station Code": cs.get("CS Code", ""),
-            "Business Address_4": cs.get("Address", ""), "City_4": cs.get("City", ""),
-            "State_5": cs.get("State", ""), "Zip_4": cs.get("Zip", ""),
-            "Business Tel_4": cs.get("Phone", ""), "New_2": "/On"
-        })
-
-        # --- FLOOR COLUMNS ---
         mapa_col = {p: i+1 for i, p in enumerate(pisos_trabajados)}
         for p, i in mapa_col.items(): campos[f'floors{i}'] = p
 
-        # --- DEVICE ROWS ---
         dispositivos = sorted(list(set(d['device'] for d in datos_instalacion)))
         fila_actual = {k: v[0] for k, v in RANGOS.items()}
         mapa_fil = {}
@@ -612,21 +534,20 @@ def generar_a433(datos, input_pdf, output_pdf):
             cat = CATEGORIAS.get(dev, 'Initiating')
             r_ini, r_fin = RANGOS[cat]
             f = fila_actual[cat]
-            if f > r_fin: continue
+            if f > r_fin: continue 
 
             idx = f - r_ini + 1
             campos[f"{cat}{idx}"] = dev
             mapa_fil[dev] = (f, cat, idx)
-
+            
             m, a, g, t = obtener_cols_derecha(f, cat, idx)
             if m: campos[m] = specs.get('Manufacturer', '')
             if a: campos[a] = specs.get('Approval', '')
             if g: campos[g] = specs.get('WireGauge', '')
             if t: campos[t] = specs.get('WireType', '')
-
+            
             fila_actual[cat] += 1
 
-        # --- QUANTITIES ---
         totales = {}
         for item in datos_instalacion:
             d, p, q = item['device'], item['floor'], int(item['qty'])
@@ -638,12 +559,10 @@ def generar_a433(datos, input_pdf, output_pdf):
 
         for r, t in totales.items(): campos[f"r{r}c32"] = str(t)
 
+        # Una sola línea hace toda la magia
         rellenar_pdf_inteligente(input_pdf, output_pdf, campos)
         print("   ✅ A-433 Generated.")
-    except Exception as e:
-        print(f"   ❌ A-433 Error: {e}")
-        raise
-
+    except Exception as e: print(f"   ❌ A-433 Error: {e}")
 
 # ==========================================
 # 5. GENERADOR B-45
@@ -651,63 +570,61 @@ def generar_a433(datos, input_pdf, output_pdf):
 def generar_b45(datos, input_pdf, output_pdf):
     print("📄 4. Generating B-45...")
     try:
-        exp = EXPEDITOR
+        exp = EXPEDITOR  # <--- Cambiamos 'emp = COMPANY' por esto
         campos = {
-            "adress": f"{datos.get('house','')} {datos.get('street','')}, {datos.get('borough','')}, NY {datos.get('zip','')}",
-            "name":     f"{exp.get('First Name','')} {exp.get('Last Name','')}".strip(),
-            "title":    "Expeditor",
-            "lic":      exp.get("Reg No", ""),
-            "company":  exp.get("Company Name", ""),
-            "caddress": f"{exp.get('Address','')}, {exp.get('City','')}, {exp.get('State','NY')} {exp.get('Zip','')}",
-            "cphone":   exp.get("Phone", ""),
-            "email":    exp.get("Email", ""),
-            "pname":    f"{exp.get('First Name','')} {exp.get('Last Name','')}".strip(),
-            "date1":    fecha_hoy
+            "adress": f"{datos['house']} {datos['street']}, {datos['borough']}, NY {datos['zip']}",
+            "name": f"{exp.get('First Name')} {exp.get('Last Name')}", "title": "Expeditor",
+            "lic": exp.get("Reg No"), "company": exp.get("Company Name"), 
+            "caddress": f"{exp.get('Address')}, {exp.get('City')}, {exp.get('State')} {exp.get('Zip')}",
+            "cphone": exp.get("Phone"), "email": exp.get("Email"), "pname": f"{exp.get('First Name')} {exp.get('Last Name')}", "date1": fecha_hoy
         }
+        
+        # Una sola línea hace toda la magia (ya incluye el desbloqueo de ReadOnly)
         rellenar_pdf_inteligente(input_pdf, output_pdf, campos)
         print("   ✅ B-45 Generated.")
-    except Exception as e:
-        print(f"   ❌ B-45 Error: {e}")
-        raise
-
-
+    except Exception as e: print(f"   ❌ B-45 Error: {e}")
+    
 # ==========================================
 # 6. REPORTE DE AUDITORÍA
 # ==========================================
 def generar_reporte_auditoria(datos, nombre_archivo="REPORTE_LOGICA.txt"):
-    print(f" 5. Generating Audit Report...")
+    print(f"📄 5. Generating Audit Report...")
     try:
         with open(nombre_archivo, "w", encoding="utf-8") as f:
-            f.write("AUTOMATED GENERATION REPORT\n")
+            f.write("AUTOMATED GENERATION REPORT n")
             f.write("=================================================\n")
             f.write(f"DATE: {fecha_hoy}\n")
             f.write(f"BIN: {datos.get('bin')}\n")
             f.write(f"ADDRESS: {datos.get('house')} {datos.get('street')}\n\n")
-            f.write("*** ARTIFICIAL INTELLIGENCE NOTES (PLEASE REVIEW):\n")
+            f.write("⚠️ ARTIFICIAL INTELLIGENCE NOTES (PLEASE REVIEW):\n")
             f.write("-------------------------------------------------\n")
             f.write(f"1. CONSTRUCTION CLASS:\n   - Original Value (DB): {datos.get('raw_construction_class', 'N/A')}\n   - Final Value on PDF:  {datos.get('construction_class')}\n   - System Note:         {datos.get('debug_nota_const', '')}\n\n")
             f.write(f"2. OCCUPANCY GROUP:\n   - Original Value (DB): {datos.get('raw_occupancy', 'N/A')}\n   - Final Value on PDF:  {datos.get('occupancy_group')}\n   - System Note:         {datos.get('debug_nota_occ', '')}\n\n")
+            
+            # --- NUEVO DISCLAIMER LEGAL ROBUSTO ---
             f.write("=================================================\n")
             f.write("LEGAL DISCLAIMER & TERMS OF USE:\n")
             f.write("-------------------------------------------------\n")
             f.write("1. NO GOVERNMENT AFFILIATION:\n")
             f.write("   Fire Form Pro is an independent software tool. It is NOT affiliated with,\n")
-            f.write("   endorsed by, or connected to the NYC Fire Department (FDNY), the\n")
+            f.write("   endorsed by, or connected to the NYC Fire Department (FDNY), the \n")
             f.write("   Department of Buildings (DOB), or any other government agency.\n\n")
+            
             f.write("2. DATA ACCURACY AND PUBLIC RECORDS:\n")
             f.write("   Property and ownership data are automatically retrieved from public NYC\n")
             f.write("   databases (BIS, DOB NOW, PLUTO, Geoclient) based on the provided BIN.\n")
             f.write("   Due to filing delays, database inconsistencies, and historical variations,\n")
             f.write("   this information is provided 'AS IS' and is NOT guaranteed to be 100%\n")
             f.write("   accurate or current.\n\n")
+            
             f.write("3. PROFESSIONAL RESPONSIBILITY:\n")
             f.write("   These generated documents are intended solely as a drafting aid. The\n")
             f.write("   Architect, Engineer of Record, Expeditor, and/or Contractor assume full\n")
             f.write("   and strict responsibility for verifying, correcting, and validating all\n")
             f.write("   fields prior to signing, sealing, and submitting these forms to the FDNY.\n")
-        print(f"    Report Generated: {nombre_archivo}")
-    except Exception as e:
-        print(f"   [ERROR] Report Error: {e}")
+            
+        print(f"   ✅ Report Generated: {nombre_archivo}")
+    except Exception as e: print(f"   ❌ Report Error: {e}")
 
 
 if __name__ == "__main__":
