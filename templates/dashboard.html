@@ -78,27 +78,70 @@
                 <hr class="my-4">
                 <h4 class="fw-bold mb-3">🏢 Property Overview</h4>
                 <div class="card-custom">
-                    <div class="row mb-4">
-                        <div class="col-md-6">
+                    <!-- Address Header -->
+                    <div class="row mb-3 align-items-center">
+                        <div class="col-md-8">
                             <h5 class="fw-bold mb-0" id="res_address">Loading...</h5>
-                            <p class="text-muted" id="res_dcp">DCP Address: Loading...</p>
+                            <p class="text-muted mb-0 mt-1" id="res_dcp" style="font-size:0.9rem;"></p>
                         </div>
-                        <div class="col-md-6 text-md-start text-md-end mt-2 mt-md-0">
-                            <h5 class="fw-bold mb-0">BIN: <span id="res_bin" class="text-primary">Loading...</span></h5>
+                        <div class="col-md-4 text-md-end mt-2 mt-md-0">
+                            <span class="badge bg-primary fs-6 px-3 py-2">BIN: <span id="res_bin">-</span></span>
+                            <span class="badge bg-success ms-1 fs-6 px-2 py-2 d-none" id="badge_co">✅ Digital C of O</span>
                         </div>
                     </div>
-                    
+
+                    <!-- Row 1: Core metrics -->
                     <div class="row g-3 mb-3">
-                        <div class="col-6 col-md-3"><div class="metric-box"><div class="metric-label">Block / Lot</div><div class="metric-value" id="res_blocklot">- / -</div></div></div>
-                        <div class="col-6 col-md-3"><div class="metric-box"><div class="metric-label">Height</div><div class="metric-value" id="res_height">- ft</div></div></div>
-                        <div class="col-6 col-md-3"><div class="metric-box"><div class="metric-label">Stories</div><div class="metric-value" id="res_stories">-</div></div></div>
-                        <div class="col-6 col-md-3"><div class="metric-box"><div class="metric-label">Const. Class</div><div class="metric-value" id="res_const">-</div></div></div>
+                        <div class="col-6 col-md-2"><div class="metric-box"><div class="metric-label">Block / Lot</div><div class="metric-value" id="res_blocklot">-</div></div></div>
+                        <div class="col-6 col-md-2"><div class="metric-box"><div class="metric-label">Height</div><div class="metric-value" id="res_height">-</div></div></div>
+                        <div class="col-6 col-md-2"><div class="metric-box"><div class="metric-label">Stories</div><div class="metric-value" id="res_stories">-</div></div></div>
+                        <div class="col-6 col-md-2"><div class="metric-box"><div class="metric-label">Year Built</div><div class="metric-value" id="res_year">-</div></div></div>
+                        <div class="col-6 col-md-2"><div class="metric-box"><div class="metric-label">Const. Class</div><div class="metric-value" id="res_const">-</div></div></div>
+                        <div class="col-6 col-md-2"><div class="metric-box"><div class="metric-label">Occupancy</div><div class="metric-value" id="res_occ">-</div></div></div>
                     </div>
+
+                    <!-- Row 2: Secondary metrics -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-6 col-md-2"><div class="metric-box"><div class="metric-label">Landmark</div><div class="metric-value" id="res_landmark">-</div></div></div>
+                        <div class="col-6 col-md-2"><div class="metric-box"><div class="metric-label">Flood Zone</div><div class="metric-value" id="res_flood">-</div></div></div>
+                        <div class="col-6 col-md-2"><div class="metric-box"><div class="metric-label">Sprinklers</div><div class="metric-value" id="res_sprinklers">-</div></div></div>
+                        <div class="col-6 col-md-2"><div class="metric-box"><div class="metric-label">Elevators</div><div class="metric-value" id="res_elevators">-</div></div></div>
+                        <div class="col-6 col-md-2"><div class="metric-box"><div class="metric-label">Tax Class</div><div class="metric-value" id="res_taxclass">-</div></div></div>
+                        <div class="col-6 col-md-2"><div class="metric-box"><div class="metric-label">Res. Units</div><div class="metric-value" id="res_units">-</div></div></div>
+                    </div>
+
+                    <!-- Owner + Coords -->
                     <div class="row g-3 mb-4">
-                        <div class="col-6 col-md-3"><div class="metric-box"><div class="metric-label">Landmark</div><div class="metric-value" id="res_landmark">-</div></div></div>
-                        <div class="col-6 col-md-3"><div class="metric-box"><div class="metric-label">Flood Zone</div><div class="metric-value" id="res_flood">-</div></div></div>
-                        <div class="col-6 col-md-3"><div class="metric-box"><div class="metric-label">Occupancy</div><div class="metric-value" id="res_occ">-</div></div></div>
-                        <div class="col-6 col-md-3"><div class="metric-box"><div class="metric-label">Property Owner</div><div class="metric-value text-truncate" id="res_owner">-</div></div></div>
+                        <div class="col-md-6"><div class="metric-box"><div class="metric-label">Property Owner</div><div class="metric-value" id="res_owner">-</div></div></div>
+                        <div class="col-md-6"><div class="metric-box"><div class="metric-label">X / Y Coordinates (NYC)</div><div class="metric-value" id="res_coords" style="font-size:0.85rem;">-</div></div></div>
+                    </div>
+
+                    <!-- Fire Alarm Jobs Table (shown only if data exists) -->
+                    <div id="fa-jobs-section" style="display:none;" class="mb-4">
+                        <div style="background:#FFF5F5;border-left:4px solid #E53E3E;padding:10px 15px;margin-bottom:12px;border-radius:4px;">
+                            <h6 class="fw-bold mb-0" style="color:#C53030;">🚨 Historical Fire Alarm Jobs Detected</h6>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover border rounded">
+                                <thead class="table-light"><tr><th>Job #</th><th>Status</th><th>Date</th><th>Description</th><th>Link</th></tr></thead>
+                                <tbody id="fa-jobs-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- AI Translation Notes -->
+                    <div id="ai-notes-section" style="display:none;" class="mb-3">
+                        <div style="background:#FFFAF0;border-left:4px solid #ED8936;padding:10px 15px;border-radius:4px;">
+                            <h6 class="fw-bold mb-1" style="color:#C05621;">⚠️ AI Translation Notes (Review Required)</h6>
+                            <p class="mb-0" id="ai-notes-text" style="font-size:0.85rem;color:#4A5568;"></p>
+                        </div>
+                    </div>
+
+                    <!-- Disclaimer -->
+                    <div style="background:#F7FAFC;padding:12px;border-radius:6px;border-left:4px solid #A0AEC0;margin-bottom:20px;">
+                        <p style="font-size:11px;color:#4A5568;margin:0;line-height:1.5;">
+                            <b>* Accuracy Disclaimer:</b> Property data is retrieved in real-time from public NYC APIs (DOB NOW, BIS, PLUTO, Geoclient). Due to filing delays or database inconsistencies, this information is provided "AS IS". Always verify critical details before submitting to FDNY/DOB.
+                        </p>
                     </div>
 
                     <h5 class="fw-bold mb-3">⚡ Quick Actions (Smart Links)</h5>
@@ -471,25 +514,75 @@
                 const data = await response.json();
                 if(data.error) throw new Error(data.error);
 
-                document.getElementById('res_address').innerText = `${data.house || ''} ${data.street || ''}, ${data.borough || ''}`;
-                document.getElementById('res_dcp').innerText = `DCP Address: ${data.dcp_address || 'N/A'}`;
+                // Core address fields
+                document.getElementById('res_address').innerText = `${data.house || ''} ${data.street || ''}, ${data.borough || ''}, NY ${data.zip || ''}`;
+                document.getElementById('res_dcp').innerText = data.dcp_address ? `DCP Address Range: ${data.dcp_address}` : '';
                 document.getElementById('res_bin').innerText = data.bin || 'N/A';
-                document.getElementById('res_blocklot').innerText = `${data.block || '-'}/${data.lot || '-'}`;
-                document.getElementById('res_height').innerText = `${data.height || '0'} ft`;
-                document.getElementById('res_stories').innerText = data.stories || '-';
-                document.getElementById('res_const').innerText = data.construction_class || '-';
-                document.getElementById('res_landmark').innerText = data.landmarked || 'No';
-                document.getElementById('res_flood').innerText = data.flood_zone || 'No';
-                document.getElementById('res_occ').innerText = data.occupancy_group || '-';
-                document.getElementById('res_owner').innerText = data.owner_business || `${data.owner_first || ''} ${data.owner_last || ''}`.trim() || 'N/A';
 
+                // Digital C of O badge
+                if (data.has_digital_co) {
+                    document.getElementById('badge_co').classList.remove('d-none');
+                }
+
+                // Metrics row 1
+                document.getElementById('res_blocklot').innerText  = `${data.block || '-'} / ${data.lot || '-'}`;
+                document.getElementById('res_height').innerText    = data.height && data.height !== '0' ? `${data.height} ft` : 'N/A';
+                document.getElementById('res_stories').innerText   = data.stories && data.stories !== '0' ? data.stories : 'N/A';
+                document.getElementById('res_year').innerText      = data.year_built || data.pluto_year || 'N/A';
+                document.getElementById('res_const').innerText     = data.construction_class || 'N/A';
+                document.getElementById('res_occ').innerText       = data.occupancy_group || 'N/A';
+
+                // Metrics row 2
+                document.getElementById('res_landmark').innerText   = data.landmarked || 'No';
+                document.getElementById('res_flood').innerText      = data.flood_zone || 'No';
+                document.getElementById('res_sprinklers').innerText = data.has_sprinklers || 'Unknown';
+                document.getElementById('res_elevators').innerText  = data.has_elevators || 'Unknown';
+                document.getElementById('res_taxclass').innerText   = data.tax_class || 'N/A';
+                document.getElementById('res_units').innerText      = data.pluto_units || 'N/A';
+
+                // Owner + Coords
+                document.getElementById('res_owner').innerText  = data.owner_business || `${data.owner_first || ''} ${data.owner_last || ''}`.trim() || 'N/A';
+                const x = data.x_coord || 'N/A', y = data.y_coord || 'N/A';
+                document.getElementById('res_coords').innerText = `${x} / ${y}`;
+
+                // Fire Alarm Jobs table
+                if (data.fire_alarm_jobs && data.fire_alarm_jobs.length > 0) {
+                    document.getElementById('fa-jobs-section').style.display = 'block';
+                    const tbody = document.getElementById('fa-jobs-body');
+                    tbody.innerHTML = '';
+                    data.fire_alarm_jobs.forEach(j => {
+                        tbody.innerHTML += `<tr>
+                            <td>${j['Job #']}</td>
+                            <td><span class="badge bg-secondary">${j['Status']}</span></td>
+                            <td>${j['Date']}</td>
+                            <td style="font-size:0.82rem;">${j['Description']}</td>
+                            <td><a href="${j['DOB Link']}" target="_blank" class="btn btn-sm btn-outline-primary py-0">View 🔗</a></td>
+                        </tr>`;
+                    });
+                }
+
+                // AI Translation Notes
+                const aiNote = [data.debug_nota_const, data.debug_nota_occ].filter(Boolean).join(' | ');
+                if (aiNote && aiNote.trim()) {
+                    document.getElementById('ai-notes-section').style.display = 'block';
+                    document.getElementById('ai-notes-text').innerText = aiNote;
+                }
+
+                // Smart Links
                 document.getElementById('link_dob').href = `https://a810-bisweb.nyc.gov/bisweb/COsByLocationServlet?requestid=1&allbin=${data.bin}`;
-                if(data.bbl_full && data.bbl_full.length === 10) {
-                    const boro = data.bbl_full[0]; const block = parseInt(data.bbl_full.substring(1,6)); const lot = parseInt(data.bbl_full.substring(6,10));
+                if (data.bbl_full && data.bbl_full.length === 10) {
+                    const boro = data.bbl_full[0];
+                    const block = parseInt(data.bbl_full.substring(1,6));
+                    const lot = parseInt(data.bbl_full.substring(6,10));
                     document.getElementById('link_zola').href = `https://zola.planning.nyc.gov/lot/${boro}/${block}/${lot}`;
                 }
+
+                // Auto-fill BIN in builder
                 document.getElementById('builder_bin').value = data.bin;
-            } catch (err) { document.getElementById('res_address').innerHTML = `<span class="text-danger">❌ ${err.message}</span>`; }
+
+            } catch (err) {
+                document.getElementById('res_address').innerHTML = `<span class="text-danger">❌ ${err.message}</span>`;
+            }
         }
 
         // --- 3. DEVICE SCHEDULE LOGIC ---
