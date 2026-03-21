@@ -388,9 +388,9 @@ def rellenar_pdf_inteligente(input_pdf, output_pdf, campos):
     for page in reader.pages:
         writer.add_page(page)
         
-    # 1. Le decimos a Nitro que redibuje el formulario
-    if "/AcroForm" in writer.root_object:
-        writer.root_object["/AcroForm"][NameObject("/NeedAppearances")] = BooleanObject(True)
+    # 1. Le decimos a Nitro que redibuje el formulario (ACTUALIZADO PARA PYPDF 3+)
+    if "/AcroForm" in writer.root:
+        writer.root["/AcroForm"].get_object()[NameObject("/NeedAppearances")] = BooleanObject(True)
     
     # 2. Pasada Quirúrgica: Campo por Campo
     for page in writer.pages:
