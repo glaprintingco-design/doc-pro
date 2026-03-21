@@ -157,6 +157,186 @@ def privacy():
     return render_template('privacy.html')
 
 # ==========================================
+# RUTA DE DIAGNÓSTICO — /api/diagnostics
+# Visita esta URL en el browser para ver el estado de todas las APIs y keys
+# ==========================================
+@app.route('/api/diagnostics')
+def diagnostics():
+    import requests as req
+    import datetime
+
+    NYC_API_KEY      = os.environ.get("NYC_API_KEY", "")
+    SOCRATA_TOKEN    = os.environ.get("SOCRATA_TOKEN", "")
+    TEST_BIN         = "1007239"  # 54 Crosby St — edificio conocido para pruebas
+
+    results = {
+        "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+        "environment": {},
+        "api_tests": {}
+    }
+
+    # --- 1. VARIABLES DE ENTORNO ---
+    results["environment"] = {
+        "NYC_API_KEY":    "✅ SET"   if NYC_API_KEY    else "❌ MISSING",
+        "SOCRATA_TOKEN":  "✅ SET"   if SOCRATA_TOKEN  else "⚠️ MISSING (optional but recommended)",
+        "SUPABASE_URL":   "✅ SET"   if os.environ.get("SUPABASE_URL") else "❌ MISSING",
+        "SUPABASE_KEY":   "✅ SET"   if os.environ.get("SUPABASE_KEY") else "❌ MISSING",
+        "FLASK_SECRET":   "✅ SET"   if os.environ.get("FLASK_SECRET") else "⚠️ using default",
+        "NYC_API_KEY_preview": (NYC_API_KEY[:6] + "..." + NYC_API_KEY[-4:]) if len(NYC_API_KEY) > 10 else ("(empty)" if not NYC_API_KEY else NYC_API_KEY),
+    }
+
+    # --- 2. TEST GEOCLIENT ---
+    try:
+        r = req.get(
+            "https://api.nyc.gov/geoclient/v2/bin",
+            params={"bin": TEST_BIN},
+            headers={"Ocp-Apim-Subscription-Key": NYC_API_KEY},
+            timeout=8
+        )
+        if r.status_code == 200:
+            d = r.json().get("bin", {})
+            results["api_tests"]["geoclient"] = {
+                "status": "✅ OK",
+                "http_code": 200,
+                "bbl": d.get("bbl", "not found"),
+                "address": f"{d.get('giLowHouseNumber1','')} {d.get('giStreetName1','')}".strip(),
+                "borough": d.get("firstBoroughName", ""),
+            }
+        elif r.status_code == 401:
+            results["api_tests"]["geoclient"] = {
+                "status": "❌ UNAUTHORIZED — NYC_API_KEY is wrong or expired",
+                "http_code": 401,
+                "fix": "Go to https://api-portal.nyc.gov and check your subscription key"
+            }
+        elif r.status_code == 403:
+            results["api_tests"]["geoclient"] = {
+                "status": "❌ FORBIDDEN — Key valid but no access to Geoclient product",
+                "http_code": 403,
+                "fix": "Subscribe to 'Geoclient' product at https://api-portal.nyc.gov"
+            }
+        else:
+            results["api_tests"]["geoclient"] = {
+                "status": f"⚠️ Unexpected response",
+                "http_code": r.status_code,
+                "body_preview": r.text[:200]
+            }
+    except Exception as e:
+        results["api_tests"]["geoclient"] = {"status": f"❌ EXCEPTION: {str(e)}"}
+
+    # --- 3. TEST PLUTO (Socrata, por BIN directo) ---
+    try:
+        headers_soc = {"X-App-Token": SOCRATA_TOKEN} if SOCRATA_TOKEN else {}
+        r = req.get(
+            "https://data.cityofnewyork.us/resource/64uk-42ks.json",
+            params={"bin": TEST_BIN, "$limit": 1},
+            headers=headers_soc,
+            timeout=8
+        )
+        if r.status_code == 200 and r.json():
+            p = r.json()[0]
+            results["api_tests"]["pluto"] = {
+                "status": "✅ OK",
+                "http_code": 200,
+                "yearbuilt":  p.get("yearbuilt", "not found"),
+                "numfloors":  p.get("numfloors", "not found"),
+                "bldgclass":  p.get("bldgclass", "not found"),
+                "zipcode":    p.get("zipcode", "not found"),
+                "ownername":  p.get("ownername", "not found"),
+            }
+        elif r.status_code == 200 and not r.json():
+            results["api_tests"]["pluto"] = {
+                "status": "⚠️ OK but NO DATA for this BIN",
+                "http_code": 200,
+                "note": "PLUTO returned empty array — BIN may not exist in dataset"
+            }
+        elif r.status_code == 429:
+            results["api_tests"]["pluto"] = {
+                "status": "⚠️ RATE LIMITED — add SOCRATA_TOKEN to env vars",
+                "http_code": 429
+            }
+        else:
+            results["api_tests"]["pluto"] = {
+                "status": f"⚠️ HTTP {r.status_code}",
+                "http_code": r.status_code,
+                "body_preview": r.text[:200]
+            }
+    except Exception as e:
+        results["api_tests"]["pluto"] = {"status": f"❌ EXCEPTION: {str(e)}"}
+
+    # --- 4. TEST BIS (Socrata) ---
+    try:
+        headers_soc = {"X-App-Token": SOCRATA_TOKEN} if SOCRATA_TOKEN else {}
+        r = req.get(
+            "https://data.cityofnewyork.us/resource/ic3t-wcy2.json",
+            params={"bin__": TEST_BIN, "$limit": 2},
+            headers=headers_soc,
+            timeout=8
+        )
+        if r.status_code == 200:
+            jobs = r.json()
+            results["api_tests"]["bis"] = {
+                "status": "✅ OK",
+                "http_code": 200,
+                "jobs_found": len(jobs),
+                "sample": {
+                    "existing_height": jobs[0].get("existing_height") if jobs else None,
+                    "existingno_of_stories": jobs[0].get("existingno_of_stories") if jobs else None,
+                    "existing_construction_class": jobs[0].get("existing_construction_class") if jobs else None,
+                    "existing_occupancy": jobs[0].get("existing_occupancy") if jobs else None,
+                    "job_description": jobs[0].get("job_description") if jobs else None,
+                } if jobs else "no jobs found for this BIN"
+            }
+        else:
+            results["api_tests"]["bis"] = {
+                "status": f"⚠️ HTTP {r.status_code}",
+                "http_code": r.status_code
+            }
+    except Exception as e:
+        results["api_tests"]["bis"] = {"status": f"❌ EXCEPTION: {str(e)}"}
+
+    # --- 5. TEST DOB NOW ---
+    try:
+        headers_soc = {"X-App-Token": SOCRATA_TOKEN} if SOCRATA_TOKEN else {}
+        r = req.get(
+            "https://data.cityofnewyork.us/resource/w9ak-ipjd.json",
+            params={"bin": TEST_BIN, "$limit": 1},
+            headers=headers_soc,
+            timeout=8
+        )
+        if r.status_code == 200:
+            jobs = r.json()
+            results["api_tests"]["dob_now"] = {
+                "status": "✅ OK",
+                "http_code": 200,
+                "records_found": len(jobs),
+                "owner_business": jobs[0].get("owner_s_business_name") if jobs else None,
+                "owner_name": f"{jobs[0].get('owner_first_name','')} {jobs[0].get('owner_last_name','')}".strip() if jobs else None,
+            }
+        else:
+            results["api_tests"]["dob_now"] = {
+                "status": f"⚠️ HTTP {r.status_code}",
+                "http_code": r.status_code
+            }
+    except Exception as e:
+        results["api_tests"]["dob_now"] = {"status": f"❌ EXCEPTION: {str(e)}"}
+
+    # --- 6. TEST SUPABASE ---
+    try:
+        if supabase:
+            supabase.table("profiles").select("id").limit(1).execute()
+            results["api_tests"]["supabase"] = {"status": "✅ OK — connected and query succeeded"}
+        else:
+            results["api_tests"]["supabase"] = {"status": "❌ Client not initialized — check SUPABASE_URL and SUPABASE_KEY"}
+    except Exception as e:
+        results["api_tests"]["supabase"] = {"status": f"❌ EXCEPTION: {str(e)}"}
+
+    # --- RESUMEN FINAL ---
+    all_ok = all("✅" in str(v.get("status","")) for v in results["api_tests"].values())
+    results["summary"] = "✅ ALL SYSTEMS OK" if all_ok else "⚠️ SOME APIS HAVE ISSUES — see api_tests above"
+
+    return jsonify(results), 200
+
+# ==========================================
 # RUTAS DE API: AUTENTICACIÓN
 # ==========================================
 @app.route('/api/auth/login', methods=['POST'])
@@ -438,6 +618,162 @@ def delete_project(project_id):
         return jsonify({"status": "success"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+# ==========================================
+# RUTA DE DIAGNÓSTICO (SOLO PARA DEBUG)
+# ==========================================
+@app.route('/api/debug/test-apis')
+def test_apis():
+    """
+    Endpoint de diagnóstico. Llama a todas las APIs externas y reporta
+    qué está funcionando y qué no. Visitar en browser: /api/debug/test-apis
+    """
+    import traceback
+    results = {}
+    BIN_TEST = "1007239"  # 54 Crosby St - BIN conocido para pruebas
+
+    # --- 1. Variables de entorno ---
+    results["env_vars"] = {
+        "NYC_API_KEY": "✅ SET" if main.API_KEY_NYC else "❌ MISSING",
+        "NYC_API_KEY_length": len(main.API_KEY_NYC) if main.API_KEY_NYC else 0,
+        "SOCRATA_TOKEN": "✅ SET" if main.APP_TOKEN_SOCRATA else "⚠️ MISSING (optional but recommended)",
+        "SUPABASE_URL": "✅ SET" if os.environ.get("SUPABASE_URL") else "❌ MISSING",
+        "SUPABASE_KEY": "✅ SET" if os.environ.get("SUPABASE_KEY") else "❌ MISSING",
+    }
+
+    # --- 2. Test Geoclient ---
+    try:
+        import requests as req
+        r = req.get(
+            "https://api.nyc.gov/geoclient/v2/bin",
+            params={"bin": BIN_TEST},
+            headers={"Ocp-Apim-Subscription-Key": main.API_KEY_NYC},
+            timeout=10
+        )
+        if r.status_code == 200:
+            d = r.json().get("bin", {})
+            results["geoclient"] = {
+                "status": "✅ OK",
+                "http_code": r.status_code,
+                "address_found": f"{d.get('giLowHouseNumber1','')} {d.get('giStreetName1','')}".strip(),
+                "bbl": d.get("bbl", ""),
+                "borough": d.get("firstBoroughName", ""),
+            }
+        else:
+            results["geoclient"] = {
+                "status": "❌ FAILED",
+                "http_code": r.status_code,
+                "response_preview": r.text[:300]
+            }
+    except Exception as e:
+        results["geoclient"] = {"status": "❌ EXCEPTION", "error": str(e)}
+
+    # --- 3. Test PLUTO por BIN directo ---
+    try:
+        headers_soc = {"X-App-Token": main.APP_TOKEN_SOCRATA}
+        r = req.get(
+            "https://data.cityofnewyork.us/resource/64uk-42ks.json",
+            params={"bin": BIN_TEST, "$limit": 1},
+            headers=headers_soc, timeout=10
+        )
+        if r.status_code == 200 and r.json():
+            p = r.json()[0]
+            results["pluto_by_bin"] = {
+                "status": "✅ OK",
+                "http_code": r.status_code,
+                "yearbuilt": p.get("yearbuilt"),
+                "numfloors": p.get("numfloors"),
+                "bldgclass": p.get("bldgclass"),
+                "zipcode": p.get("zipcode"),
+                "bbl": p.get("bbl"),
+            }
+        elif r.status_code == 200:
+            results["pluto_by_bin"] = {"status": "⚠️ OK but NO DATA for this BIN", "http_code": 200}
+        else:
+            results["pluto_by_bin"] = {"status": "❌ FAILED", "http_code": r.status_code, "response": r.text[:200]}
+    except Exception as e:
+        results["pluto_by_bin"] = {"status": "❌ EXCEPTION", "error": str(e)}
+
+    # --- 4. Test BIS ---
+    try:
+        r = req.get(
+            "https://data.cityofnewyork.us/resource/ic3t-wcy2.json",
+            params={"bin__": BIN_TEST, "$limit": 2},
+            headers=headers_soc, timeout=10
+        )
+        if r.status_code == 200 and r.json():
+            jobs = r.json()
+            j = jobs[0]
+            results["bis"] = {
+                "status": "✅ OK",
+                "http_code": r.status_code,
+                "jobs_found": len(jobs),
+                "sample_height": j.get("existing_height"),
+                "sample_stories": j.get("existingno_of_stories"),
+                "sample_const_class": j.get("existing_construction_class"),
+                "sample_occupancy": j.get("existing_occupancy"),
+                "sample_owner": j.get("owner_s_business_name"),
+            }
+        elif r.status_code == 200:
+            results["bis"] = {"status": "⚠️ OK but NO JOBS for this BIN", "http_code": 200}
+        else:
+            results["bis"] = {"status": "❌ FAILED", "http_code": r.status_code}
+    except Exception as e:
+        results["bis"] = {"status": "❌ EXCEPTION", "error": str(e)}
+
+    # --- 5. Test DOB NOW ---
+    try:
+        r = req.get(
+            "https://data.cityofnewyork.us/resource/w9ak-ipjd.json",
+            params={"bin": BIN_TEST, "$limit": 1},
+            headers=headers_soc, timeout=10
+        )
+        if r.status_code == 200 and r.json():
+            j = r.json()[0]
+            results["dob_now"] = {
+                "status": "✅ OK",
+                "http_code": r.status_code,
+                "owner_business": j.get("owner_s_business_name"),
+                "owner_first": j.get("owner_first_name"),
+                "owner_last": j.get("owner_last_name"),
+                "job_number": j.get("job_filing_number"),
+            }
+        elif r.status_code == 200:
+            results["dob_now"] = {"status": "⚠️ OK but NO DATA for this BIN", "http_code": 200}
+        else:
+            results["dob_now"] = {"status": "❌ FAILED", "http_code": r.status_code}
+    except Exception as e:
+        results["dob_now"] = {"status": "❌ EXCEPTION", "error": str(e)}
+
+    # --- 6. Test PAD fallback ---
+    try:
+        r = req.get(
+            "https://data.cityofnewyork.us/resource/w4v2-rv29.json",
+            params={"bin": BIN_TEST, "$limit": 1},
+            headers=headers_soc, timeout=10
+        )
+        if r.status_code == 200 and r.json():
+            p = r.json()[0]
+            results["pad_fallback"] = {
+                "status": "✅ OK",
+                "http_code": r.status_code,
+                "bbl": p.get("bbl"),
+                "address": p.get("address") or f"{p.get('lhnd','')} {p.get('stname','')}",
+            }
+        elif r.status_code == 200:
+            results["pad_fallback"] = {"status": "⚠️ OK but NO DATA", "http_code": 200}
+        else:
+            results["pad_fallback"] = {"status": "❌ FAILED", "http_code": r.status_code}
+    except Exception as e:
+        results["pad_fallback"] = {"status": "❌ EXCEPTION", "error": str(e)}
+
+    # --- 7. Diagnóstico final ---
+    all_ok = all("✅" in str(v.get("status","")) for v in results.values() if isinstance(v, dict) and "status" in v)
+    results["_summary"] = "✅ ALL SYSTEMS OK" if all_ok else "⚠️ SOME APIS HAVE ISSUES — check individual results above"
+    results["_test_bin"] = BIN_TEST
+    results["_test_address"] = "54 CROSBY STREET, MANHATTAN"
+
+    return jsonify(results), 200
 
 # ==========================================
 # INICIO
