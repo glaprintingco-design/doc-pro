@@ -296,33 +296,27 @@ def generate_pdfs():
         safe_address = f"{info.get('house', '')} {info.get('street', '')}".replace("/", "-").strip() or bin_number
 
         BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-        
-        # NUEVO: Crear una carpeta local para los PDFs y evitar restricciones de Namecheap
         TEMP_DIR = os.path.join(BASE_DIR, 'tmp_pdfs')
         if not os.path.exists(TEMP_DIR):
             os.makedirs(TEMP_DIR)
             
         timestamp = str(int(time.time()))
-        
         generated_files = []
         
-        
+        # NOTA: Usamos solo el nombre del archivo asumiendo que están en la raíz del proyecto
         if 'TM-1' in forms_to_gen:
-            template = os.path.join(BASE_DIR, "tm-1-application-for-plan-examination-doc-review.pdf")
             out_file = os.path.join(TEMP_DIR, f"TM-1_{timestamp}.pdf")
-            main.generar_tm1(full_data, template, out_file)
+            main.generar_tm1(full_data, "tm-1-application-for-plan-examination-doc-review.pdf", out_file)
             generated_files.append((out_file, f"TM-1 - {safe_address}.pdf"))
             
         if 'A-433' in forms_to_gen:
-            template = os.path.join(BASE_DIR, "application-a-433-c.pdf")
             out_file = os.path.join(TEMP_DIR, f"A-433_{timestamp}.pdf")
-            main.generar_a433(full_data, template, out_file)
+            main.generar_a433(full_data, "application-a-433-c.pdf", out_file)
             generated_files.append((out_file, f"A-433 - {safe_address}.pdf"))
             
         if 'B-45' in forms_to_gen:
-            template = os.path.join(BASE_DIR, "b45-inspection-request.pdf")
             out_file = os.path.join(TEMP_DIR, f"B-45_{timestamp}.pdf")
-            main.generar_b45(full_data, template, out_file)
+            main.generar_b45(full_data, "b45-inspection-request.pdf", out_file)
             generated_files.append((out_file, f"B-45 - {safe_address}.pdf"))
             
         if 'REPORT' in forms_to_gen:
@@ -330,45 +324,48 @@ def generate_pdfs():
             main.generar_reporte_auditoria(full_data, out_file)
             generated_files.append((out_file, f"REPORT - {safe_address}.txt"))
 
-        # --- 5. Empaquetamos en ZIP en la memoria del servidor ---
+        # --- 5. Empaquetamos en ZIP en memoria ---
+        import base64
         zip_buffer = BytesIO()
         with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
             for sys_path, user_filename in generated_files:
                 if os.path.exists(sys_path):
                     zip_file.write(sys_path, arcname=user_filename)
-                    try:
-                        os.remove(sys_path) # Limpiamos la basura temporal
-                    except: 
-                        pass
-                    
-        zip_buffer.seek(0)
 
-        # --- 6. Guardamos en el Historial de Proyectos de Supabase ---
+        # --- 6. Preparamos Respuesta JSON con Base64 para descargas individuales ---
+        response_data = {
+            "zip_base64": base64.b64encode(zip_buffer.getvalue()).decode('utf-8'),
+            "files": []
+        }
+        
+        for sys_path, user_filename in generated_files:
+            if os.path.exists(sys_path):
+                with open(sys_path, "rb") as f:
+                    b64_content = base64.b64encode(f.read()).decode('utf-8')
+                    response_data["files"].append({
+                        "filename": user_filename,
+                        "mime_type": "application/pdf" if user_filename.endswith(".pdf") else "text/plain",
+                        "content": b64_content
+                    })
+                try:
+                    os.remove(sys_path) # Limpiar temporal
+                except: pass
+
+        # Guardamos en el Historial
         if user_client:
             try:
                 user_client.table("projects").upsert({
                     "user_id": user_id, "bin": bin_number, "address": safe_address,
                     "device_list": devices, "job_description": job_desc
                 }, on_conflict="user_id, bin").execute()
-            except Exception as e:
-                print(" Warning: Could not save project history ->", e)
+            except: pass
 
-        # Devolvemos el ZIP para descarga
-        return send_file(
-            zip_buffer,
-            mimetype='application/zip',
-            as_attachment=True,
-            download_name=f"FDNY_Forms_{safe_address}.zip"
-        )
+        return jsonify(response_data)
         
     except Exception as e:
-        # SI ALGO FALLA, FORZAMOS EL ERROR EN JSON (No más pantallas HTML genéricas 500)
         error_details = traceback.format_exc()
         print(f"CRITICAL ERROR: {error_details}")
-        return jsonify({
-            "error": f"Internal Error: {str(e)}", 
-            "traceback": error_details
-        }), 500  
+        return jsonify({"error": f"Internal Error: {str(e)}", "traceback": error_details}), 500  
 # ==========================================
 # RUTAS DE API: PROFILE SETTINGS
 # ==========================================
