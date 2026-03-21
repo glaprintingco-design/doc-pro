@@ -1,8 +1,6 @@
-streamlit
-pandas
-requests
-pypdf
-customtkinter
-supabase
-PyMuPDF
-extra-streamlit-components
+Flask==3.0.2
+requests==2.31.0
+pypdf==3.17.4
+supabase==2.3.4
+flask-cors==4.0.0
+gunicorn==21.2.0
