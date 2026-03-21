@@ -7,54 +7,20 @@ from pypdf import PdfReader, PdfWriter
 from pypdf.generic import NameObject, BooleanObject, NumberObject, TextStringObject
 
 # ==========================================
-# 0. CONFIGURATION LOADER (WEB & LOCAL)
+# 0. CONFIGURATION LOADER (NAMECHEAP / FLASK)
 # ==========================================
-import streamlit as st
 
-def load_configuration():
-    try:
-        if hasattr(st, "secrets") and len(st.secrets) > 0:
-            # Usamos dict() para crear una copia editable y evitar el error de "Read Only"
-            return {
-                "api_keys": dict(st.secrets.get("api_keys", {})),
-                "fire_alarm_company": dict(st.secrets.get("fire_alarm_company", {})),
-                "architect_applicant": dict(st.secrets.get("architect_applicant", {})),
-                "electrical_contractor": dict(st.secrets.get("electrical_contractor", {})),
-                "technical_defaults": dict(st.secrets.get("technical_defaults", {})),
-                "central_station": dict(st.secrets.get("central_station", {}))
-            }
-    except Exception:
-        pass 
+# Cargamos las variables de entorno (API Keys) directamente del sistema
+API_KEY_NYC = os.environ.get("NYC_API_KEY", "")
+APP_TOKEN_SOCRATA = os.environ.get("SOCRATA_TOKEN", "")
 
-    # 2. INTENTAR CARGAR DESDE ARCHIVO LOCAL (FALLBACK)
-    if getattr(sys, 'frozen', False):
-        base_path = os.path.dirname(sys.executable)
-    else:
-        base_path = os.path.dirname(os.path.abspath(__file__))
-    
-    json_path = os.path.join(base_path, "config.json")
-    
-    if os.path.exists(json_path):
-        try:
-            with open(json_path, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            return {}
-    
-    return {}
-
-CONFIG_DATA = load_configuration()
-
-# Cargar variables globales desde el diccionario unificado
-API_KEY_NYC = CONFIG_DATA.get("api_keys", {}).get("nyc_open_data_key", "")
-APP_TOKEN_SOCRATA = CONFIG_DATA.get("api_keys", {}).get("nyc_socrata_token", "")
-
-COMPANY = CONFIG_DATA.get("fire_alarm_company", {})
-EXPEDITOR = CONFIG_DATA.get("expeditor", {})
-ARCHITECT = CONFIG_DATA.get("architect_applicant", {})
-ELECTRICIAN = CONFIG_DATA.get("electrical_contractor", {})
-TECH_DEFAULTS = CONFIG_DATA.get("technical_defaults", {})
-CENTRAL_STATION = CONFIG_DATA.get("central_station", {})
+# Diccionarios globales que llenaremos dinámicamente desde Supabase por cada usuario
+COMPANY = {}
+EXPEDITOR = {}
+ARCHITECT = {}
+ELECTRICIAN = {}
+TECH_DEFAULTS = {}
+CENTRAL_STATION = {}
 
 fecha_hoy = datetime.date.today().strftime("%m/%d/%Y")
 
@@ -176,10 +142,6 @@ RANGOS = {
 # 1. TRANSLATION & INTELLIGENCE ENGINE
 # ==========================================
 def traducir_datos(ocupacion_old, construccion_old, job_description="", building_class_tax=""):
-    # (El código de traducción se mantiene igual, abreviado aquí por espacio)
-    # ... COPIA TU FUNCIÓN traducir_datos AQUÍ ...
-    # Si quieres te la pego completa, pero es la misma de la V19.
-    # Para asegurar que funcione, usaré la versión completa abajo:
     occ = str(ocupacion_old or "").upper().strip()
     const = str(construccion_old or "").upper().strip()
     desc = str(job_description or "").upper()
@@ -223,7 +185,7 @@ def traducir_datos(ocupacion_old, construccion_old, job_description="", building
 # 2. FETCH DATA
 # ==========================================
 def obtener_bin_por_direccion(house, street, borough):
-    print(f"🌍 Resolving Address to BIN: {house} {street}, {borough}...")
+    print(f"Resolving Address to BIN: {house} {street}, {borough}...")
     try:
         url_geo = "https://api.nyc.gov/geoclient/v2/address"
         params = {
@@ -240,28 +202,28 @@ def obtener_bin_por_direccion(house, street, borough):
             # Geoclient devuelve el BIN en este campo exacto
             bin_number = data.get('buildingIdentificationNumber', '')
             
-            # Los BINs válidos tienen 7 dígitos (evitamos códigos de error raros de Geoclient)
+            # Los BINs válidos tienen 7 dígitos
             if bin_number and len(str(bin_number)) == 7:
-                print(f"   ✅ Address resolved to BIN: {bin_number}")
+                print(f"    Address resolved to BIN: {bin_number}")
                 return str(bin_number)
             else:
-                print(f"   ⚠️ BIN not found or invalid format: {bin_number}")
+                print(f"    BIN not found or invalid format: {bin_number}")
         else:
-            print(f"   ❌ Geoclient API Error {r.status_code}")
+            print(f"    Geoclient API Error {r.status_code}")
     except Exception as e:
-        print(f"   ❌ Connection failed: {e}")
+        print(f"    Connection failed: {e}")
         
     return None
     
 def consultar_dob_now(bin_number, headers_soc):
-    print(f"   🚀 Querying DOB NOW (Fresh Data)...")
+    print(f"    Querying DOB NOW (Fresh Data)...")
     dob_now_data = {}
     try:
         r = requests.get("https://data.cityofnewyork.us/resource/w9ak-ipjd.json", 
                          params={"bin": bin_number, "$order": "filing_date DESC", "$limit": 1}, headers=headers_soc)
         if r.status_code == 200 and r.json():
             job = r.json()[0]
-            print(f"      ✅ Found Recent Job: {job.get('job_filing_number')}")
+            print(f"       Found Recent Job: {job.get('job_filing_number')}")
             dob_now_data["owner_business"] = job.get("owner_s_business_name", "").strip()
             dob_now_data["owner_first"] = job.get("owner_first_name", "").strip() 
             dob_now_data["owner_last"] = job.get("owner_last_name", "").strip()
@@ -287,7 +249,7 @@ def buscar_co_dob_now(bin_number, headers_soc):
     return False
 
 def obtener_datos_completos(bin_number):
-    print(f"📡 1. Fetching master data for BIN: {bin_number}...")
+    print(f"1. Fetching master data for BIN: {bin_number}...")
     
     info = {
         "bin": bin_number, "house": "", "street": "", "borough": "", "zip": "", 
@@ -329,7 +291,7 @@ def obtener_datos_completos(bin_number):
                 info["dcp_address"] = f"{low_hn}-{high_hn} {info['street']}"
             else:
                 info["dcp_address"] = f"{info['house']} {info['street']}"
-    except Exception as e: print(f"   ❌ [Geoclient] Error: {e}")
+    except Exception as e: print(f"   [ERROR] Geoclient: {e}")
 
     # --- NIVEL 2: PLUTO (Respaldo Fuerte para Coordenadas) ---
     if info["bbl_full"]:
@@ -390,7 +352,7 @@ def obtener_datos_completos(bin_number):
                 if "SPRINKLER" in job_desc_individual: info["has_sprinklers"] = "Yes"
                 if "ELEVATOR" in job_desc_individual: info["has_elevators"] = "Yes"
                 
-                # --- NUEVO: LINK EXACTO AL TRABAJO EN BIS ---
+                # --- LINK EXACTO AL TRABAJO EN BIS ---
                 if "FIRE ALARM" in job_desc_individual or " FA " in job_desc_individual:
                     job_num = job.get("job__", "")
                     if job_num and not any(j["Job #"] == job_num for j in info["fire_alarm_jobs"]):
@@ -401,7 +363,7 @@ def obtener_datos_completos(bin_number):
                             "Status": job.get("job_status", "N/A"),
                             "Date": job.get("latest_action_date", "N/A")[:10],
                             "Description": job_desc_individual.capitalize()[:60] + "...",
-                            "DOB Link": job_url  # <-- El link mágico
+                            "DOB Link": job_url
                         })
 
             info["height"], info["stories"] = raw_h, raw_s
@@ -410,14 +372,14 @@ def obtener_datos_completos(bin_number):
             info["construction_class"] = trad["const"]
             info["raw_occupancy"], info["raw_construction_class"] = raw_o, raw_c
             info["debug_nota_occ"], info["debug_nota_const"] = trad["nota"], trad["nota"]
-    except Exception as e: print(f"   ⚠️ [BIS] Error: {e}")
+    except Exception as e: print(f"   [WARNING] BIS Error: {e}")
 
     if not info["owner_business"]: info["owner_business"] = info.get("owner_business_backup", "")
     return info
     
 def rellenar_pdf_inteligente(input_pdf, output_pdf, campos):
     """
-    Solución definitiva. Auto-descubre el "nombre real" de cada checkbox 
+    Solución definitiva. Auto-descubre el nombre real de cada checkbox 
     y formatea el texto perfectamente para Nitro.
     """
     reader = PdfReader(input_pdf)
@@ -442,7 +404,6 @@ def rellenar_pdf_inteligente(input_pdf, output_pdf, campos):
                         val = campos[key]
                         
                         # A. ¿ES UN CHECKBOX O RADIO BUTTON?
-                        # (Lo sabemos si el valor es /On, /Off, o si el tipo de campo /FT es /Btn)
                         is_button = obj.get("/FT") == "/Btn"
                         
                         if val in ["/On", "/Off", True, False] or is_button:
@@ -495,11 +456,12 @@ def rellenar_pdf_inteligente(input_pdf, output_pdf, campos):
     # Guardamos el archivo
     with open(output_pdf, "wb") as f:
         writer.write(f)
+
 # ==========================================
 # 3. GENERADOR TM-1
 # ==========================================
 def generar_tm1(datos, input_pdf, output_pdf):
-    print(f"📄 2. Generating TM-1...")
+    print(f" 2. Generating TM-1...")
     try:
         lm_yes = "/On" if datos["landmarked"] == "Yes" else "/Off"
         lm_no  = "/On" if datos["landmarked"] == "No" else "/Off"
@@ -533,11 +495,10 @@ def generar_tm1(datos, input_pdf, output_pdf):
             "EMail_2": EXPEDITOR.get("Email"), "undefined_16": "/On", "2025": "/On", "Code Section": "BC 907"
         }
         
-        # Una sola línea hace toda la magia
         rellenar_pdf_inteligente(input_pdf, output_pdf, campos)
-        print("   ✅ TM-1 Generated.")
+        print("    TM-1 Generated.")
     except Exception as e: 
-        print(f"   ❌ TM-1 Error: {e}")
+        print(f"   [ERROR] TM-1: {e}")
 
 # ==========================================
 # 4. GENERADOR A-433 (EL MÁS IMPORTANTE)
@@ -556,7 +517,7 @@ def obtener_cols_derecha(fila, categoria, idx):
     return m, a, g, t
 
 def generar_a433(datos, input_pdf, output_pdf):
-    print("📄 3. Generating A-433...")
+    print(" 3. Generating A-433...")
     try:
         datos_instalacion = datos.get("devices", [])
         
@@ -620,16 +581,15 @@ def generar_a433(datos, input_pdf, output_pdf):
 
         for r, t in totales.items(): campos[f"r{r}c32"] = str(t)
 
-        # Una sola línea hace toda la magia
         rellenar_pdf_inteligente(input_pdf, output_pdf, campos)
-        print("   ✅ A-433 Generated.")
-    except Exception as e: print(f"   ❌ A-433 Error: {e}")
+        print("    A-433 Generated.")
+    except Exception as e: print(f"   [ERROR] A-433: {e}")
 
 # ==========================================
 # 5. GENERADOR B-45
 # ==========================================
 def generar_b45(datos, input_pdf, output_pdf):
-    print("📄 4. Generating B-45...")
+    print(" 4. Generating B-45...")
     try:
         exp = EXPEDITOR  # <--- Cambiamos 'emp = COMPANY' por esto
         campos = {
@@ -640,24 +600,23 @@ def generar_b45(datos, input_pdf, output_pdf):
             "cphone": exp.get("Phone"), "email": exp.get("Email"), "pname": f"{exp.get('First Name')} {exp.get('Last Name')}", "date1": fecha_hoy
         }
         
-        # Una sola línea hace toda la magia (ya incluye el desbloqueo de ReadOnly)
         rellenar_pdf_inteligente(input_pdf, output_pdf, campos)
-        print("   ✅ B-45 Generated.")
-    except Exception as e: print(f"   ❌ B-45 Error: {e}")
+        print("    B-45 Generated.")
+    except Exception as e: print(f"   [ERROR] B-45: {e}")
     
 # ==========================================
 # 6. REPORTE DE AUDITORÍA
 # ==========================================
 def generar_reporte_auditoria(datos, nombre_archivo="REPORTE_LOGICA.txt"):
-    print(f"📄 5. Generating Audit Report...")
+    print(f" 5. Generating Audit Report...")
     try:
         with open(nombre_archivo, "w", encoding="utf-8") as f:
-            f.write("AUTOMATED GENERATION REPORT n")
+            f.write("AUTOMATED GENERATION REPORT \n")
             f.write("=================================================\n")
             f.write(f"DATE: {fecha_hoy}\n")
             f.write(f"BIN: {datos.get('bin')}\n")
             f.write(f"ADDRESS: {datos.get('house')} {datos.get('street')}\n\n")
-            f.write("⚠️ ARTIFICIAL INTELLIGENCE NOTES (PLEASE REVIEW):\n")
+            f.write("*** ARTIFICIAL INTELLIGENCE NOTES (PLEASE REVIEW):\n")
             f.write("-------------------------------------------------\n")
             f.write(f"1. CONSTRUCTION CLASS:\n   - Original Value (DB): {datos.get('raw_construction_class', 'N/A')}\n   - Final Value on PDF:  {datos.get('construction_class')}\n   - System Note:         {datos.get('debug_nota_const', '')}\n\n")
             f.write(f"2. OCCUPANCY GROUP:\n   - Original Value (DB): {datos.get('raw_occupancy', 'N/A')}\n   - Final Value on PDF:  {datos.get('occupancy_group')}\n   - System Note:         {datos.get('debug_nota_occ', '')}\n\n")
@@ -684,9 +643,8 @@ def generar_reporte_auditoria(datos, nombre_archivo="REPORTE_LOGICA.txt"):
             f.write("   and strict responsibility for verifying, correcting, and validating all\n")
             f.write("   fields prior to signing, sealing, and submitting these forms to the FDNY.\n")
             
-        print(f"   ✅ Report Generated: {nombre_archivo}")
-    except Exception as e: print(f"   ❌ Report Error: {e}")    
+        print(f"    Report Generated: {nombre_archivo}")
+    except Exception as e: print(f"   [ERROR] Report Error: {e}")    
 
 if __name__ == "__main__":
-    print("Run gui.py to start the application.")
-
+    print("Run app.py to start the application.")
