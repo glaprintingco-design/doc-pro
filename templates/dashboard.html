@@ -13,7 +13,8 @@
     <meta name="theme-color" content="#1a202c">
     <link rel="apple-touch-icon" href="/static/app_icon.png">
     
-    <script src="https://www.paypal.com/sdk/js?client-id=AeCRCUKXnF3G_15llpYzaFzgqbaOeay3eWcO6fXMcaoRA6Cy7v2iXO5FOQPaqenMndAzHRR_YArdquue&vault=true&intent=subscription" data-sdk-integration-source="button-factory"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+	<script src="https://www.paypal.com/sdk/js?client-id=AeCRCUKXnF3G_15llpYzaFzgqbaOeay3eWcO6fXMcaoRA6Cy7v2iXO5FOQPaqenMndAzHRR_YArdquue&vault=true&intent=subscription" data-sdk-integration-source="button-factory"></script>
 </head>
 <body>
 
@@ -162,19 +163,168 @@
                     <div class="card-custom h-100">
                         <div class="section-title">2️⃣ Device Schedule <span class="text-muted fw-normal" style="font-size:0.9rem;">(A-433 Optional)</span></div>
                         <div class="row g-2 mb-3">
-                            <div class="col-6 col-md-3"><label class="form-label">Floor</label><select id="dev_floor" class="form-select"><option>Cellar</option><option>Basement</option><option>1st Floor</option><option>2nd Floor</option><option>Roof</option></select></div>
+                            <div class="col-6 col-md-3">
+                                <label class="form-label">Floor</label>
+                                <select id="dev_floor" class="form-select">
+                                    <option value="" disabled selected>Select...</option>
+                                    <optgroup label="Sub-Grade Levels">
+                                        <option>Sub Cellar</option><option>Sub Cellar #1</option><option>Sub Cellar #2</option>
+                                        <option>Sub Cellar #3</option><option>Sub Cellar #4</option><option>Sub Cellar #5</option>
+                                        <option>Sub Cellar #6</option><option>Sub Cellar #7</option><option>Sub Cellar #8</option>
+                                        <option>Sub Cellar #9</option><option>Sub Cellar #10</option><option>Cellar</option>
+                                        <option>Sub Basement</option><option>Basement</option><option>Vault Space</option>
+                                        <option>Elevator Pit</option><option>Escalator Pit</option>
+                                    </optgroup>
+                                    <optgroup label="Lower Special Levels">
+                                        <option>Dining Hall</option><option>Arcade</option>
+                                        <option>Parking Level #1</option><option>Parking Level #2</option><option>Parking Level #3</option>
+                                        <option>Parking Level #4</option><option>Parking Level #5</option><option>Parking Level #6</option>
+                                        <option>Parking Level #7</option><option>Parking Level #8</option><option>Parking Level #9</option>
+                                        <option>Parking Level #10</option>
+                                        <option>Ground Floor</option><option>Mall</option><option>Lower Concourse</option>
+                                        <option>Concourse</option><option>Upper Concourse</option><option>Stage</option>
+                                        <option>Auditorium</option><option>Gymnasium</option><option>Conference Hall</option>
+                                        <option>Atrium</option><option>Annex</option><option>Concert Hall</option>
+                                        <option>Theater</option><option>Ball Room</option><option>Meeting Hall</option>
+                                        <option>Stadium Level</option><option>Lecture Hall</option><option>Catering Hall</option>
+                                        <option>Mezz Between 1 & 2 Flrs</option><option>Mezz Between 2 & 3 Flrs</option><option>Mezz Between 3 & 4 Flrs</option>
+                                    </optgroup>
+                                    <optgroup label="Numbered Floors">
+                                        <option>1st Floor</option><option>1st Floor Mezzanine</option>
+                                        <option>2nd Floor</option><option>2nd Floor Mezzanine</option>
+                                        <option>Lower Lobby</option><option>Lobby</option><option>Upper Lobby</option>
+                                        <option>Sky Lobby</option><option>Balcony</option><option>Upper Balcony</option>
+                                        <option>3rd Floor</option><option>3rd Floor Mezzanine</option>
+                                        <option>4th Floor</option><option>5th Floor</option><option>6th Floor</option>
+                                        <option>7th Floor</option><option>8th Floor</option><option>9th Floor</option>
+                                        <option>10th Floor</option><option>11th Floor</option><option>12th Floor</option>
+                                        <option>13th Floor</option><option>14th Floor</option><option>15th Floor</option>
+                                        <option>16th Floor</option><option>17th Floor</option><option>18th Floor</option>
+                                        <option>19th Floor</option><option>20th Floor</option><option>21st Floor</option>
+                                        <option>22nd Floor</option><option>23rd Floor</option><option>24th Floor</option>
+                                        <option>25th Floor</option><option>26th Floor</option><option>27th Floor</option>
+                                        <option>28th Floor</option><option>29th Floor</option><option>30th Floor</option>
+                                        <option>31st Floor</option><option>32nd Floor</option><option>33rd Floor</option>
+                                        <option>34th Floor</option><option>35th Floor</option><option>36th Floor</option>
+                                        <option>37th Floor</option><option>38th Floor</option><option>39th Floor</option>
+                                        <option>40th Floor</option><option>41st Floor</option><option>42nd Floor</option>
+                                        <option>43rd Floor</option><option>44th Floor</option><option>45th Floor</option>
+                                        <option>46th Floor</option><option>47th Floor</option><option>48th Floor</option>
+                                        <option>49th Floor</option><option>50th Floor</option><option>51st Floor</option>
+                                        <option>52nd Floor</option><option>53rd Floor</option><option>54th Floor</option>
+                                        <option>55th Floor</option><option>56th Floor</option><option>57th Floor</option>
+                                        <option>58th Floor</option><option>59th Floor</option><option>60th Floor</option>
+                                        <option>61st Floor</option><option>62nd Floor</option><option>63rd Floor</option>
+                                        <option>64th Floor</option><option>65th Floor</option><option>66st Floor</option>
+                                        <option>66th Floor</option><option>67th Floor</option><option>68th Floor</option>
+                                        <option>69th Floor</option><option>70th Floor</option><option>71st Floor</option>
+                                        <option>72nd Floor</option><option>73rd Floor</option><option>74th Floor</option>
+                                        <option>75th Floor</option><option>76th Floor</option><option>77th Floor</option>
+                                        <option>78th Floor</option><option>79th Floor</option><option>80th Floor</option>
+                                        <option>81st Floor</option><option>82nd Floor</option><option>83rd Floor</option>
+                                        <option>84th Floor</option><option>85th Floor</option><option>86th Floor</option>
+                                        <option>87th Floor</option><option>88th Floor</option><option>89th Floor</option>
+                                        <option>90th Floor</option><option>91st Floor</option><option>92nd Floor</option>
+                                        <option>93rd Floor</option><option>94th Floor</option><option>95th Floor</option>
+                                        <option>96th Floor</option><option>97th Floor</option><option>98th Floor</option>
+                                        <option>99th Floor</option><option>100th Floor</option><option>101st Floor</option>
+                                        <option>102nd Floor</option><option>103rd Floor</option><option>104th Floor</option>
+                                        <option>105th Floor</option><option>106th Floor</option><option>107th Floor</option>
+                                        <option>108th Floor</option><option>109th Floor</option><option>110th Floor</option>
+                                        <option>111th Floor</option><option>112th Floor</option><option>113th Floor</option>
+                                        <option>114th Floor</option><option>115th Floor</option><option>116th Floor</option>
+                                        <option>117th Floor</option><option>118th Floor</option><option>119th Floor</option>
+                                        <option>120th Floor</option>
+                                    </optgroup>
+                                    <optgroup label="Upper & Roof Levels">
+                                        <option>Mechanical Floor</option><option>Penthouse</option><option>Upper Penthouse</option>
+                                        <option>Penthouse #1</option><option>Penthouse #2</option><option>Penthouse #3</option>
+                                        <option>Stair Bulkhead</option><option>Stairwell</option><option>Elevator Shaft</option>
+                                        <option>Passenger Elevator Shaft</option><option>Freight Elevator Shaft</option>
+                                        <option>Emergency FD Elevator Shaft</option><option>Passenger Elevator</option>
+                                        <option>Freight Elevator</option><option>Emergency FD Elevator</option>
+                                        <option>Compactor Shaft</option><option>Space</option><option>Attic</option>
+                                        <option>Roof</option><option>Roof Observation Deck</option><option>Roof Deck</option>
+                                        <option>Roof Pool</option><option>Roof Health Club</option><option>Roof Machine Room</option>
+                                        <option>Roof Elevator Room</option><option>Roof Tank Room</option><option>Clock Tower</option>
+                                        <option>Tower</option><option>Fire Tower</option><option>Antenna Room</option>
+                                    </optgroup>
+                                </select>
+                            </div>
                             <div class="col-6 col-md-5">
                                 <label class="form-label">Device Type</label>
                                 <select id="dev_type" class="form-select">
-                                    <optgroup label="Initiating"><option>Smoke Detector</option><option>Manual Pull Station</option><option>Water Flow Vane Switch</option></optgroup>
-                                    <optgroup label="Signals"><option>Horn Strobe</option><option>Speaker Strobe</option></optgroup>
-                                    <optgroup label="Firepanel"><option>Fire Alarm Control</option></optgroup>
+                                    <option value="" disabled selected>Select...</option>
+                                    <optgroup label="Initiating">
+                                        <option>Manual Pull Station</option><option>Code Manual Pull Station</option><option>Class 3 Manual Pull Station</option>
+                                        <option>Water Flow Vane Switch</option><option>Water Flow Pressure Switch</option><option>Pressure Switch</option>
+                                        <option>Smoke Detector</option><option>Photo Electric Smoke Detector</option><option>Ionization Smoke Detector</option>
+                                        <option>Smoke Detector & Heat Detector</option><option>Duct Smoke Detector</option><option>Multi Criteria Detector</option>
+                                        <option>Multi Sensor Detector</option><option>Fixed Temperature Heat Detector</option><option>Rate of Rise Heat Detector</option>
+                                        <option>Fixed & Rate Of Rise Heat Detector</option><option>Rate Compensated Heat Detector</option><option>Linear Heat Detector</option>
+                                        <option>Carbon Monoxide Detector</option><option>Flame Detector</option><option>Spark Detector</option><option>Air Sampling Detection</option>
+                                        <option>Beam Smoke Detector</option><option>Gas Detector Sensor</option><option>Natural Gas Detector Sensor</option>
+                                        <option>Remote Indicator</option><option>Video Image Smoke Detector Camera</option>
+                                    </optgroup>
+                                    <optgroup label="Supervisory">
+                                        <option>Valve Tamper Switch</option><option>Pit Tamper Switch</option><option>OS&Y Tamper Switch</option><option>Wall Valve Tamper Switch</option>
+                                        <option>Built In Valve Tamper Switch</option><option>Post Indicator Valve TS</option><option>Butter Fly Valve TS</option>
+                                        <option>Gate Valve Tamper Switch</option><option>Low Rising Stem Valve Tamper Switch</option><option>High/Low Air Switch</option>
+                                        <option>Low Air Switch</option><option>High/Low Water Switch</option><option>Tank Temperature Switch</option><option>Room Temperature Switch</option>
+                                        <option>Low Temperature Switch</option><option>Low Room Temperature Switch</option><option>Tank Low Temperature Switch</option>
+                                        <option>Pump Running</option><option>Pump Power Failure</option><option>Phase Reversal</option><option>Generator Running</option>
+                                        <option>Generator Failure</option><option>Generator Low Fuel</option><option>Generator Low Oil Pressure</option><option>UPS Failure</option>
+                                        <option>UPS Battery Failure</option><option>Fire Pump</option><option>Combination Fire Pump</option><option>Special Service Pump</option>
+                                        <option>Sprinkler Booster Pump</option><option>Automatic Standpipe Fire Pump</option><option>Manual Standpipe Fire Pump</option>
+                                    </optgroup>
+                                    <optgroup label="Control">
+                                        <option>Fire Door Holder</option><option>Fire Shutter Release</option><option>FIre Damper Control</option><option>Fire Damper</option>
+                                        <option>Smoke Damper</option><option>Damper</option><option>Shutter</option><option>Exhaust Damper</option><option>Release</option><option>Elevator Recall</option>
+                                        <option>HVAC Shut Down</option><option>Fire Suppression Release</option><option>Isolation Module</option><option>Access Control Release</option><option>Fire Door Release</option>
+                                        <option>Automatic Smoke Exhaust</option><option>BMS Signal</option><option>Release Control Activation</option><option>Auxillary Relay Operation</option>
+                                        <option>Fossil Fuel Shutdown</option><option>Natural Gas Shutdown</option>
+                                    </optgroup>
+                                    <optgroup label="Signals">
+                                        <option>Horn</option><option>Vibrating Bell</option><option>Signal Stroke Bell</option><option>Chime</option><option>Multi Electronic Sounder</option>
+                                        <option>Sounder Base</option><option>Mini Sounder</option><option>Speaker</option><option>Horn Strobe</option><option>Vibrating Bell Strobe</option>
+                                        <option>Single Stroke Bell Strobe</option><option>Chime Strobe</option><option>Multi Electronic Sounder Strobe</option>
+                                        <option>Speaker Strobe</option><option>Strobe</option><option>Auxiliary Audible Signal</option><option>Auxiliary Visual Signal</option>
+                                    </optgroup>
+                                    <optgroup label="Communication">
+                                        <option>Warden Telephone</option><option>Warden Jack</option><option>Warden Telephone Extended Hand Set</option>
+                                        <option>Remote Microphone</option><option>Strap Key Station</option><option>Remote Antenna</option><option>Radio Repeater</option>
+                                        <option>Radio Transmitter</option><option>Radio Receiver</option><option>Radio Signal Booster</option><option>Radio Antenna</option>
+                                    </optgroup>
+                                    <optgroup label="Fire & Control Panels">
+                                        <option>Fire Alarm Control</option><option>Fire Command Center</option><option>Secondary Fire Command Center</option>
+                                        <option>Smoke Detection Control</option><option>Heat Detection Control</option><option>Fire Sprinkler Control</option>
+                                        <option>Flame Detection Control</option><option>Special Hazard Control</option><option>Video Image Smoke Control</option>
+                                        <option>Tank Alarm Control</option><option>Gas Alarm Control</option><option>Medical Gas Alarm Control</option>
+                                        <option>Smoke Purge Control</option><option>Smoke Control Panel</option><option>Data Gathering Panel</option>
+                                        <option>Network Sub Control</option><option>Sub Amplifier</option><option>Sub Panel</option><option>Auxiliary Power Supply</option>
+                                        <option>Signal Power Booster</option><option>Auxiliary Battery Charger</option><option>One Way Voice Com Control</option>
+                                        <option>Warden Telephone Control</option><option>Remote Annunciator</option><option>Graphic Annunciator</option>
+                                        <option>Detector Address Map</option><option>Uninterrupted Power Suppy</option><option>Central Station Transmitter</option>
+                                        <option>Radiating Cable System</option><option>Distributed Antenna System</option><option>Repeater/Simplex System</option>
+                                    </optgroup>
                                 </select>
                             </div>
-                            <div class="col-6 col-md-2"><label class="form-label">Qty</label><input type="number" id="dev_qty" class="form-control" value="1" min="1"></div>
-                            <div class="col-6 col-md-2 d-flex align-items-end"><button class="btn btn-secondary-custom w-100" onclick="addDevice()">➕ Add</button></div>
+                            <div class="col-6 col-md-2">
+                                <label class="form-label">Qty</label>
+                                <input type="number" id="dev_qty" class="form-control" value="1" min="1">
+                            </div>
+                            <div class="col-6 col-md-2 d-flex align-items-end">
+                                <button class="btn btn-secondary-custom w-100" onclick="addDevice()">➕ Add</button>
+                            </div>
                         </div>
-                        <div class="table-responsive border rounded"><table class="table table-sm table-hover mb-0"><thead class="table-light"><tr><th>Qty</th><th>Type</th><th>Floor</th><th></th></tr></thead><tbody id="device-table-body"></tbody></table></div>
+                        <div class="table-responsive border rounded">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr><th>Qty</th><th>Type</th><th>Floor</th><th></th></tr>
+                                </thead>
+                                <tbody id="device-table-body"></tbody>
+                            </table>
+                        </div>
                         <p id="empty-device-msg" class="text-center text-muted mt-4">No devices added yet</p>
                     </div>
                 </div>
@@ -289,8 +439,10 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
+    
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+	<script>
         // --- 1. NAVEGACIÓN Y MOBILE ---
         function switchTab(tabId, element) {
             document.querySelectorAll('.tab-content-view').forEach(t => t.classList.remove('active'));
@@ -342,16 +494,62 @@
 
         // --- 3. DEVICE SCHEDULE LOGIC ---
         let deviceList = [];
+        
         function addDevice() {
-            const floor = document.getElementById('dev_floor').value; const type = document.getElementById('dev_type').value; const qty = document.getElementById('dev_qty').value;
+            const floor = document.getElementById('dev_floor').value; 
+            const type = document.getElementById('dev_type').value; 
+            const qty = document.getElementById('dev_qty').value;
+            
             if (!floor || !type || !qty) return;
-            deviceList.push({ floor, device: type, qty: parseInt(qty) }); renderTable();
+            
+            // Verificamos si el dispositivo ya existe en ese piso para sumar la cantidad en lugar de crear otra fila
+            const existingIndex = deviceList.findIndex(d => d.floor === floor && d.device === type);
+            if (existingIndex >= 0) {
+                deviceList[existingIndex].qty += parseInt(qty);
+            } else {
+                deviceList.push({ floor, device: type, qty: parseInt(qty) }); 
+            }
+            
+            renderTable();
         }
-        function removeDevice(index) { deviceList.splice(index, 1); renderTable(); }
+        
+        function removeDevice(index) { 
+            deviceList.splice(index, 1); 
+            renderTable(); 
+        }
+        
+        // NUEVA FUNCIÓN: Actualiza la cantidad cuando el usuario escribe en el input de la tabla
+        function updateDeviceQty(index, newQty) {
+            const qty = parseInt(newQty);
+            if (qty > 0) {
+                deviceList[index].qty = qty;
+            } else {
+                // Si intentan poner 0 o negativo, lo forzamos a 1
+                deviceList[index].qty = 1;
+                renderTable(); // Recargamos para corregir el error visual
+            }
+        }
+
         function renderTable() {
-            const tbody = document.getElementById('device-table-body'); tbody.innerHTML = '';
+            const tbody = document.getElementById('device-table-body'); 
+            tbody.innerHTML = '';
             document.getElementById('empty-device-msg').style.display = deviceList.length ? 'none' : 'block';
-            deviceList.forEach((d, i) => { tbody.innerHTML += `<tr><td>${d.qty}</td><td>${d.device}</td><td>${d.floor}</td><td><button class="btn btn-sm btn-outline-danger border-0" onclick="removeDevice(${i})"><i class="bi bi-trash"></i></button></td></tr>`; });
+            
+            deviceList.forEach((d, i) => { 
+                tbody.innerHTML += `
+                    <tr>
+                        <td style="width: 80px;">
+                            <input type="number" class="form-control form-control-sm" value="${d.qty}" min="1" onchange="updateDeviceQty(${i}, this.value)">
+                        </td>
+                        <td class="align-middle">${d.device}</td>
+                        <td class="align-middle">${d.floor}</td>
+                        <td class="align-middle text-end">
+                            <button class="btn btn-sm btn-outline-danger border-0" onclick="removeDevice(${i})">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>`; 
+            });
         }
 
         // --- 4. GENERATE DOCUMENTS & PAYPAL LOGIC ---
@@ -377,52 +575,65 @@
             try {
                 const response = await fetch('/api/generate', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
                 
-                // --- LÓGICA SI LLEGÓ AL LÍMITE (403) ---
+                // --- LÓGICA DE SUSCRIPCIÓN (LÍMITE ALCANZADO) ---
                 if (response.status === 403) {
+                    // ... (Manten tu código actual de paypal aquí, no cambia)
                     document.getElementById('generate-action-area').style.display = 'none';
                     document.getElementById('paypal-upgrade-container').style.display = 'block';
-                    
-                    if(!isPaypalRendered) {
-                        const currentUserId = "{{ session.get('user_id', '') }}";
-                        paypal.Buttons({
-                            style: { shape: 'rect', color: 'gold', layout: 'vertical', label: 'subscribe' },
-                            createSubscription: function(data, actions) {
-                                return actions.subscription.create({
-                                    plan_id: 'P-73L06517ME334400KNGY24TI',
-                                    custom_id: currentUserId 
-                                });
-                            },
-                            onApprove: function(data, actions) {
-                                alert("Thank you for upgrading! Your Pro account is now active.");
-                                window.location.reload();
-                            }
-                        }).render('#paypal-button-container-P-73L06517ME334400KNGY24TI');
-                        isPaypalRendered = true;
-                    }
                     statusDiv.innerHTML = '';
                     return;
                 }
 
-                if (!response.ok) throw new Error("Server error processing your forms.");
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || "Server error processing your forms.");
                 
-                // Si todo fue bien, descargamos
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url; a.download = `FDNY_Forms_${bin}.zip`;
-                document.body.appendChild(a); a.click(); a.remove(); window.URL.revokeObjectURL(url);
-                statusDiv.innerHTML = '<span class="text-success fw-bold">✅ Success! ZIP downloaded.</span>';
+                // Guardamos los datos globalmente para los botones
+                window.generatedFilesData = data;
                 
-                // Refrescamos el historial automáticamente
+                // Dibujar Botones de Descarga
+                let html = `<div class="alert alert-success mt-3 mb-2 p-2 shadow-sm border-0"><i class="bi bi-check-circle-fill"></i> Documents ready!</div>`;
+                
+                // Botón ZIP
+                html += `<button class="btn btn-primary-custom w-100 mb-3" onclick="downloadZipFile('${bin}')"><i class="bi bi-file-earmark-zip"></i> Download All as ZIP</button>`;
+                
+                // Botones Individuales
+                html += `<p class="text-muted text-center mb-2" style="font-size:0.9rem;">Or download individually:</p>`;
+                html += `<div class="row g-2">`;
+                data.files.forEach((f, index) => {
+                    const icon = f.filename.endsWith('.pdf') ? '<i class="bi bi-file-pdf-fill text-danger"></i>' : '<i class="bi bi-file-text-fill text-primary"></i>';
+                    const shortName = f.filename.split(' - ')[0];
+                    html += `<div class="col-6"><button class="btn btn-outline-secondary w-100 btn-sm fw-bold" onclick="downloadIndividualFile(${index})">${icon} ${shortName}</button></div>`;
+                });
+                html += `</div>`;
+                
+                statusDiv.innerHTML = html;
                 loadProjects(); 
                 
             } catch (error) { 
-                statusDiv.innerHTML = `<span class="text-danger">❌ ${error.message}</span>`; 
+                statusDiv.innerHTML = `<div class="alert alert-danger shadow-sm border-start border-danger border-4 text-start mt-3"><b>❌ Error:</b> ${error.message}</div>`; 
             } finally {
                 btnGen.innerHTML = 'GENERATE DOCUMENTS';
                 btnGen.disabled = false;
             }
         }
+
+        // --- FUNCIONES AUXILIARES DE DESCARGA BASE64 ---
+        window.downloadZipFile = function(bin) {
+            const linkSource = `data:application/zip;base64,${window.generatedFilesData.zip_base64}`;
+            const downloadLink = document.createElement("a");
+            downloadLink.href = linkSource;
+            downloadLink.download = `FDNY_Forms_${bin}.zip`;
+            downloadLink.click();
+        };
+
+        window.downloadIndividualFile = function(index) {
+            const f = window.generatedFilesData.files[index];
+            const linkSource = `data:${f.mime_type};base64,${f.content}`;
+            const downloadLink = document.createElement("a");
+            downloadLink.href = linkSource;
+            downloadLink.download = f.filename;
+            downloadLink.click();
+        };
 
         // --- 5. CARGAR Y GUARDAR PERFIL ---
         const profileMap = {
@@ -552,6 +763,19 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadProfile(); 
             loadProjects();
+            
+            // --- ACTIVAR BUSCADOR EN LOS DROPDOWNS (TOM SELECT) ---
+            new TomSelect("#dev_floor", {
+                create: false,
+                sortField: { field: "$order" }, // Mantiene el orden oficial de NYC
+                placeholder: "Search floor..."
+            });
+
+            new TomSelect("#dev_type", {
+                create: false,
+                sortField: { field: "$order" }, // Mantiene tus categorías
+                placeholder: "Search device..."
+            });
         });
     </script>
 </body>
