@@ -25,12 +25,25 @@ application = app
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
+# --- INICIO DEL DIAGNÓSTICO (CHISMOSO) ---
+print("=======================================")
+print("--- DIAGNÓSTICO DE SUPABASE ---")
+print(f"URL detectada en Render: {'SÍ' if SUPABASE_URL else 'NO'}")
+print(f"KEY detectada en Render: {'SÍ' if SUPABASE_KEY else 'NO'}")
+if SUPABASE_URL:
+    print(f"La URL empieza con https: {SUPABASE_URL.startswith('https')}")
+print("=======================================")
+# --- FIN DEL DIAGNÓSTICO ---
+
 supabase = None
 if SUPABASE_URL and SUPABASE_KEY:
     try:
         supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+        print("✅ Supabase cliente creado EXITOSAMENTE.")
     except Exception as e:
-        print(f"Error Supabase: {e}")
+        print(f"❌ ERROR CRÍTICO creando cliente Supabase: {e}")
+else:
+    print("⚠️ FALTAN CREDENCIALES: Flask no intentará conectarse a Supabase.")
 
 # ==========================================
 # HELPER: CLIENTE SUPABASE AUTENTICADO
