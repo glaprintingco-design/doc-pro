@@ -7,10 +7,9 @@ from pypdf import PdfReader, PdfWriter
 from pypdf.generic import NameObject, BooleanObject, NumberObject, TextStringObject
 
 # ==========================================
-# 0. CONFIGURATION LOADER (NAMECHEAP / FLASK)
+# 0. CONFIGURATION LOADER (FLASK / RENDER)
 # ==========================================
 
-# Cargamos las variables de entorno (API Keys) directamente del sistema
 API_KEY_NYC = os.environ.get("NYC_API_KEY", "")
 APP_TOKEN_SOCRATA = os.environ.get("SOCRATA_TOKEN", "")
 
@@ -25,15 +24,14 @@ CENTRAL_STATION = {}
 fecha_hoy = datetime.date.today().strftime("%m/%d/%Y")
 
 # ==========================================
-# LISTAS MAESTRAS DEL A-433 (LA "BASE DE DATOS" OFICIAL)
+# LISTAS MAESTRAS DEL A-433
 # ==========================================
 
-# 1. PISOS (Ordenados lógicamente para el PDF)
 FULL_FLOOR_LIST = [
     "Sub Cellar", "Sub Cellar #1", "Sub Cellar #2", "Sub Cellar #3", "Sub Cellar #4", "Sub Cellar #5",
     "Sub Cellar #6", "Sub Cellar #7", "Sub Cellar #8", "Sub Cellar #9", "Sub Cellar #10",
     "Cellar", "Sub Basement", "Basement", "Vault Space", "Elevator Pit", "Escalator Pit",
-    "Dining Hall", "Arcade", 
+    "Dining Hall", "Arcade",
     "Parking Level #1", "Parking Level #2", "Parking Level #3", "Parking Level #4", "Parking Level #5",
     "Parking Level #6", "Parking Level #7", "Parking Level #8", "Parking Level #9", "Parking Level #10",
     "Ground Floor", "Mall", "Lower Concourse", "Concourse", "Upper Concourse",
@@ -65,7 +63,6 @@ FULL_FLOOR_LIST = [
     "Tower", "Fire Tower", "Antenna Room"
 ]
 
-# 2. DISPOSITIVOS (Clasificados para la lógica del PDF)
 MASTER_DEVICE_LIST = {
     "Initiating": [
         "Manual Pull Station", "Code Manual Pull Station", "Class 3 Manual Pull Station",
@@ -92,7 +89,7 @@ MASTER_DEVICE_LIST = {
     "Control": [
         "Fire Door Holder", "Fire Shutter Release", "FIre Damper Control", "Fire Damper",
         "Smoke Damper", "Damper", "Shutter", "Exhaust Damper", "Release", "Elevator Recall",
-        "HVAC Shut Down", "Fire Suppression Release","Isolation Module", "Access Control Release", "Fire Door Release",
+        "HVAC Shut Down", "Fire Suppression Release", "Isolation Module", "Access Control Release", "Fire Door Release",
         "Automatic Smoke Exhaust", "BMS Signal", "Release Control Activation", "Auxillary Relay Operation",
         "Fossil Fuel Shutdown", "Natural Gas Shutdown"
     ],
@@ -107,7 +104,7 @@ MASTER_DEVICE_LIST = {
         "Remote Microphone", "Strap Key Station", "Remote Antenna", "Radio Repeater",
         "Radio Transmitter", "Radio Receiver", "Radio Signal Booster", "Radio Antenna"
     ],
-    "Firepanel": [ # Nota: En el PDF se llama 'Fire & Control Panels' pero la lógica usa 'Firepanel'
+    "Firepanel": [
         "Fire Alarm Control", "Fire Command Center", "Secondary Fire Command Center",
         "Smoke Detection Control", "Heat Detection Control", "Fire Sprinkler Control",
         "Flame Detection Control", "Special Hazard Control", "Video Image Smoke Control",
@@ -121,14 +118,11 @@ MASTER_DEVICE_LIST = {
     ]
 }
 
-# --- GENERACIÓN AUTOMÁTICA DEL MAPA DE CATEGORÍAS ---
-# Esto permite que main.py sepa automáticamente que "Spark Detector" es "Initiating"
 CATEGORIAS = {}
 for cat, devices in MASTER_DEVICE_LIST.items():
     for dev in devices:
         CATEGORIAS[dev] = cat
 
-# Rangos de filas en el PDF A-433
 RANGOS = {
     'Initiating': (1, 10),
     'Supervisory': (11, 20),
@@ -146,7 +140,7 @@ def traducir_datos(ocupacion_old, construccion_old, job_description="", building
     const = str(construccion_old or "").upper().strip()
     desc = str(job_description or "").upper()
     tax_class = str(building_class_tax or "").upper().strip()
-    
+
     res = {"occ": occ, "const": const, "nota": ""}
 
     mapa_numerico = {"1": "I-B", "2": "II-B", "3": "III-B", "4": "V-B", "5": "II-B", "6": "IV-HT"}
@@ -188,21 +182,12 @@ def obtener_bin_por_direccion(house, street, borough):
     print(f"Resolving Address to BIN: {house} {street}, {borough}...")
     try:
         url_geo = "https://api.nyc.gov/geoclient/v2/address"
-        params = {
-            "houseNumber": house,
-            "street": street,
-            "borough": borough
-        }
+        params = {"houseNumber": house, "street": street, "borough": borough}
         headers = {"Ocp-Apim-Subscription-Key": API_KEY_NYC}
-        
         r = requests.get(url_geo, params=params, headers=headers, timeout=10)
-        
         if r.status_code == 200:
             data = r.json().get('address', {})
-            # Geoclient devuelve el BIN en este campo exacto
             bin_number = data.get('buildingIdentificationNumber', '')
-            
-            # Los BINs válidos tienen 7 dígitos
             if bin_number and len(str(bin_number)) == 7:
                 print(f"    Address resolved to BIN: {bin_number}")
                 return str(bin_number)
@@ -212,37 +197,37 @@ def obtener_bin_por_direccion(house, street, borough):
             print(f"    Geoclient API Error {r.status_code}")
     except Exception as e:
         print(f"    Connection failed: {e}")
-        
     return None
-    
+
 def consultar_dob_now(bin_number, headers_soc):
     print(f"    Querying DOB NOW (Fresh Data)...")
     dob_now_data = {}
     try:
-        r = requests.get("https://data.cityofnewyork.us/resource/w9ak-ipjd.json", 
+        r = requests.get("https://data.cityofnewyork.us/resource/w9ak-ipjd.json",
                          params={"bin": bin_number, "$order": "filing_date DESC", "$limit": 1}, headers=headers_soc)
         if r.status_code == 200 and r.json():
             job = r.json()[0]
             print(f"       Found Recent Job: {job.get('job_filing_number')}")
             dob_now_data["owner_business"] = job.get("owner_s_business_name", "").strip()
-            dob_now_data["owner_first"] = job.get("owner_first_name", "").strip() 
+            dob_now_data["owner_first"] = job.get("owner_first_name", "").strip()
             dob_now_data["owner_last"] = job.get("owner_last_name", "").strip()
             dob_now_data["owner_email"] = job.get("owner_email", "").strip()
             dob_now_data["owner_phone"] = job.get("owner_phone", "").strip()
             addr_st = job.get("owner_s_street_name", "").strip()
             addr_no = job.get("owner_s_house_number", "").strip()
+            # BUG FIX #1: Siempre llenar owner_city, owner_zip, owner_state aunque addr_st esté vacío
+            dob_now_data["owner_city"] = job.get("owner_s_city", job.get("city", "")).strip()
+            dob_now_data["owner_zip"] = job.get("owner_s_zip", job.get("zip", "")).strip()
+            dob_now_data["owner_state"] = job.get("state", "NY") or "NY"
             if addr_st:
                 dob_now_data["owner_address"] = f"{addr_no} {addr_st}".strip()
-                dob_now_data["owner_city"] = job.get("owner_s_city", job.get("city", "")).strip()
-                dob_now_data["owner_zip"] = job.get("owner_s_zip", job.get("zip", "")).strip()
-                dob_now_data["owner_state"] = job.get("state", "NY")
             return dob_now_data
     except: pass
     return None
 
 def buscar_co_dob_now(bin_number, headers_soc):
     try:
-        r = requests.get("https://data.cityofnewyork.us/resource/bs8b-p36n.json", 
+        r = requests.get("https://data.cityofnewyork.us/resource/bs8b-p36n.json",
                          params={"bin": bin_number, "$limit": 1}, headers=headers_soc)
         if r.status_code == 200 and r.json(): return True
     except: pass
@@ -250,28 +235,27 @@ def buscar_co_dob_now(bin_number, headers_soc):
 
 def obtener_datos_completos(bin_number):
     print(f"1. Fetching master data for BIN: {bin_number}...")
-    
+
     info = {
-        "bin": bin_number, "house": "", "street": "", "borough": "", "zip": "", 
+        "bin": bin_number, "house": "", "street": "", "borough": "", "zip": "",
         "block": "", "lot": "", "bbl_full": "", "tax_class": "",
-        "stories": "", "height": "", "occupancy_group": "", "construction_class": "", 
-        "landmarked": "No", "flood_zone": "No", 
-        "owner_first": "", "owner_last": "", "owner_business": "", "owner_address": "", 
-        "owner_phone": "", "owner_email": "", "owner_city": "", "owner_state": "NY", 
+        "stories": "", "height": "", "occupancy_group": "", "construction_class": "",
+        "landmarked": "No", "flood_zone": "No",
+        "owner_first": "", "owner_last": "", "owner_business": "", "owner_address": "",
+        "owner_phone": "", "owner_email": "", "owner_city": "", "owner_state": "NY",
         "owner_zip": "", "has_digital_co": False,
-        "x_coord": "", "y_coord": "", "dcp_address": "", 
+        "x_coord": "", "y_coord": "", "dcp_address": "",
         "has_sprinklers": "Unknown", "has_elevators": "Unknown",
         "fire_alarm_jobs": []
     }
 
     headers_socrata = {"X-App-Token": APP_TOKEN_SOCRATA}
-    
-    # --- NIVEL 1: GEOCLIENT (Coordenadas y Rangos) ---
+
+    # --- NIVEL 1: GEOCLIENT ---
     try:
         url_geo = "https://api.nyc.gov/geoclient/v2/bin"
-        r_geo = requests.get(url_geo, params={"bin": bin_number}, 
+        r_geo = requests.get(url_geo, params={"bin": bin_number},
                              headers={"Ocp-Apim-Subscription-Key": API_KEY_NYC}, timeout=10)
-        
         if r_geo.status_code == 200:
             d = r_geo.json().get('bin', {})
             info["house"] = (d.get("giLowHouseNumber1") or d.get("houseNumber", "")).strip()
@@ -281,10 +265,8 @@ def obtener_datos_completos(bin_number):
             info["lot"] = d.get("bblTaxLot", "").strip()
             info["bbl_full"] = d.get("bbl", "").strip()
             info["tax_class"] = d.get("rpadBuildingClassificationCode", "").strip()
-            
             info["x_coord"] = d.get("xCoordinate", "")
             info["y_coord"] = d.get("yCoordinate", "")
-            
             low_hn = str(d.get("giLowHouseNumber1", "")).strip()
             high_hn = str(d.get("giHighHouseNumber1", "")).strip()
             if low_hn and high_hn and low_hn != high_hn:
@@ -293,10 +275,10 @@ def obtener_datos_completos(bin_number):
                 info["dcp_address"] = f"{info['house']} {info['street']}"
     except Exception as e: print(f"   [ERROR] Geoclient: {e}")
 
-    # --- NIVEL 2: PLUTO (Respaldo Fuerte para Coordenadas) ---
+    # --- NIVEL 2: PLUTO ---
     if info["bbl_full"]:
         try:
-            r_pluto = requests.get("https://data.cityofnewyork.us/resource/64uk-42ks.json", 
+            r_pluto = requests.get("https://data.cityofnewyork.us/resource/64uk-42ks.json",
                                  params={"bbl": info["bbl_full"]}, headers=headers_socrata, timeout=10)
             if r_pluto.status_code == 200 and r_pluto.json():
                 pluto = r_pluto.json()[0]
@@ -304,11 +286,8 @@ def obtener_datos_completos(bin_number):
                 if pluto.get("pfirm15_flag") == "1": info["flood_zone"] = "Yes"
                 info["owner_business_backup"] = pluto.get("ownername", "").strip()
                 if not info["tax_class"]: info["tax_class"] = pluto.get("bldgclass", "").strip()
-                
-                # PLAN B PARA COORDENADAS: Si Geoclient falló, PLUTO las tiene
                 if not info["x_coord"]: info["x_coord"] = str(pluto.get("xcoord", "")).strip()
                 if not info["y_coord"]: info["y_coord"] = str(pluto.get("ycoord", "")).strip()
-                
                 if not info["house"] and pluto.get("address"):
                     addr_raw = pluto.get("address").split(" ", 1)
                     info["house"], info["street"] = addr_raw[0], (addr_raw[1] if len(addr_raw) > 1 else "")
@@ -319,15 +298,15 @@ def obtener_datos_completos(bin_number):
     if dob_now_info: info.update(dob_now_info)
     if buscar_co_dob_now(bin_number, headers_socrata): info["has_digital_co"] = True
 
-    # --- NIVEL 3: ESCANEO HISTÓRICO BIS ---
+    # --- NIVEL 3: BIS ---
     try:
-        r_bis = requests.get("https://data.cityofnewyork.us/resource/ic3t-wcy2.json", 
-                           params={"bin__": bin_number, "$order": "latest_action_date DESC", "$limit": 100}, 
+        r_bis = requests.get("https://data.cityofnewyork.us/resource/ic3t-wcy2.json",
+                           params={"bin__": bin_number, "$order": "latest_action_date DESC", "$limit": 100},
                            headers=headers_socrata, timeout=10)
         if r_bis.status_code == 200:
             jobs = r_bis.json()
             raw_h, raw_s, raw_c, raw_o, desc_total = "0", "0", "", "", ""
-            
+
             for job in jobs:
                 if not info["owner_business"] and not info["owner_last"]:
                     bn = str(job.get("owner_s_business_name") or "").strip()
@@ -335,8 +314,8 @@ def obtener_datos_completos(bin_number):
                         info["owner_business"] = bn
                         info["owner_first"] = str(job.get("owner_s_first_name") or "").strip()
                         info["owner_last"] = str(job.get("owner_s_last_name") or "").strip()
-                        oh, os = job.get("owner_s_house_number", ""), job.get("owner_s_street_name", "")
-                        info["owner_address"] = f"{oh} {os}" if oh else f"{info['house']} {info['street']}"
+                        oh, os_ = job.get("owner_s_house_number", ""), job.get("owner_s_street_name", "")
+                        info["owner_address"] = f"{oh} {os_}" if oh else f"{info['house']} {info['street']}"
                         info["owner_city"] = job.get("owner_s_city", info["borough"])
                         info["owner_zip"] = job.get("owner_s_zip", info["zip"])
 
@@ -348,15 +327,13 @@ def obtener_datos_completos(bin_number):
 
                 job_desc_individual = str(job.get("job_description") or "").upper()
                 desc_total += " " + job_desc_individual
-                
+
                 if "SPRINKLER" in job_desc_individual: info["has_sprinklers"] = "Yes"
                 if "ELEVATOR" in job_desc_individual: info["has_elevators"] = "Yes"
-                
-                # --- LINK EXACTO AL TRABAJO EN BIS ---
+
                 if "FIRE ALARM" in job_desc_individual or " FA " in job_desc_individual:
                     job_num = job.get("job__", "")
                     if job_num and not any(j["Job #"] == job_num for j in info["fire_alarm_jobs"]):
-                        # Construimos la URL que apunta directamente al Job
                         job_url = f"https://a810-bisweb.nyc.gov/bisweb/JobsQueryByNumberServlet?passjobnumber={job_num}&passdocnumber=01"
                         info["fire_alarm_jobs"].append({
                             "Job #": job_num,
@@ -374,58 +351,60 @@ def obtener_datos_completos(bin_number):
             info["debug_nota_occ"], info["debug_nota_const"] = trad["nota"], trad["nota"]
     except Exception as e: print(f"   [WARNING] BIS Error: {e}")
 
+    # BUG FIX #2: Si owner_city sigue vacío después de todo, usar el borough como fallback
+    if not info["owner_city"] and info["borough"]:
+        info["owner_city"] = info["borough"]
+    # BUG FIX #3: Si owner_zip sigue vacío, usar el zip del edificio como fallback
+    if not info["owner_zip"] and info["zip"]:
+        info["owner_zip"] = info["zip"]
+    if not info["owner_state"]:
+        info["owner_state"] = "NY"
+
     if not info["owner_business"]: info["owner_business"] = info.get("owner_business_backup", "")
     return info
-    
+
+
 def rellenar_pdf_inteligente(input_pdf, output_pdf, campos):
     """
-    Solución definitiva. Auto-descubre el nombre real de cada checkbox 
-    y formatea el texto perfectamente para Nitro.
+    Rellena un PDF con los campos dados.
+    Compatible con pypdf 3.x y versiones posteriores (usa getattr para _root_object).
     """
     reader = PdfReader(input_pdf)
     writer = PdfWriter()
-    
+
     for page in reader.pages:
         writer.add_page(page)
-        
-    # 1. Le decimos a Nitro que redibuje el formulario (PARCHE PARA PYPDF 3.17+)
-    # La librería ocultó la variable con un guion bajo, así que usamos getattr para atraparla siempre
+
+    # PARCHE COMPATIBILIDAD pypdf 3.17+: root pasó a ser _root_object
     root = getattr(writer, "_root_object", getattr(writer, "root_object", None))
     if root and "/AcroForm" in root:
         root["/AcroForm"].get_object()[NameObject("/NeedAppearances")] = BooleanObject(True)
-    
-    # 2. Pasada Quirúrgica: Campo por Campo
+
     for page in writer.pages:
         if "/Annots" in page:
             for annot in page["/Annots"]:
                 obj = annot.get_object()
-                
-                if obj.get("/T"): # Si el campo tiene nombre
+
+                if obj.get("/T"):
                     key = obj.get("/T")
                     if key in campos:
                         val = campos[key]
-                        
-                        # A. ¿ES UN CHECKBOX O RADIO BUTTON?
+
+                        # A. CHECKBOX / RADIO BUTTON
                         is_button = obj.get("/FT") == "/Btn"
-                        
+
                         if val in ["/On", "/Off", True, False] or is_button:
                             if val in ["/On", True]:
-                                # Por defecto asumimos que se llama "/On"
                                 estado_activo = NameObject("/On")
-                                
-                                # MAGIA: Buscamos dentro de la estructura del PDF cuál es el nombre real
                                 if "/AP" in obj:
                                     ap = obj["/AP"].get_object()
                                     if "/N" in ap:
                                         n_dict = ap["/N"].get_object()
-                                        # Buscamos cualquier llave que NO sea "/Off"
                                         if hasattr(n_dict, "keys"):
                                             for k in n_dict.keys():
                                                 if k != "/Off":
                                                     estado_activo = NameObject(k)
                                                     break
-                                
-                                # Activamos la casilla con su contraseña secreta
                                 obj.update({
                                     NameObject("/V"): estado_activo,
                                     NameObject("/AS"): estado_activo
@@ -435,78 +414,119 @@ def rellenar_pdf_inteligente(input_pdf, output_pdf, campos):
                                     NameObject("/V"): NameObject("/Off"),
                                     NameObject("/AS"): NameObject("/Off")
                                 })
-                        
-                        # B. ES UN CAMPO DE TEXTO NORMAL
+
+                        # B. CAMPO DE TEXTO
                         else:
-                            texto_seguro = str(val).encode('latin-1', 'ignore').decode('latin-1')
-                            obj.update({
-                                NameObject("/V"): TextStringObject(texto_seguro)
-                            })
-                            
-                            # Borramos la apariencia vieja para que Nitro redibuje
+                            # BUG FIX #4: Convertir None a string vacío para evitar errores al encodear
+                            texto_seguro = str(val if val is not None else "").encode('latin-1', 'ignore').decode('latin-1')
+                            obj.update({NameObject("/V"): TextStringObject(texto_seguro)})
                             if "/AP" in obj:
                                 del obj["/AP"]
-                                
-                    # 3. LIMPIEZA GENERAL (Para todos los campos)
+
+                    # LIMPIEZA GENERAL
                     if "/Ff" in obj:
                         flags = obj.get("/Ff", 0)
                         if isinstance(flags, int):
-                            # Hacemos todo editable y quitamos separación
                             flags = (flags & ~0x1000000) & ~1
                             obj.update({NameObject("/Ff"): NumberObject(flags)})
 
-    # Guardamos el archivo
     with open(output_pdf, "wb") as f:
         writer.write(f)
+
 
 # ==========================================
 # 3. GENERADOR TM-1
 # ==========================================
 def generar_tm1(datos, input_pdf, output_pdf):
     print(f"📄 2. Generating TM-1...")
-    lm_yes = "/On" if datos["landmarked"] == "Yes" else "/Off"
-    lm_no  = "/On" if datos["landmarked"] == "No" else "/Off"
-    fl_yes = "/On" if datos["flood_zone"] == "Yes" else "/Off"
-    fl_no  = "/On" if datos["flood_zone"] == "No" else "/Off"
+    try:
+        lm_yes = "/On" if datos["landmarked"] == "Yes" else "/Off"
+        lm_no  = "/On" if datos["landmarked"] == "No" else "/Off"
+        fl_yes = "/On" if datos["flood_zone"] == "Yes" else "/Off"
+        fl_no  = "/On" if datos["flood_zone"] == "No" else "/Off"
 
-    campos = {
-        "Last Name_3": datos["owner_last"], "First Name_2": datos["owner_first"],
-        "Business Name_4": datos["owner_business"], "Business Address_3": datos["owner_address"],
-        "City_3": datos["owner_city"], "State_3": datos["owner_state"], "Zip_3": datos["owner_zip"],
-        "Business Tel_2": datos["owner_phone"], "Mobile Tel": datos["owner_phone"], "EMail_3": datos["owner_email"],
-        "Classification": datos["construction_class"], 
-        "Stories": datos["stories"], "Height ft": datos["height"],
-        "Building Dominant Occupancy Group": datos["occupancy_group"],
-        "Occupancy classification of the area of work": datos["occupancy_group"],
-        "undefined_18": lm_yes, "undefined_181": lm_no, "undefined_19": fl_yes, "undefined_191": fl_no,
-        "Initial Filing Date": fecha_hoy, "Total Fee": "585.00", "NEW SUBMISSION": "/On",
-        "Fire AlarmFire SuppressionARCS Electrical": "/On", "undefined": "/On",
-        "BIN": datos["bin"], "Building No": datos["house"], "Street Name": datos["street"],
-        "Borough": datos["borough"], "Block": datos["block"], "Lot": datos["lot"], "ZIP": datos["zip"],
-        "Job Description": datos.get("job_desc", ""),
-        "Last Name": ARCHITECT.get("Last Name"), "Firstname": ARCHITECT.get("First Name"),
-        "Business Name_2": ARCHITECT.get("Company Name"), "Business Address": ARCHITECT.get("Address"),
-        "City": ARCHITECT.get("City"), "State": ARCHITECT.get("State"), "Zip": ARCHITECT.get("Zip"),
-        "bsn_phone": str(ARCHITECT.get("Phone")), "EMail": ARCHITECT.get("Email"), 
-        "License Number": ARCHITECT.get("License No"), "undefined_5": "/On",
-        "Lastnamefilingrep": EXPEDITOR.get("Last Name"), "firstnamefilingrep": EXPEDITOR.get("First Name"),
-        "Filing Rep Tel": EXPEDITOR.get("Phone"), "Reg No": EXPEDITOR.get("Reg No"),
-        "Business Name_3": EXPEDITOR.get("Company Name"), "Business Address_2": EXPEDITOR.get("Address"),
-        "City_2": EXPEDITOR.get("City"), "State_2": EXPEDITOR.get("State"), "Zip_2": EXPEDITOR.get("Zip"),
-        "EMail_2": EXPEDITOR.get("Email"), "undefined_16": "/On", "2025": "/On", "Code Section": "BC 907"
-    }
-    
-    rellenar_pdf_inteligente(input_pdf, output_pdf, campos)
-    print("   ✅ TM-1 Generated.")
+        # BUG FIX #5: ARCHITECT["Phone"] puede ser None → forzar str
+        arch_phone = str(ARCHITECT.get("Phone") or "")
+
+        campos = {
+            # --- OWNER / APPLICANT (sufijos _3 y _4 en el TM-1) ---
+            "Last Name_3":      datos.get("owner_last", ""),
+            "First Name_2":     datos.get("owner_first", ""),
+            "Business Name_4":  datos.get("owner_business", ""),
+            "Business Address_3": datos.get("owner_address", ""),
+            "City_3":           datos.get("owner_city", ""),
+            "State_3":          datos.get("owner_state", "NY"),
+            "Zip_3":            datos.get("owner_zip", ""),
+            "Business Tel_2":   datos.get("owner_phone", ""),
+            "Mobile Tel":       datos.get("owner_phone", ""),
+            "EMail_3":          datos.get("owner_email", ""),
+
+            # --- BUILDING INFO ---
+            "Classification":   datos.get("construction_class", ""),
+            "Stories":          datos.get("stories", ""),
+            "Height ft":        datos.get("height", ""),
+            "Building Dominant Occupancy Group": datos.get("occupancy_group", ""),
+            "Occupancy classification of the area of work": datos.get("occupancy_group", ""),
+            "undefined_18": lm_yes, "undefined_181": lm_no,
+            "undefined_19": fl_yes, "undefined_191": fl_no,
+            "Initial Filing Date": fecha_hoy,
+            "Total Fee": "585.00",
+            "NEW SUBMISSION": "/On",
+            "Fire AlarmFire SuppressionARCS Electrical": "/On",
+            "undefined": "/On",
+            "BIN":          datos.get("bin", ""),
+            "Building No":  datos.get("house", ""),
+            "Street Name":  datos.get("street", ""),
+            "Borough":      datos.get("borough", ""),
+            "Block":        datos.get("block", ""),
+            "Lot":          datos.get("lot", ""),
+            "ZIP":          datos.get("zip", ""),
+            "Job Description": datos.get("job_desc", ""),
+
+            # --- ARCHITECT / PE (sin sufijo en el TM-1) ---
+            "Last Name":        ARCHITECT.get("Last Name", ""),
+            "Firstname":        ARCHITECT.get("First Name", ""),
+            "Business Name_2":  ARCHITECT.get("Company Name", ""),
+            "Business Address": ARCHITECT.get("Address", ""),
+            "City":             ARCHITECT.get("City", ""),
+            "State":            ARCHITECT.get("State", ""),
+            "Zip":              ARCHITECT.get("Zip", ""),
+            "bsn_phone":        arch_phone,
+            "EMail":            ARCHITECT.get("Email", ""),
+            "License Number":   ARCHITECT.get("License No", ""),
+            "undefined_5":      "/On",
+
+            # --- FILING REP / EXPEDITOR (sufijos _2 en el TM-1) ---
+            "Lastnamefilingrep":   EXPEDITOR.get("Last Name", ""),
+            "firstnamefilingrep":  EXPEDITOR.get("First Name", ""),
+            "Filing Rep Tel":      EXPEDITOR.get("Phone", ""),
+            "Reg No":              EXPEDITOR.get("Reg No", ""),
+            "Business Name_3":     EXPEDITOR.get("Company Name", ""),
+            "Business Address_2":  EXPEDITOR.get("Address", ""),
+            "City_2":              EXPEDITOR.get("City", ""),
+            "State_2":             EXPEDITOR.get("State", "NY"),
+            "Zip_2":               EXPEDITOR.get("Zip", ""),
+            "EMail_2":             EXPEDITOR.get("Email", ""),
+            "undefined_16": "/On",
+            "2025": "/On",
+            "Code Section": "BC 907"
+        }
+
+        rellenar_pdf_inteligente(input_pdf, output_pdf, campos)
+        print("   ✅ TM-1 Generated.")
+    except Exception as e:
+        print(f"   ❌ TM-1 Error: {e}")
+        raise
+
 
 # ==========================================
-# 4. GENERADOR A-433 (EL MÁS IMPORTANTE)
+# 4. GENERADOR A-433
 # ==========================================
 def obtener_cols_derecha(fila, categoria, idx):
     if fila == 1: m, a = "Manufacturer", "BSA MEA COA or Agency Approval"
     elif 2 <= fila <= 16: m, a = f"Manufacturer_{fila}", f"BSA MEA COA or Agency Approval_{fila}"
     else: m, a = f"ManufacturerRow{fila}", f"BSA MEA COA or Agency Approval Row{fila}"
-    
+
     if categoria == 'Initiating': g, t = f"WireGuageInitiating{idx}", f"Insulation/WireType-Initiating{idx}"
     elif categoria == 'Supervisory': g, t = f"WireGuageSupervisory{idx}", f"Insulation/WireType-Initiating{10+idx}"
     elif categoria == 'Control': g, t = f"WireGuageControl{idx}", f"Insulation/WireType-Control{idx}"
@@ -517,88 +537,140 @@ def obtener_cols_derecha(fila, categoria, idx):
 
 def generar_a433(datos, input_pdf, output_pdf):
     print("📄 3. Generating A-433...")
-    datos_instalacion = datos.get("devices", [])
-    
-    def floor_sorter(f_name):
-        try: return FULL_FLOOR_LIST.index(f_name)
-        except ValueError: return 9999
-        
-    pisos_trabajados = sorted(list(set(d['floor'] for d in datos_instalacion)), key=floor_sorter)
-    
-    campos = {}
-    campos.update({
-        "Building No": datos.get("house", ""), "Street Name": datos.get("street", ""), 
-        "Borough": datos.get("borough", ""), "State": "NY", "ZIP": datos.get("zip", ""), 
-        "Work on floor(s)": ", ".join(pisos_trabajados), "New": "/On"
-    })
-    campos.update({
-        "Last Name": datos["owner_last"], "First Name": datos["owner_first"],
-        "Business_Name": datos["owner_business"], "Business Address": datos["owner_address"],
-        "City": datos["owner_city"], "State_2": datos["owner_state"], "Zip": datos["owner_zip"],
-        "Business Tel": datos["owner_phone"], "Mobile Tel": datos["owner_phone"], "EMail": datos["owner_email"]
-    })
+    try:
+        datos_instalacion = datos.get("devices", [])
 
-    elec = ELECTRICIAN; emp = COMPANY; cs = CENTRAL_STATION; specs = TECH_DEFAULTS
-    campos.update({"First Name_2": elec.get("First Name"), "Last Name_2": elec.get("Last Name"), "Business Name_2": elec.get("Company Name"), "Business Address_2": elec.get("Address"), "City_2": elec.get("City"), "State_3": elec.get("State"), "Zip_2": elec.get("Zip"), "Business Tel_2": elec.get("Phone"), "License Number": elec.get("License No"), "Date of Expiration": elec.get("Expiration")})
-    campos.update({"First Name_3": emp.get("First Name"), "Last Name_3": emp.get("Last Name"), "Business Name_3": emp.get("Company Name"), "Business Address_3": emp.get("Address"), "City_3": emp.get("City"), "State_4": emp.get("State"), "Zip_3": emp.get("Zip"), "Business Tel_3": emp.get("Phone"), "COF S97": emp.get("COF S97"), "Date of Expiration_2": emp.get("Expiration")})
-    campos.update({"Business Name_4": cs.get("Company Name"), "Station Code": cs.get("CS Code"), "Business Address_4": cs.get("Address"), "City_4": cs.get("City"), "State_5": cs.get("State"), "Zip_4": cs.get("Zip"), "Business Tel_4": cs.get("Phone"), "New_2": "/On"})
+        def floor_sorter(f_name):
+            try: return FULL_FLOOR_LIST.index(f_name)
+            except ValueError: return 9999
 
-    mapa_col = {p: i+1 for i, p in enumerate(pisos_trabajados)}
-    for p, i in mapa_col.items(): campos[f'floors{i}'] = p
+        pisos_trabajados = sorted(list(set(d['floor'] for d in datos_instalacion)), key=floor_sorter)
 
-    dispositivos = sorted(list(set(d['device'] for d in datos_instalacion)))
-    fila_actual = {k: v[0] for k, v in RANGOS.items()}
-    mapa_fil = {}
+        campos = {}
+        campos.update({
+            "Building No":  datos.get("house", ""),
+            "Street Name":  datos.get("street", ""),
+            "Borough":      datos.get("borough", ""),
+            "State":        "NY",
+            "ZIP":          datos.get("zip", ""),
+            "Work on floor(s)": ", ".join(pisos_trabajados),
+            "New": "/On"
+        })
 
-    for dev in dispositivos:
-        cat = CATEGORIAS.get(dev, 'Initiating')
-        r_ini, r_fin = RANGOS[cat]
-        f = fila_actual[cat]
-        if f > r_fin: continue 
+        # --- OWNER ---
+        campos.update({
+            "Last Name":        datos.get("owner_last", ""),
+            "First Name":       datos.get("owner_first", ""),
+            "Business_Name":    datos.get("owner_business", ""),   # Así está en el PDF original
+            "Business Address": datos.get("owner_address", ""),
+            "City":             datos.get("owner_city", ""),
+            "State_2":          datos.get("owner_state", "NY"),
+            "Zip":              datos.get("owner_zip", ""),
+            "Business Tel":     datos.get("owner_phone", ""),
+            "Mobile Tel":       datos.get("owner_phone", ""),
+            "EMail":            datos.get("owner_email", ""),
+        })
 
-        idx = f - r_ini + 1
-        campos[f"{cat}{idx}"] = dev
-        mapa_fil[dev] = (f, cat, idx)
-        
-        m, a, g, t = obtener_cols_derecha(f, cat, idx)
-        if m: campos[m] = specs.get('Manufacturer', '')
-        if a: campos[a] = specs.get('Approval', '')
-        if g: campos[g] = specs.get('WireGauge', '')
-        if t: campos[t] = specs.get('WireType', '')
-        
-        fila_actual[cat] += 1
+        elec = ELECTRICIAN; emp = COMPANY; cs = CENTRAL_STATION; specs = TECH_DEFAULTS
 
-    totales = {}
-    for item in datos_instalacion:
-        d, p, q = item['device'], item['floor'], int(item['qty'])
-        if d in mapa_fil and p in mapa_col:
-            r, cat, idx = mapa_fil[d]
-            c = mapa_col[p]
-            campos[f"r{r}c{c}"] = str(q)
-            totales[r] = totales.get(r, 0) + q
+        # --- ELECTRICIAN ---
+        campos.update({
+            "First Name_2": elec.get("First Name", ""), "Last Name_2": elec.get("Last Name", ""),
+            "Business Name_2": elec.get("Company Name", ""), "Business Address_2": elec.get("Address", ""),
+            "City_2": elec.get("City", ""), "State_3": elec.get("State", ""), "Zip_2": elec.get("Zip", ""),
+            "Business Tel_2": elec.get("Phone", ""), "License Number": elec.get("License No", ""),
+            "Date of Expiration": elec.get("Expiration", "")
+        })
 
-    for r, t in totales.items(): campos[f"r{r}c32"] = str(t)
+        # --- COMPANY (Fire Alarm Vendor) ---
+        campos.update({
+            "First Name_3": emp.get("First Name", ""), "Last Name_3": emp.get("Last Name", ""),
+            "Business Name_3": emp.get("Company Name", ""), "Business Address_3": emp.get("Address", ""),
+            "City_3": emp.get("City", ""), "State_4": emp.get("State", ""), "Zip_3": emp.get("Zip", ""),
+            "Business Tel_3": emp.get("Phone", ""), "COF S97": emp.get("COF S97", ""),
+            "Date of Expiration_2": emp.get("Expiration", "")
+        })
 
-    rellenar_pdf_inteligente(input_pdf, output_pdf, campos)
-    print("   ✅ A-433 Generated.")
+        # --- CENTRAL STATION ---
+        campos.update({
+            "Business Name_4": cs.get("Company Name", ""), "Station Code": cs.get("CS Code", ""),
+            "Business Address_4": cs.get("Address", ""), "City_4": cs.get("City", ""),
+            "State_5": cs.get("State", ""), "Zip_4": cs.get("Zip", ""),
+            "Business Tel_4": cs.get("Phone", ""), "New_2": "/On"
+        })
+
+        # --- FLOOR COLUMNS ---
+        mapa_col = {p: i+1 for i, p in enumerate(pisos_trabajados)}
+        for p, i in mapa_col.items(): campos[f'floors{i}'] = p
+
+        # --- DEVICE ROWS ---
+        dispositivos = sorted(list(set(d['device'] for d in datos_instalacion)))
+        fila_actual = {k: v[0] for k, v in RANGOS.items()}
+        mapa_fil = {}
+
+        for dev in dispositivos:
+            cat = CATEGORIAS.get(dev, 'Initiating')
+            r_ini, r_fin = RANGOS[cat]
+            f = fila_actual[cat]
+            if f > r_fin: continue
+
+            idx = f - r_ini + 1
+            campos[f"{cat}{idx}"] = dev
+            mapa_fil[dev] = (f, cat, idx)
+
+            m, a, g, t = obtener_cols_derecha(f, cat, idx)
+            if m: campos[m] = specs.get('Manufacturer', '')
+            if a: campos[a] = specs.get('Approval', '')
+            if g: campos[g] = specs.get('WireGauge', '')
+            if t: campos[t] = specs.get('WireType', '')
+
+            fila_actual[cat] += 1
+
+        # --- QUANTITIES ---
+        totales = {}
+        for item in datos_instalacion:
+            d, p, q = item['device'], item['floor'], int(item['qty'])
+            if d in mapa_fil and p in mapa_col:
+                r, cat, idx = mapa_fil[d]
+                c = mapa_col[p]
+                campos[f"r{r}c{c}"] = str(q)
+                totales[r] = totales.get(r, 0) + q
+
+        for r, t in totales.items(): campos[f"r{r}c32"] = str(t)
+
+        rellenar_pdf_inteligente(input_pdf, output_pdf, campos)
+        print("   ✅ A-433 Generated.")
+    except Exception as e:
+        print(f"   ❌ A-433 Error: {e}")
+        raise
+
 
 # ==========================================
 # 5. GENERADOR B-45
 # ==========================================
 def generar_b45(datos, input_pdf, output_pdf):
     print("📄 4. Generating B-45...")
-    exp = EXPEDITOR  
-    campos = {
-        "adress": f"{datos['house']} {datos['street']}, {datos['borough']}, NY {datos['zip']}",
-        "name": f"{exp.get('First Name')} {exp.get('Last Name')}", "title": "Expeditor",
-        "lic": exp.get("Reg No"), "company": exp.get("Company Name"), 
-        "caddress": f"{exp.get('Address')}, {exp.get('City')}, {exp.get('State')} {exp.get('Zip')}",
-        "cphone": exp.get("Phone"), "email": exp.get("Email"), "pname": f"{exp.get('First Name')} {exp.get('Last Name')}", "date1": fecha_hoy
-    }
-    
-    rellenar_pdf_inteligente(input_pdf, output_pdf, campos)
-    print("   ✅ B-45 Generated.")
-    
+    try:
+        exp = EXPEDITOR
+        campos = {
+            "adress": f"{datos.get('house','')} {datos.get('street','')}, {datos.get('borough','')}, NY {datos.get('zip','')}",
+            "name":     f"{exp.get('First Name','')} {exp.get('Last Name','')}".strip(),
+            "title":    "Expeditor",
+            "lic":      exp.get("Reg No", ""),
+            "company":  exp.get("Company Name", ""),
+            "caddress": f"{exp.get('Address','')}, {exp.get('City','')}, {exp.get('State','NY')} {exp.get('Zip','')}",
+            "cphone":   exp.get("Phone", ""),
+            "email":    exp.get("Email", ""),
+            "pname":    f"{exp.get('First Name','')} {exp.get('Last Name','')}".strip(),
+            "date1":    fecha_hoy
+        }
+        rellenar_pdf_inteligente(input_pdf, output_pdf, campos)
+        print("   ✅ B-45 Generated.")
+    except Exception as e:
+        print(f"   ❌ B-45 Error: {e}")
+        raise
+
+
 # ==========================================
 # 6. REPORTE DE AUDITORÍA
 # ==========================================
@@ -606,7 +678,7 @@ def generar_reporte_auditoria(datos, nombre_archivo="REPORTE_LOGICA.txt"):
     print(f" 5. Generating Audit Report...")
     try:
         with open(nombre_archivo, "w", encoding="utf-8") as f:
-            f.write("AUTOMATED GENERATION REPORT \n")
+            f.write("AUTOMATED GENERATION REPORT\n")
             f.write("=================================================\n")
             f.write(f"DATE: {fecha_hoy}\n")
             f.write(f"BIN: {datos.get('bin')}\n")
@@ -615,31 +687,28 @@ def generar_reporte_auditoria(datos, nombre_archivo="REPORTE_LOGICA.txt"):
             f.write("-------------------------------------------------\n")
             f.write(f"1. CONSTRUCTION CLASS:\n   - Original Value (DB): {datos.get('raw_construction_class', 'N/A')}\n   - Final Value on PDF:  {datos.get('construction_class')}\n   - System Note:         {datos.get('debug_nota_const', '')}\n\n")
             f.write(f"2. OCCUPANCY GROUP:\n   - Original Value (DB): {datos.get('raw_occupancy', 'N/A')}\n   - Final Value on PDF:  {datos.get('occupancy_group')}\n   - System Note:         {datos.get('debug_nota_occ', '')}\n\n")
-            
-            # --- NUEVO DISCLAIMER LEGAL ROBUSTO ---
             f.write("=================================================\n")
             f.write("LEGAL DISCLAIMER & TERMS OF USE:\n")
             f.write("-------------------------------------------------\n")
             f.write("1. NO GOVERNMENT AFFILIATION:\n")
             f.write("   Fire Form Pro is an independent software tool. It is NOT affiliated with,\n")
-            f.write("   endorsed by, or connected to the NYC Fire Department (FDNY), the \n")
+            f.write("   endorsed by, or connected to the NYC Fire Department (FDNY), the\n")
             f.write("   Department of Buildings (DOB), or any other government agency.\n\n")
-            
             f.write("2. DATA ACCURACY AND PUBLIC RECORDS:\n")
             f.write("   Property and ownership data are automatically retrieved from public NYC\n")
             f.write("   databases (BIS, DOB NOW, PLUTO, Geoclient) based on the provided BIN.\n")
             f.write("   Due to filing delays, database inconsistencies, and historical variations,\n")
             f.write("   this information is provided 'AS IS' and is NOT guaranteed to be 100%\n")
             f.write("   accurate or current.\n\n")
-            
             f.write("3. PROFESSIONAL RESPONSIBILITY:\n")
             f.write("   These generated documents are intended solely as a drafting aid. The\n")
             f.write("   Architect, Engineer of Record, Expeditor, and/or Contractor assume full\n")
             f.write("   and strict responsibility for verifying, correcting, and validating all\n")
             f.write("   fields prior to signing, sealing, and submitting these forms to the FDNY.\n")
-            
         print(f"    Report Generated: {nombre_archivo}")
-    except Exception as e: print(f"   [ERROR] Report Error: {e}")    
+    except Exception as e:
+        print(f"   [ERROR] Report Error: {e}")
+
 
 if __name__ == "__main__":
     print("Run app.py to start the application.")
