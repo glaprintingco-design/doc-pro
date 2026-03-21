@@ -461,44 +461,41 @@ def rellenar_pdf_inteligente(input_pdf, output_pdf, campos):
 # 3. GENERADOR TM-1
 # ==========================================
 def generar_tm1(datos, input_pdf, output_pdf):
-    print(f" 2. Generating TM-1...")
-    try:
-        lm_yes = "/On" if datos["landmarked"] == "Yes" else "/Off"
-        lm_no  = "/On" if datos["landmarked"] == "No" else "/Off"
-        fl_yes = "/On" if datos["flood_zone"] == "Yes" else "/Off"
-        fl_no  = "/On" if datos["flood_zone"] == "No" else "/Off"
+    print(f"📄 2. Generating TM-1...")
+    lm_yes = "/On" if datos["landmarked"] == "Yes" else "/Off"
+    lm_no  = "/On" if datos["landmarked"] == "No" else "/Off"
+    fl_yes = "/On" if datos["flood_zone"] == "Yes" else "/Off"
+    fl_no  = "/On" if datos["flood_zone"] == "No" else "/Off"
 
-        campos = {
-            "Last Name_3": datos["owner_last"], "First Name_2": datos["owner_first"],
-            "Business Name_4": datos["owner_business"], "Business Address_3": datos["owner_address"],
-            "City_3": datos["owner_city"], "State_3": datos["owner_state"], "Zip_3": datos["owner_zip"],
-            "Business Tel_2": datos["owner_phone"], "Mobile Tel": datos["owner_phone"], "EMail_3": datos["owner_email"],
-            "Classification": datos["construction_class"], 
-            "Stories": datos["stories"], "Height ft": datos["height"],
-            "Building Dominant Occupancy Group": datos["occupancy_group"],
-            "Occupancy classification of the area of work": datos["occupancy_group"],
-            "undefined_18": lm_yes, "undefined_181": lm_no, "undefined_19": fl_yes, "undefined_191": fl_no,
-            "Initial Filing Date": fecha_hoy, "Total Fee": "585.00", "NEW SUBMISSION": "/On",
-            "Fire AlarmFire SuppressionARCS Electrical": "/On", "undefined": "/On",
-            "BIN": datos["bin"], "Building No": datos["house"], "Street Name": datos["street"],
-            "Borough": datos["borough"], "Block": datos["block"], "Lot": datos["lot"], "ZIP": datos["zip"],
-            "Job Description": datos.get("job_desc", ""),
-            "Last Name": ARCHITECT.get("Last Name"), "Firstname": ARCHITECT.get("First Name"),
-            "Business Name_2": ARCHITECT.get("Company Name"), "Business Address": ARCHITECT.get("Address"),
-            "City": ARCHITECT.get("City"), "State": ARCHITECT.get("State"), "Zip": ARCHITECT.get("Zip"),
-            "bsn_phone": str(ARCHITECT.get("Phone")), "EMail": ARCHITECT.get("Email"), 
-            "License Number": ARCHITECT.get("License No"), "undefined_5": "/On",
-            "Lastnamefilingrep": EXPEDITOR.get("Last Name"), "firstnamefilingrep": EXPEDITOR.get("First Name"),
-            "Filing Rep Tel": EXPEDITOR.get("Phone"), "Reg No": EXPEDITOR.get("Reg No"),
-            "Business Name_3": EXPEDITOR.get("Company Name"), "Business Address_2": EXPEDITOR.get("Address"),
-            "City_2": EXPEDITOR.get("City"), "State_2": EXPEDITOR.get("State"), "Zip_2": EXPEDITOR.get("Zip"),
-            "EMail_2": EXPEDITOR.get("Email"), "undefined_16": "/On", "2025": "/On", "Code Section": "BC 907"
-        }
-        
-        rellenar_pdf_inteligente(input_pdf, output_pdf, campos)
-        print("    TM-1 Generated.")
-    except Exception as e: 
-        print(f"   [ERROR] TM-1: {e}")
+    campos = {
+        "Last Name_3": datos["owner_last"], "First Name_2": datos["owner_first"],
+        "Business Name_4": datos["owner_business"], "Business Address_3": datos["owner_address"],
+        "City_3": datos["owner_city"], "State_3": datos["owner_state"], "Zip_3": datos["owner_zip"],
+        "Business Tel_2": datos["owner_phone"], "Mobile Tel": datos["owner_phone"], "EMail_3": datos["owner_email"],
+        "Classification": datos["construction_class"], 
+        "Stories": datos["stories"], "Height ft": datos["height"],
+        "Building Dominant Occupancy Group": datos["occupancy_group"],
+        "Occupancy classification of the area of work": datos["occupancy_group"],
+        "undefined_18": lm_yes, "undefined_181": lm_no, "undefined_19": fl_yes, "undefined_191": fl_no,
+        "Initial Filing Date": fecha_hoy, "Total Fee": "585.00", "NEW SUBMISSION": "/On",
+        "Fire AlarmFire SuppressionARCS Electrical": "/On", "undefined": "/On",
+        "BIN": datos["bin"], "Building No": datos["house"], "Street Name": datos["street"],
+        "Borough": datos["borough"], "Block": datos["block"], "Lot": datos["lot"], "ZIP": datos["zip"],
+        "Job Description": datos.get("job_desc", ""),
+        "Last Name": ARCHITECT.get("Last Name"), "Firstname": ARCHITECT.get("First Name"),
+        "Business Name_2": ARCHITECT.get("Company Name"), "Business Address": ARCHITECT.get("Address"),
+        "City": ARCHITECT.get("City"), "State": ARCHITECT.get("State"), "Zip": ARCHITECT.get("Zip"),
+        "bsn_phone": str(ARCHITECT.get("Phone")), "EMail": ARCHITECT.get("Email"), 
+        "License Number": ARCHITECT.get("License No"), "undefined_5": "/On",
+        "Lastnamefilingrep": EXPEDITOR.get("Last Name"), "firstnamefilingrep": EXPEDITOR.get("First Name"),
+        "Filing Rep Tel": EXPEDITOR.get("Phone"), "Reg No": EXPEDITOR.get("Reg No"),
+        "Business Name_3": EXPEDITOR.get("Company Name"), "Business Address_2": EXPEDITOR.get("Address"),
+        "City_2": EXPEDITOR.get("City"), "State_2": EXPEDITOR.get("State"), "Zip_2": EXPEDITOR.get("Zip"),
+        "EMail_2": EXPEDITOR.get("Email"), "undefined_16": "/On", "2025": "/On", "Code Section": "BC 907"
+    }
+    
+    rellenar_pdf_inteligente(input_pdf, output_pdf, campos)
+    print("   ✅ TM-1 Generated.")
 
 # ==========================================
 # 4. GENERADOR A-433 (EL MÁS IMPORTANTE)
@@ -517,92 +514,88 @@ def obtener_cols_derecha(fila, categoria, idx):
     return m, a, g, t
 
 def generar_a433(datos, input_pdf, output_pdf):
-    print(" 3. Generating A-433...")
-    try:
-        datos_instalacion = datos.get("devices", [])
+    print("📄 3. Generating A-433...")
+    datos_instalacion = datos.get("devices", [])
+    
+    def floor_sorter(f_name):
+        try: return FULL_FLOOR_LIST.index(f_name)
+        except ValueError: return 9999
         
-        def floor_sorter(f_name):
-            try: return FULL_FLOOR_LIST.index(f_name)
-            except ValueError: return 9999
-            
-        pisos_trabajados = sorted(list(set(d['floor'] for d in datos_instalacion)), key=floor_sorter)
+    pisos_trabajados = sorted(list(set(d['floor'] for d in datos_instalacion)), key=floor_sorter)
+    
+    campos = {}
+    campos.update({
+        "Building No": datos.get("house", ""), "Street Name": datos.get("street", ""), 
+        "Borough": datos.get("borough", ""), "State": "NY", "ZIP": datos.get("zip", ""), 
+        "Work on floor(s)": ", ".join(pisos_trabajados), "New": "/On"
+    })
+    campos.update({
+        "Last Name": datos["owner_last"], "First Name": datos["owner_first"],
+        "Business_Name": datos["owner_business"], "Business Address": datos["owner_address"],
+        "City": datos["owner_city"], "State_2": datos["owner_state"], "Zip": datos["owner_zip"],
+        "Business Tel": datos["owner_phone"], "Mobile Tel": datos["owner_phone"], "EMail": datos["owner_email"]
+    })
+
+    elec = ELECTRICIAN; emp = COMPANY; cs = CENTRAL_STATION; specs = TECH_DEFAULTS
+    campos.update({"First Name_2": elec.get("First Name"), "Last Name_2": elec.get("Last Name"), "Business Name_2": elec.get("Company Name"), "Business Address_2": elec.get("Address"), "City_2": elec.get("City"), "State_3": elec.get("State"), "Zip_2": elec.get("Zip"), "Business Tel_2": elec.get("Phone"), "License Number": elec.get("License No"), "Date of Expiration": elec.get("Expiration")})
+    campos.update({"First Name_3": emp.get("First Name"), "Last Name_3": emp.get("Last Name"), "Business Name_3": emp.get("Company Name"), "Business Address_3": emp.get("Address"), "City_3": emp.get("City"), "State_4": emp.get("State"), "Zip_3": emp.get("Zip"), "Business Tel_3": emp.get("Phone"), "COF S97": emp.get("COF S97"), "Date of Expiration_2": emp.get("Expiration")})
+    campos.update({"Business Name_4": cs.get("Company Name"), "Station Code": cs.get("CS Code"), "Business Address_4": cs.get("Address"), "City_4": cs.get("City"), "State_5": cs.get("State"), "Zip_4": cs.get("Zip"), "Business Tel_4": cs.get("Phone"), "New_2": "/On"})
+
+    mapa_col = {p: i+1 for i, p in enumerate(pisos_trabajados)}
+    for p, i in mapa_col.items(): campos[f'floors{i}'] = p
+
+    dispositivos = sorted(list(set(d['device'] for d in datos_instalacion)))
+    fila_actual = {k: v[0] for k, v in RANGOS.items()}
+    mapa_fil = {}
+
+    for dev in dispositivos:
+        cat = CATEGORIAS.get(dev, 'Initiating')
+        r_ini, r_fin = RANGOS[cat]
+        f = fila_actual[cat]
+        if f > r_fin: continue 
+
+        idx = f - r_ini + 1
+        campos[f"{cat}{idx}"] = dev
+        mapa_fil[dev] = (f, cat, idx)
         
-        campos = {}
-        campos.update({
-            "Building No": datos.get("house", ""), "Street Name": datos.get("street", ""), 
-            "Borough": datos.get("borough", ""), "State": "NY", "ZIP": datos.get("zip", ""), 
-            "Work on floor(s)": ", ".join(pisos_trabajados), "New": "/On"
-        })
-        campos.update({
-            "Last Name": datos["owner_last"], "First Name": datos["owner_first"],
-            "Business_Name": datos["owner_business"], "Business Address": datos["owner_address"],
-            "City": datos["owner_city"], "State_2": datos["owner_state"], "Zip": datos["owner_zip"],
-            "Business Tel": datos["owner_phone"], "Mobile Tel": datos["owner_phone"], "EMail": datos["owner_email"]
-        })
+        m, a, g, t = obtener_cols_derecha(f, cat, idx)
+        if m: campos[m] = specs.get('Manufacturer', '')
+        if a: campos[a] = specs.get('Approval', '')
+        if g: campos[g] = specs.get('WireGauge', '')
+        if t: campos[t] = specs.get('WireType', '')
+        
+        fila_actual[cat] += 1
 
-        elec = ELECTRICIAN; emp = COMPANY; cs = CENTRAL_STATION; specs = TECH_DEFAULTS
-        campos.update({"First Name_2": elec.get("First Name"), "Last Name_2": elec.get("Last Name"), "Business Name_2": elec.get("Company Name"), "Business Address_2": elec.get("Address"), "City_2": elec.get("City"), "State_3": elec.get("State"), "Zip_2": elec.get("Zip"), "Business Tel_2": elec.get("Phone"), "License Number": elec.get("License No"), "Date of Expiration": elec.get("Expiration")})
-        campos.update({"First Name_3": emp.get("First Name"), "Last Name_3": emp.get("Last Name"), "Business Name_3": emp.get("Company Name"), "Business Address_3": emp.get("Address"), "City_3": emp.get("City"), "State_4": emp.get("State"), "Zip_3": emp.get("Zip"), "Business Tel_3": emp.get("Phone"), "COF S97": emp.get("COF S97"), "Date of Expiration_2": emp.get("Expiration")})
-        campos.update({"Business Name_4": cs.get("Company Name"), "Station Code": cs.get("CS Code"), "Business Address_4": cs.get("Address"), "City_4": cs.get("City"), "State_5": cs.get("State"), "Zip_4": cs.get("Zip"), "Business Tel_4": cs.get("Phone"), "New_2": "/On"})
+    totales = {}
+    for item in datos_instalacion:
+        d, p, q = item['device'], item['floor'], int(item['qty'])
+        if d in mapa_fil and p in mapa_col:
+            r, cat, idx = mapa_fil[d]
+            c = mapa_col[p]
+            campos[f"r{r}c{c}"] = str(q)
+            totales[r] = totales.get(r, 0) + q
 
-        mapa_col = {p: i+1 for i, p in enumerate(pisos_trabajados)}
-        for p, i in mapa_col.items(): campos[f'floors{i}'] = p
+    for r, t in totales.items(): campos[f"r{r}c32"] = str(t)
 
-        dispositivos = sorted(list(set(d['device'] for d in datos_instalacion)))
-        fila_actual = {k: v[0] for k, v in RANGOS.items()}
-        mapa_fil = {}
-
-        for dev in dispositivos:
-            cat = CATEGORIAS.get(dev, 'Initiating')
-            r_ini, r_fin = RANGOS[cat]
-            f = fila_actual[cat]
-            if f > r_fin: continue 
-
-            idx = f - r_ini + 1
-            campos[f"{cat}{idx}"] = dev
-            mapa_fil[dev] = (f, cat, idx)
-            
-            m, a, g, t = obtener_cols_derecha(f, cat, idx)
-            if m: campos[m] = specs.get('Manufacturer', '')
-            if a: campos[a] = specs.get('Approval', '')
-            if g: campos[g] = specs.get('WireGauge', '')
-            if t: campos[t] = specs.get('WireType', '')
-            
-            fila_actual[cat] += 1
-
-        totales = {}
-        for item in datos_instalacion:
-            d, p, q = item['device'], item['floor'], int(item['qty'])
-            if d in mapa_fil and p in mapa_col:
-                r, cat, idx = mapa_fil[d]
-                c = mapa_col[p]
-                campos[f"r{r}c{c}"] = str(q)
-                totales[r] = totales.get(r, 0) + q
-
-        for r, t in totales.items(): campos[f"r{r}c32"] = str(t)
-
-        rellenar_pdf_inteligente(input_pdf, output_pdf, campos)
-        print("    A-433 Generated.")
-    except Exception as e: print(f"   [ERROR] A-433: {e}")
+    rellenar_pdf_inteligente(input_pdf, output_pdf, campos)
+    print("   ✅ A-433 Generated.")
 
 # ==========================================
 # 5. GENERADOR B-45
 # ==========================================
 def generar_b45(datos, input_pdf, output_pdf):
-    print(" 4. Generating B-45...")
-    try:
-        exp = EXPEDITOR  # <--- Cambiamos 'emp = COMPANY' por esto
-        campos = {
-            "adress": f"{datos['house']} {datos['street']}, {datos['borough']}, NY {datos['zip']}",
-            "name": f"{exp.get('First Name')} {exp.get('Last Name')}", "title": "Expeditor",
-            "lic": exp.get("Reg No"), "company": exp.get("Company Name"), 
-            "caddress": f"{exp.get('Address')}, {exp.get('City')}, {exp.get('State')} {exp.get('Zip')}",
-            "cphone": exp.get("Phone"), "email": exp.get("Email"), "pname": f"{exp.get('First Name')} {exp.get('Last Name')}", "date1": fecha_hoy
-        }
-        
-        rellenar_pdf_inteligente(input_pdf, output_pdf, campos)
-        print("    B-45 Generated.")
-    except Exception as e: print(f"   [ERROR] B-45: {e}")
+    print("📄 4. Generating B-45...")
+    exp = EXPEDITOR  
+    campos = {
+        "adress": f"{datos['house']} {datos['street']}, {datos['borough']}, NY {datos['zip']}",
+        "name": f"{exp.get('First Name')} {exp.get('Last Name')}", "title": "Expeditor",
+        "lic": exp.get("Reg No"), "company": exp.get("Company Name"), 
+        "caddress": f"{exp.get('Address')}, {exp.get('City')}, {exp.get('State')} {exp.get('Zip')}",
+        "cphone": exp.get("Phone"), "email": exp.get("Email"), "pname": f"{exp.get('First Name')} {exp.get('Last Name')}", "date1": fecha_hoy
+    }
+    
+    rellenar_pdf_inteligente(input_pdf, output_pdf, campos)
+    print("   ✅ B-45 Generated.")
     
 # ==========================================
 # 6. REPORTE DE AUDITORÍA
