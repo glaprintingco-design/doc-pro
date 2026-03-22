@@ -421,7 +421,11 @@ def obtener_datos_completos(bin_number):
                 desc_total += " " + job_desc_individual
 
                 if "SPRINKLER" in job_desc_individual: info["has_sprinklers"] = "Yes"
-                if "ELEVATOR" in job_desc_individual: info["has_elevators"] = "Yes"
+
+                # Elevator detection — más keywords que solo "ELEVATOR"
+                ELEV_KEYWORDS = ["ELEVATOR", "ELEV ", "ELEVATORS", " ELV ", "HYDRAULIC LIFT", "ESCALATOR"]
+                if any(kw in job_desc_individual for kw in ELEV_KEYWORDS):
+                    info["has_elevators"] = "Yes"
 
                 # --- DETECCIÓN DE ALT-1 CON CAMBIO DE OCUPANCIA ---
                 # Alt-1 = alteración mayor que puede cambiar ocupancia/uso
@@ -462,11 +466,15 @@ def obtener_datos_completos(bin_number):
                     except:
                         return str(raw)[:10]
 
-                # --- DETECCIÓN DE JOBS RELACIONADOS A FIRE ALARM / SMOKE ---
+                # --- FIRE ALARM JOBS (solo sistemas de alarma, NO sprinkler) ---
                 FA_KEYWORDS = ["FIRE ALARM", "SMOKE DETECTOR", "SMOKE DETECTION",
-                               "SPRINKLER", "FIRE SUPPRESSION", "FIRE PROTECTION",
+                               "FIRE SUPPRESSION", "FIRE PROTECTION",
                                " FA ", "F.A.", "ARCS"]
+                # Sprinkler es sistema separado — va en su propia lista
+                SPRINKLER_KEYWORDS = ["SPRINKLER", "STANDPIPE", "WET PIPE", "DRY PIPE"]
+
                 is_fa_job = any(kw in job_desc_individual for kw in FA_KEYWORDS)
+                is_sprinkler_job = any(kw in job_desc_individual for kw in SPRINKLER_KEYWORDS)
 
                 if is_fa_job:
                     job_num = job.get("job__", "")
@@ -475,6 +483,22 @@ def obtener_datos_completos(bin_number):
                         raw_date = str(job.get("latest_action_date") or "")
                         full_desc = job_desc_individual.capitalize()
                         info["fire_alarm_jobs"].append({
+                            "Job #":       job_num,
+                            "Year":        fmt_date(raw_date),
+                            "Type":        job_type or "N/A",
+                            "Status":      job.get("job_status", "N/A"),
+                            "Description": full_desc[:100] + ("..." if len(full_desc) > 100 else ""),
+                            "DOB Link":    job_url
+                        })
+
+                if is_sprinkler_job:
+                    job_num = job.get("job__", "")
+                    if job_num and not any(j["Job #"] == job_num for j in info.get("sprinkler_jobs", [])):
+                        job_url = f"https://a810-bisweb.nyc.gov/bisweb/JobsQueryByNumberServlet?passjobnumber={job_num}&passdocnumber=01"
+                        raw_date = str(job.get("latest_action_date") or "")
+                        full_desc = job_desc_individual.capitalize()
+                        if "sprinkler_jobs" not in info: info["sprinkler_jobs"] = []
+                        info["sprinkler_jobs"].append({
                             "Job #":       job_num,
                             "Year":        fmt_date(raw_date),
                             "Type":        job_type or "N/A",
@@ -502,9 +526,42 @@ def obtener_datos_completos(bin_number):
             info["debug_nota_occ"], info["debug_nota_const"] = trad["nota"], trad["nota"]
     except Exception as e: print(f"   [WARNING] BIS Error: {e}")
 
+    # --- NIVEL 4: ELEVADORES (DOB Elevator dataset) ---
+    try:
+        r_elev = requests.get("https://data.cityofnewyork.us/resource/p9kp-jvxn.json",
+                              params={"bin_number": bin_number, "$limit": 50},
+                              headers=headers_socrata, timeout=10)
+        if r_elev.status_code == 200 and r_elev.json():
+            elev_records = r_elev.json()
+            # Contar equipos únicos activos
+            active_elevs = [e for e in elev_records if str(e.get("device_status", "")).upper() in ["ACTIVE", "IN SERVICE", ""]]
+            elev_count = len(active_elevs) or len(elev_records)
+            info["has_elevators"] = "Yes"
+            info["elevator_count"] = elev_count
+            # Tipos de equipos
+            types = list(set(str(e.get("device_type", "")).strip() for e in elev_records if e.get("device_type")))
+            info["elevator_types"] = ", ".join(types) if types else ""
+            print(f"   ✅ Elevators found: {elev_count} units — {info['elevator_types']}")
+    except Exception as e:
+        print(f"   ⚠️ Elevator dataset error: {e}")
+
     # --- FALLBACK PLUTO: Si BIS no devolvió datos técnicos, usamos PLUTO ---
     if not info["stories"] or info["stories"] == "0":
         info["stories"] = info.get("pluto_stories", "")
+
+    # Inferir elevadores por altura si el dataset no los encontró
+    # NYC BC 1002.1: edificios de 5+ pisos deben tener acceso accesible (generalmente elevador)
+    # En la práctica, edificios de 6+ pisos casi siempre tienen elevador
+    if info.get("has_elevators") == "Unknown":
+        try:
+            stories_num = int(float(info.get("stories") or info.get("pluto_stories") or 0))
+            if stories_num >= 6:
+                info["has_elevators"] = "Yes (inferred)"
+                info["elevator_note"] = f"Inferred from building height ({stories_num} floors — NYC BC typically requires elevator at 6+ floors)"
+            elif stories_num >= 4 and info.get("occupancy_group", "") in ["R-1", "R-2", "I-1", "I-2", "I-3"]:
+                info["has_elevators"] = "Likely (inferred)"
+                info["elevator_note"] = f"Likely required — {stories_num} floors, occupancy {info.get('occupancy_group')} (ADA/accessibility requirements)"
+        except: pass
     # Height fallback: si no vino de BIS, estimamos multiplicando stories × 10 ft
     if (not info["height"] or info["height"] == "0") and info["stories"]:
         try:
