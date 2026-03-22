@@ -327,29 +327,50 @@ def obtener_datos_completos(bin_number):
             print(f"   ⚠️ PLUTO by BIN failed: {e}")
 
     if pluto_data:
-        info["zip"]    = str(pluto_data.get("zipcode", "")).strip()
-        info["year_built"]     = str(pluto_data.get("yearbuilt", "")).strip()
-        info["pluto_year"]     = info["year_built"]
-        info["pluto_stories"]  = str(pluto_data.get("numfloors", "")).strip()
-        info["pluto_bldgclass"]= str(pluto_data.get("bldgclass", "")).strip()
-        info["pluto_units"]    = str(pluto_data.get("unitsres", "")).strip()
-        if pluto_data.get("pfirm15_flag") == "1": info["flood_zone"] = "Yes"
+        info["zip"]             = str(pluto_data.get("zipcode", "")).strip()
+        info["year_built"]      = str(pluto_data.get("yearbuilt", "")).strip()
+        info["pluto_year"]      = info["year_built"]
+        info["pluto_stories"]   = str(pluto_data.get("numfloors", "")).split(".")[0].strip()  # "2.0000" → "2"
+        info["pluto_bldgclass"] = str(pluto_data.get("bldgclass", "")).strip()
+        info["pluto_units"]     = str(pluto_data.get("unitsres", "")).strip()
         info["owner_business_backup"] = pluto_data.get("ownername", "").strip()
-        if not info["tax_class"]: info["tax_class"] = pluto_data.get("bldgclass", "").strip()
-        if not info["x_coord"]:  info["x_coord"] = str(pluto_data.get("xcoord", "")).strip()
-        if not info["y_coord"]:  info["y_coord"] = str(pluto_data.get("ycoord", "")).strip()
-        # Si aún no tenemos BBL, lo tomamos de PLUTO
-        if not info["bbl_full"]: info["bbl_full"] = str(pluto_data.get("bbl", "")).strip()
-        # Si aún no tenemos dirección, la reconstruimos desde PLUTO
+
+        # Flood zone
+        if pluto_data.get("pfirm15_flag") == "1":
+            info["flood_zone"] = "Yes"
+
+        # Landmark — PLUTO tiene histdist si el edificio está en un distrito histórico
+        if pluto_data.get("histdist") or pluto_data.get("landmark"):
+            info["landmarked"] = "Yes"
+
+        # Tax class
+        if not info["tax_class"]:
+            info["tax_class"] = pluto_data.get("bldgclass", "").strip()
+
+        # Coordinates
+        if not info["x_coord"]: info["x_coord"] = str(pluto_data.get("xcoord", "")).strip()
+        if not info["y_coord"]: info["y_coord"] = str(pluto_data.get("ycoord", "")).strip()
+
+        # BBL (por si vino en formato "1004830029.00000000")
+        if not info["bbl_full"]:
+            bbl_raw = str(pluto_data.get("bbl", "")).split(".")[0].strip()
+            info["bbl_full"] = bbl_raw
+
+        # Dirección desde PLUTO si Geoclient falló
         if not info["house"] and pluto_data.get("address"):
             addr_raw = pluto_data.get("address").split(" ", 1)
             info["house"]  = addr_raw[0]
             info["street"] = addr_raw[1] if len(addr_raw) > 1 else ""
-        if not info["borough"] and pluto_data.get("borocode"):
+
+        # Borough desde PLUTO si falta
+        if not info["borough"]:
             boro_map = {"1": "MANHATTAN", "2": "BRONX", "3": "BROOKLYN", "4": "QUEENS", "5": "STATEN ISLAND"}
-            info["borough"] = boro_map.get(str(pluto_data.get("borocode")), "")
+            info["borough"] = boro_map.get(str(pluto_data.get("borocode", "")), "")
+
         if not info["dcp_address"]:
             info["dcp_address"] = f"{info['house']} {info['street']}".strip()
+
+        print(f"   ✅ PLUTO data: floors={info['pluto_stories']}, year={info['year_built']}, class={info['pluto_bldgclass']}, owner={info['owner_business_backup']}, landmark={info['landmarked']}")
 
     # --- DOB NOW ---
     dob_now_info = consultar_dob_now(bin_number, headers_socrata)
