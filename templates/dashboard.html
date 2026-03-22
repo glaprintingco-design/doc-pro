@@ -583,6 +583,32 @@
                 document.getElementById('res_const').innerText     = data.construction_class || 'N/A';
                 document.getElementById('res_occ').innerText       = data.occupancy_group || 'N/A';
 
+                // Confidence indicators for construction class and occupancy
+                const constEl = document.getElementById('res_const');
+                const occEl   = document.getElementById('res_occ');
+
+                function applyConfidence(el, value, confidence, source) {
+                    if (!value || value === 'N/A') {
+                        el.innerHTML = '<span style="color:#A0AEC0;">N/A</span>';
+                        return;
+                    }
+                    // Icon and color by confidence
+                    let icon = '', color = '', subColor = '';
+                    if (confidence === 'high') {
+                        icon = '✅'; color = '#276749'; subColor = '#48BB78';
+                    } else if (confidence === 'medium-high' || confidence === 'medium') {
+                        icon = '⚠️'; color = '#744210'; subColor = '#D69E2E';
+                    } else {
+                        icon = '🔍'; color = '#C05621'; subColor = '#ED8936';
+                    }
+                    const sourceLabel = source || '';
+                    el.innerHTML = `<span style="color:${color};font-weight:700;">${value}</span>` +
+                        (sourceLabel ? `<span style="font-size:0.6rem;font-weight:500;display:block;color:${subColor};margin-top:2px;">${icon} ${sourceLabel}</span>` : '');
+                }
+
+                applyConfidence(constEl, data.construction_class, data.const_confidence, data.const_source);
+                applyConfidence(occEl,   data.occupancy_group,    data.occ_confidence,   data.occ_source);
+
                 // Metrics row 2
                 document.getElementById('res_landmark').innerText   = data.landmarked || 'No';
                 document.getElementById('res_flood').innerText      = data.flood_zone || 'No';
