@@ -428,7 +428,7 @@ def obtener_datos_completos(bin_number):
                 if job_type == "A1":
                     job_occ_proposed = str(job.get("proposed_occupancy") or "").strip()
                     job_occ_existing = str(job.get("existing_occupancy") or "").strip()
-                    job_date = str(job.get("latest_action_date") or "")[:7]  # "YYYY-MM"
+                    job_date = fmt_date(job.get("latest_action_date", ""))
                     job_num  = job.get("job__", "")
                     job_status = str(job.get("job_status") or "").strip()
                     job_url = f"https://a810-bisweb.nyc.gov/bisweb/JobsQueryByNumberServlet?passjobnumber={job_num}&passdocnumber=01"
@@ -452,8 +452,18 @@ def obtener_datos_completos(bin_number):
 
                     alt1_jobs.append(alt1_entry)
 
+                # Helper para formatear fecha legible en inglés
+                def fmt_date(raw):
+                    if not raw: return "N/A"
+                    try:
+                        from datetime import datetime
+                        dt = datetime.strptime(str(raw)[:10], "%Y-%m-%d")
+                        return dt.strftime("%b %d, %Y")  # "Jun 15, 2024"
+                    except:
+                        return str(raw)[:10]
+
                 # --- DETECCIÓN DE JOBS RELACIONADOS A FIRE ALARM / SMOKE ---
-                FA_KEYWORDS = ["FIRE ALARM", "SMOKE DETECTOR", "SMOKE DETECTION", 
+                FA_KEYWORDS = ["FIRE ALARM", "SMOKE DETECTOR", "SMOKE DETECTION",
                                "SPRINKLER", "FIRE SUPPRESSION", "FIRE PROTECTION",
                                " FA ", "F.A.", "ARCS"]
                 is_fa_job = any(kw in job_desc_individual for kw in FA_KEYWORDS)
@@ -462,14 +472,11 @@ def obtener_datos_completos(bin_number):
                     job_num = job.get("job__", "")
                     if job_num and not any(j["Job #"] == job_num for j in info["fire_alarm_jobs"]):
                         job_url = f"https://a810-bisweb.nyc.gov/bisweb/JobsQueryByNumberServlet?passjobnumber={job_num}&passdocnumber=01"
-                        # Extraer año limpio de la fecha
                         raw_date = str(job.get("latest_action_date") or "")
-                        year = raw_date[:4] if raw_date else "N/A"
-                        # Descripción completa (no truncada) para mostrar bien
                         full_desc = job_desc_individual.capitalize()
                         info["fire_alarm_jobs"].append({
                             "Job #":       job_num,
-                            "Year":        year,
+                            "Year":        fmt_date(raw_date),
                             "Type":        job_type or "N/A",
                             "Status":      job.get("job_status", "N/A"),
                             "Description": full_desc[:100] + ("..." if len(full_desc) > 100 else ""),
