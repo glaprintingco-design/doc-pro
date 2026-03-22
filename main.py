@@ -204,24 +204,38 @@ def consultar_dob_now(bin_number, headers_soc):
     dob_now_data = {}
     try:
         r = requests.get("https://data.cityofnewyork.us/resource/w9ak-ipjd.json",
-                         params={"bin": bin_number, "$order": "filing_date DESC", "$limit": 1}, headers=headers_soc)
+                         params={"bin": bin_number, "$order": "filing_date DESC", "$limit": 5}, headers=headers_soc)
         if r.status_code == 200 and r.json():
-            job = r.json()[0]
-            print(f"       Found Recent Job: {job.get('job_filing_number')}")
-            dob_now_data["owner_business"] = job.get("owner_s_business_name", "").strip()
-            dob_now_data["owner_first"] = job.get("owner_first_name", "").strip()
-            dob_now_data["owner_last"] = job.get("owner_last_name", "").strip()
-            dob_now_data["owner_email"] = job.get("owner_email", "").strip()
-            dob_now_data["owner_phone"] = job.get("owner_phone", "").strip()
-            addr_st = job.get("owner_s_street_name", "").strip()
-            addr_no = job.get("owner_s_house_number", "").strip()
-            # BUG FIX #1: Siempre llenar owner_city, owner_zip, owner_state aunque addr_st esté vacío
-            dob_now_data["owner_city"] = job.get("owner_s_city", job.get("city", "")).strip()
-            dob_now_data["owner_zip"] = job.get("owner_s_zip", job.get("zip", "")).strip()
-            dob_now_data["owner_state"] = job.get("state", "NY") or "NY"
-            if addr_st:
-                dob_now_data["owner_address"] = f"{addr_no} {addr_st}".strip()
-            return dob_now_data
+            # Buscar en los últimos 5 jobs el que tenga más datos técnicos
+            for job in r.json():
+                if not dob_now_data.get("owner_business"):
+                    dob_now_data["owner_business"] = job.get("owner_s_business_name", "").strip()
+                    dob_now_data["owner_first"]    = job.get("owner_first_name", "").strip()
+                    dob_now_data["owner_last"]     = job.get("owner_last_name", "").strip()
+                    dob_now_data["owner_email"]    = job.get("owner_email", "").strip()
+                    dob_now_data["owner_phone"]    = job.get("owner_phone", "").strip()
+                    addr_st = job.get("owner_s_street_name", "").strip()
+                    addr_no = job.get("owner_s_house_number", "").strip()
+                    dob_now_data["owner_city"]  = job.get("owner_s_city", job.get("city", "")).strip()
+                    dob_now_data["owner_zip"]   = job.get("owner_s_zip", job.get("zip", "")).strip()
+                    dob_now_data["owner_state"] = job.get("state", "NY") or "NY"
+                    if addr_st:
+                        dob_now_data["owner_address"] = f"{addr_no} {addr_st}".strip()
+
+                # DOB NOW también tiene construction classification — fuente muy confiable
+                dob_const = str(job.get("construction_classification") or "").strip().upper()
+                dob_occ   = str(job.get("occupancy_classification") or job.get("occupancy_classification_of_building") or "").strip().upper()
+
+                if dob_const and not dob_now_data.get("dob_now_const"):
+                    dob_now_data["dob_now_const"] = dob_const
+                    dob_now_data["dob_now_const_job"] = job.get("job_filing_number", "")
+                if dob_occ and not dob_now_data.get("dob_now_occ"):
+                    dob_now_data["dob_now_occ"] = dob_occ
+                    dob_now_data["dob_now_occ_job"] = job.get("job_filing_number", "")
+
+            if dob_now_data:
+                print(f"   ✅ DOB NOW: owner={dob_now_data.get('owner_business')}, const={dob_now_data.get('dob_now_const')}, occ={dob_now_data.get('dob_now_occ')}")
+            return dob_now_data if dob_now_data else None
     except: pass
     return None
 
@@ -569,32 +583,116 @@ def obtener_datos_completos(bin_number):
             info["debug_nota_height"] = f"[Height estimated: {info['stories']} floors × 10ft]"
         except: pass
 
-    if not info["construction_class"]:
-        pluto_class = info.get("pluto_bldgclass", "")
-        if pluto_class:
-            bclass_map = {
-                "A": "V-B",   "B": "III-B", "C": "III-B", "D": "I-B",
-                "E": "I-B",   "F": "I-B",   "G": "I-B",   "H": "I-B",
-                "I": "I-B",   "J": "III-B", "K": "III-B", "L": "III-B",
-                "M": "III-B", "N": "I-B",   "O": "I-B",   "P": "I-B",
-                "Q": "I-B",   "R": "I-C",   "S": "III-B", "T": "I-B",
-                "U": "I-B",   "V": "V-B",   "W": "I-B",   "Y": "I-B",   "Z": "I-B",
-            }
-            first_letter = pluto_class[0].upper() if pluto_class else ""
-            # Usar bclass_map como fuente principal, traducir_datos como verificación secundaria
-            mapped = bclass_map.get(first_letter, "")
-            trad_fallback = traducir_datos("", "", "", info["tax_class"])
-            info["construction_class"] = trad_fallback["const"] if trad_fallback["const"] else mapped
-            if not info["construction_class"]: info["construction_class"] = mapped
-            info["raw_construction_class"] = f"PLUTO:{pluto_class}"
-            info["debug_nota_const"] = f"[Fallback PLUTO bldgclass={pluto_class} → {info['construction_class']}]"
+    # ================================================================
+    # CASCADA DE CONFIANZA: Construction Class + Occupancy
+    # ================================================================
 
-    if not info["occupancy_group"]:
+    if info["construction_class"]:
+        info["const_source"]     = "Confirmed — on record"
+        info["const_confidence"] = "high"
+    elif info.get("dob_now_const"):
+        dob_const = info["dob_now_const"]
+        trad = traducir_datos("", dob_const, "", info["tax_class"])
+        info["construction_class"] = trad["const"] or dob_const
+        info["raw_construction_class"] = dob_const
+        info["const_source"]     = "Confirmed — on record"
+        info["const_confidence"] = "high"
+        info["debug_nota_const"] = f"[DOB NOW: {dob_const} → {info['construction_class']}]"
+    else:
+        pluto_class = info.get("pluto_bldgclass", "")
+        year_built  = int(info.get("year_built", "0") or "0")
+
+        inferred_class = ""
+        confidence     = "low"
+        nota           = ""
+
+        if pluto_class:
+            first = pluto_class[0].upper()
+
+            if first in ["A", "B"]:
+                inferred_class = "V-B" if year_built > 1968 else "III-B"
+                confidence = "medium"
+                nota = f"Row/2-family (bldgclass={pluto_class}, built={year_built})"
+
+            elif first == "C":
+                inferred_class = "III-B"
+                confidence = "medium-high" if year_built <= 1938 else "medium"
+                nota = f"Walk-up apartment (bldgclass={pluto_class}, built={year_built})"
+
+            elif first == "D":
+                if year_built <= 1901:
+                    inferred_class = "III-B"; confidence = "medium"
+                elif year_built <= 1938:
+                    inferred_class = "I-B"; confidence = "medium-high"
+                else:
+                    inferred_class = "I-A"; confidence = "medium"
+                nota = f"Elevator apartment (bldgclass={pluto_class}, built={year_built})"
+
+            elif first in ["E", "F", "G"]:
+                inferred_class = "I-B" if year_built > 1938 else "III-B"
+                confidence = "medium"
+                nota = f"Industrial/warehouse (bldgclass={pluto_class}, built={year_built})"
+
+            elif first in ["H", "I"]:
+                inferred_class = "I-A" if year_built > 1968 else "I-B"
+                confidence = "medium"
+                nota = f"Hotel/institutional (bldgclass={pluto_class}, built={year_built})"
+
+            elif first in ["K", "L", "O", "S"]:
+                if year_built <= 1938:
+                    inferred_class = "III-B"; confidence = "medium-high"
+                else:
+                    inferred_class = "I-B"; confidence = "medium"
+                nota = f"Commercial/loft/office (bldgclass={pluto_class}, built={year_built})"
+
+            elif first == "R":
+                inferred_class = "I-B" if year_built > 1968 else "III-B"
+                confidence = "medium"
+                nota = f"Condo building (bldgclass={pluto_class}, built={year_built})"
+
+            elif first in ["M", "W", "P", "Y"]:
+                inferred_class = "I-B"; confidence = "low"
+                nota = f"Institutional (bldgclass={pluto_class})"
+
+            else:
+                trad_fb = traducir_datos("", "", "", info["tax_class"])
+                inferred_class = trad_fb["const"] or "III-B"
+                confidence = "low"
+                nota = f"Generic inference"
+
+        if inferred_class:
+            info["construction_class"]   = inferred_class
+            info["raw_construction_class"] = f"INFERRED:{pluto_class}"
+            info["const_confidence"]     = confidence
+            info["debug_nota_const"]     = nota
+            # Labels amigables para el contratista
+            if confidence == "medium-high":
+                info["const_source"] = "Estimated — verify with C of O"
+            elif confidence == "medium":
+                info["const_source"] = "Estimated — verify with C of O"
+            else:
+                info["const_source"] = "Unknown — manual verification required"
+
+    # --- OCCUPANCY GROUP ---
+    if info["occupancy_group"]:
+        info["occ_source"]     = "Confirmed — on record"
+        info["occ_confidence"] = "high"
+    elif info.get("dob_now_occ"):
+        dob_occ = info["dob_now_occ"]
+        trad = traducir_datos(dob_occ, "", "", info["tax_class"])
+        info["occupancy_group"] = trad["occ"] or dob_occ
+        info["raw_occupancy"]   = dob_occ
+        info["occ_source"]      = "Confirmed — on record"
+        info["occ_confidence"]  = "high"
+        info["debug_nota_occ"]  = f"[DOB NOW: {dob_occ} → {info['occupancy_group']}]"
+    else:
         trad_fallback = traducir_datos("", "", "", info["tax_class"])
         if trad_fallback["occ"]:
             info["occupancy_group"] = trad_fallback["occ"]
-            info["raw_occupancy"] = f"PLUTO_TAX:{info['tax_class']}"
-            info["debug_nota_occ"] = trad_fallback["nota"]
+            info["raw_occupancy"]   = f"TAX_CLASS:{info['tax_class']}"
+            info["occ_confidence"]  = "low"
+            info["occ_source"]      = "Unknown — manual verification required"
+            info["debug_nota_occ"]  = trad_fallback["nota"]
 
     # Garantizar que raw_occupancy y raw_construction_class siempre existen
     if "raw_occupancy" not in info:         info["raw_occupancy"] = ""
