@@ -370,7 +370,17 @@ def obtener_datos_completos(bin_number):
         if not info["dcp_address"]:
             info["dcp_address"] = f"{info['house']} {info['street']}".strip()
 
-        print(f"   ✅ PLUTO data: floors={info['pluto_stories']}, year={info['year_built']}, class={info['pluto_bldgclass']}, owner={info['owner_business_backup']}, landmark={info['landmarked']}")
+        # Campos extra de PLUTO útiles para el filing
+        info["zoning_dist"]   = str(pluto_data.get("zonedist1", "")).strip()
+        info["special_dist"]  = str(pluto_data.get("spdist1", "")).strip()
+        info["hist_dist"]     = str(pluto_data.get("histdist", "")).strip()
+        info["year_alter1"]   = str(pluto_data.get("yearalter1", "")).strip()
+        info["year_alter2"]   = str(pluto_data.get("yearalter2", "")).strip()
+        info["land_use"]      = str(pluto_data.get("landuse", "")).strip()
+        info["e_desig"]       = str(pluto_data.get("edesignum", "")).strip()
+        info["comm_dist"]     = str(pluto_data.get("cd", "")).strip()
+
+        print(f"   ✅ PLUTO data: floors={info['pluto_stories']}, year={info['year_built']}, class={info['pluto_bldgclass']}, owner={info['owner_business_backup']}, landmark={info['landmarked']}, alter1={info['year_alter1']}, alter2={info['year_alter2']}")
 
     # --- DOB NOW ---
     dob_now_info = consultar_dob_now(bin_number, headers_socrata)
@@ -385,6 +395,7 @@ def obtener_datos_completos(bin_number):
         if r_bis.status_code == 200:
             jobs = r_bis.json()
             raw_h, raw_s, raw_c, raw_o, desc_total = "0", "0", "", "", ""
+            alt1_jobs = []  # Para rastrear Alt-1 con cambio de ocupancia
 
             for job in jobs:
                 if not info["owner_business"] and not info["owner_last"]:
@@ -397,6 +408,7 @@ def obtener_datos_completos(bin_number):
                         info["owner_address"] = f"{oh} {os_}" if oh else f"{info['house']} {info['street']}"
                         info["owner_city"] = job.get("owner_s_city", info["borough"])
                         info["owner_zip"] = job.get("owner_s_zip", info["zip"])
+                        info["owner_phone"] = str(job.get("owner_sphone__") or "").replace("-", "")
 
                 if raw_h == "0": raw_h = str(job.get("existing_height") or "0")
                 if raw_s == "0": raw_s = str(job.get("existingno_of_stories") or "0")
@@ -405,22 +417,75 @@ def obtener_datos_completos(bin_number):
                 if info["landmarked"] == "No" and job.get("landmarked") in ["Y", "YES"]: info["landmarked"] = "Yes"
 
                 job_desc_individual = str(job.get("job_description") or "").upper()
+                job_type = str(job.get("job_type") or "").upper().strip()
                 desc_total += " " + job_desc_individual
 
                 if "SPRINKLER" in job_desc_individual: info["has_sprinklers"] = "Yes"
                 if "ELEVATOR" in job_desc_individual: info["has_elevators"] = "Yes"
 
-                if "FIRE ALARM" in job_desc_individual or " FA " in job_desc_individual:
+                # --- DETECCIÓN DE ALT-1 CON CAMBIO DE OCUPANCIA ---
+                # Alt-1 = alteración mayor que puede cambiar ocupancia/uso
+                if job_type == "A1":
+                    job_occ_proposed = str(job.get("proposed_occupancy") or "").strip()
+                    job_occ_existing = str(job.get("existing_occupancy") or "").strip()
+                    job_date = str(job.get("latest_action_date") or "")[:7]  # "YYYY-MM"
+                    job_num  = job.get("job__", "")
+                    job_status = str(job.get("job_status") or "").strip()
+                    job_url = f"https://a810-bisweb.nyc.gov/bisweb/JobsQueryByNumberServlet?passjobnumber={job_num}&passdocnumber=01"
+
+                    alt1_entry = {
+                        "Job #":    job_num,
+                        "Date":     job_date,
+                        "Status":   job_status,
+                        "Existing Occ": job_occ_existing,
+                        "Proposed Occ": job_occ_proposed,
+                        "Description":  job_desc_individual.capitalize()[:80],
+                        "DOB Link": job_url
+                    }
+
+                    # Marcar si hubo cambio de ocupancia
+                    if job_occ_proposed and job_occ_existing and job_occ_proposed != job_occ_existing:
+                        alt1_entry["⚠️ Occupancy Changed"] = f"{job_occ_existing} → {job_occ_proposed}"
+                        # Si el Alt-1 tiene propuesta de ocupancia, usarla como fuente más confiable
+                        if not raw_o:
+                            raw_o = job_occ_proposed
+
+                    alt1_jobs.append(alt1_entry)
+
+                # --- DETECCIÓN DE JOBS RELACIONADOS A FIRE ALARM / SMOKE ---
+                FA_KEYWORDS = ["FIRE ALARM", "SMOKE DETECTOR", "SMOKE DETECTION", 
+                               "SPRINKLER", "FIRE SUPPRESSION", "FIRE PROTECTION",
+                               " FA ", "F.A.", "ARCS"]
+                is_fa_job = any(kw in job_desc_individual for kw in FA_KEYWORDS)
+
+                if is_fa_job:
                     job_num = job.get("job__", "")
                     if job_num and not any(j["Job #"] == job_num for j in info["fire_alarm_jobs"]):
                         job_url = f"https://a810-bisweb.nyc.gov/bisweb/JobsQueryByNumberServlet?passjobnumber={job_num}&passdocnumber=01"
+                        # Extraer año limpio de la fecha
+                        raw_date = str(job.get("latest_action_date") or "")
+                        year = raw_date[:4] if raw_date else "N/A"
+                        # Descripción completa (no truncada) para mostrar bien
+                        full_desc = job_desc_individual.capitalize()
                         info["fire_alarm_jobs"].append({
-                            "Job #": job_num,
-                            "Status": job.get("job_status", "N/A"),
-                            "Date": job.get("latest_action_date", "N/A")[:10],
-                            "Description": job_desc_individual.capitalize()[:60] + "...",
-                            "DOB Link": job_url
+                            "Job #":       job_num,
+                            "Year":        year,
+                            "Type":        job_type or "N/A",
+                            "Status":      job.get("job_status", "N/A"),
+                            "Description": full_desc[:100] + ("..." if len(full_desc) > 100 else ""),
+                            "DOB Link":    job_url
                         })
+
+            # Guardar Alt-1 jobs en info para el dashboard
+            info["alt1_jobs"] = alt1_jobs
+            if alt1_jobs:
+                # ¿Hay algún cambio de ocupancia detectado?
+                occ_changes = [j for j in alt1_jobs if "⚠️ Occupancy Changed" in j]
+                if occ_changes:
+                    info["occ_change_warning"] = f"⚠️ {len(occ_changes)} Alt-1 job(s) detected with occupancy change — verify before filing"
+                    print(f"   ⚠️ Occupancy change detected in {len(occ_changes)} Alt-1 job(s)")
+                else:
+                    info["occ_change_warning"] = f"ℹ️ {len(alt1_jobs)} major alteration(s) on record (Alt-1) — review for occupancy changes"
 
             info["height"], info["stories"] = raw_h, raw_s
             trad = traducir_datos(raw_o, raw_c, desc_total, info["tax_class"])
