@@ -668,31 +668,38 @@ def test_apis():
     except Exception as e:
         results["geoclient"] = {"status": "❌ EXCEPTION", "error": str(e)}
 
-    # --- 3. Test PLUTO por BIN directo ---
+    # --- 3. Test PLUTO por BBL (necesita BBL de Geoclient primero) ---
+    bbl_from_geoclient = results.get("geoclient", {}).get("bbl", "")
     try:
         headers_soc = {"X-App-Token": main.APP_TOKEN_SOCRATA}
+        pluto_params = {"bbl": bbl_from_geoclient} if bbl_from_geoclient else {"bin": BIN_TEST}
         r = req.get(
             "https://data.cityofnewyork.us/resource/64uk-42ks.json",
-            params={"bin": BIN_TEST, "$limit": 1},
+            params={**pluto_params, "$limit": 1},
             headers=headers_soc, timeout=10
         )
         if r.status_code == 200 and r.json():
             p = r.json()[0]
-            results["pluto_by_bin"] = {
+            results["pluto"] = {
                 "status": "✅ OK",
                 "http_code": r.status_code,
-                "yearbuilt": p.get("yearbuilt"),
-                "numfloors": p.get("numfloors"),
-                "bldgclass": p.get("bldgclass"),
-                "zipcode": p.get("zipcode"),
-                "bbl": p.get("bbl"),
+                "query_used": f"bbl={bbl_from_geoclient}" if bbl_from_geoclient else "bin fallback",
+                "yearbuilt":  p.get("yearbuilt"),
+                "numfloors":  p.get("numfloors"),
+                "bldgclass":  p.get("bldgclass"),
+                "zipcode":    p.get("zipcode"),
+                "bbl":        p.get("bbl"),
+                "ownername":  p.get("ownername"),
+                "histdist":   p.get("histdist"),
+                "xcoord":     p.get("xcoord"),
+                "ycoord":     p.get("ycoord"),
             }
         elif r.status_code == 200:
-            results["pluto_by_bin"] = {"status": "⚠️ OK but NO DATA for this BIN", "http_code": 200}
+            results["pluto"] = {"status": "⚠️ OK but NO DATA", "http_code": 200, "query": str(pluto_params)}
         else:
-            results["pluto_by_bin"] = {"status": "❌ FAILED", "http_code": r.status_code, "response": r.text[:200]}
+            results["pluto"] = {"status": "❌ FAILED", "http_code": r.status_code, "response": r.text[:200]}
     except Exception as e:
-        results["pluto_by_bin"] = {"status": "❌ EXCEPTION", "error": str(e)}
+        results["pluto"] = {"status": "❌ EXCEPTION", "error": str(e)}
 
     # --- 4. Test BIS ---
     try:
