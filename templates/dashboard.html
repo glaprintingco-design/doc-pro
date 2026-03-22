@@ -119,21 +119,31 @@
                     <!-- Fire Alarm Jobs Table -->
                     <div id="fa-jobs-section" style="display:none;" class="mb-4">
                         <div style="background:#FFF5F5;border-left:4px solid #E53E3E;padding:10px 15px;margin-bottom:12px;border-radius:4px;">
-                            <h6 class="fw-bold mb-0" style="color:#C53030;">🚨 Related Fire Alarm / Smoke / Suppression Jobs Found in DOB</h6>
-                            <p class="mb-0 mt-1" style="font-size:0.82rem;color:#4A5568;">Jobs matching: Fire Alarm, Smoke Detector/Detection, Sprinkler, Fire Suppression, Fire Protection, ARCS</p>
+                            <h6 class="fw-bold mb-0" style="color:#C53030;">🚨 Fire Alarm / Smoke Detection Jobs in DOB</h6>
+                            <p class="mb-0 mt-1" style="font-size:0.82rem;color:#4A5568;">Keywords: Fire Alarm, Smoke Detector/Detection, Fire Suppression, Fire Protection, ARCS</p>
                         </div>
                         <div class="table-responsive">
                             <table class="table table-sm table-hover border rounded mb-0">
                                 <thead class="table-light">
-                                    <tr>
-                                        <th>Job #</th>
-                                        <th>Date</th>
-                                        <th>Type</th>
-                                        <th>Status</th>
-                                        <th>Description</th>
-                                    </tr>
+                                    <tr><th>Job #</th><th>Date</th><th>Type</th><th>Status</th><th>Description</th></tr>
                                 </thead>
                                 <tbody id="fa-jobs-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Sprinkler / Standpipe Jobs Table -->
+                    <div id="sprinkler-jobs-section" style="display:none;" class="mb-4">
+                        <div style="background:#EBF8FF;border-left:4px solid #3182CE;padding:10px 15px;margin-bottom:12px;border-radius:4px;">
+                            <h6 class="fw-bold mb-0" style="color:#2B6CB0;">💧 Sprinkler / Standpipe Jobs in DOB</h6>
+                            <p class="mb-0 mt-1" style="font-size:0.82rem;color:#4A5568;">Keywords: Sprinkler, Standpipe, Wet Pipe, Dry Pipe</p>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover border rounded mb-0">
+                                <thead class="table-light">
+                                    <tr><th>Job #</th><th>Date</th><th>Type</th><th>Status</th><th>Description</th></tr>
+                                </thead>
+                                <tbody id="sprinkler-jobs-body"></tbody>
                             </table>
                         </div>
                     </div>
@@ -531,6 +541,24 @@
 
             document.getElementById('lookup-results').style.display = 'block';
             document.getElementById('res_address').innerHTML = '<div class="spinner-border spinner-border-sm"></div> Scanning databases...';
+
+            // RESET: ocultar y limpiar todas las secciones dinámicas antes de cada búsqueda
+            document.getElementById('badge_co').classList.add('d-none');
+            document.getElementById('fa-jobs-section').style.display = 'none';
+            document.getElementById('fa-jobs-body').innerHTML = '';
+            document.getElementById('sprinkler-jobs-section').style.display = 'none';
+            document.getElementById('sprinkler-jobs-body').innerHTML = '';
+            document.getElementById('alt1-section').style.display = 'none';
+            document.getElementById('alt1-jobs-body').innerHTML = '';
+            document.getElementById('ai-notes-section').style.display = 'none';
+            document.getElementById('ai-notes-text').innerText = '';
+            // Reset metric fields
+            ['res_blocklot','res_height','res_stories','res_year','res_const','res_occ',
+             'res_landmark','res_flood','res_sprinklers','res_elevators','res_taxclass',
+             'res_units','res_owner','res_coords'].forEach(id => {
+                const el = document.getElementById(id);
+                if(el) el.innerText = '-';
+            });
             
             try {
                 const response = await fetch('/search_property', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
@@ -559,7 +587,19 @@
                 document.getElementById('res_landmark').innerText   = data.landmarked || 'No';
                 document.getElementById('res_flood').innerText      = data.flood_zone || 'No';
                 document.getElementById('res_sprinklers').innerText = data.has_sprinklers || 'Unknown';
-                document.getElementById('res_elevators').innerText  = data.has_elevators || 'Unknown';
+                // Elevators — show count if available, with inference note
+                let elevText = data.has_elevators || 'Unknown';
+                if (data.elevator_count) {
+                    elevText = `Yes (${data.elevator_count} unit${data.elevator_count > 1 ? 's' : ''})`;
+                    if (data.elevator_types) elevText += ` — ${data.elevator_types}`;
+                } else if (data.elevator_note) {
+                    elevText = data.has_elevators;
+                }
+                document.getElementById('res_elevators').innerText  = elevText;
+                if (data.elevator_note) {
+                    document.getElementById('res_elevators').title = data.elevator_note;
+                    document.getElementById('res_elevators').style.cursor = 'help';
+                }
                 document.getElementById('res_taxclass').innerText   = data.tax_class || 'N/A';
                 document.getElementById('res_units').innerText      = data.pluto_units || 'N/A';
 
@@ -574,17 +614,32 @@
                     const tbody = document.getElementById('fa-jobs-body');
                     tbody.innerHTML = '';
                     data.fire_alarm_jobs.forEach(j => {
-                        // Status badge color
                         const statusColor = 
                             j['Status'] === 'APPROVED' ? 'success' :
                             j['Status'] === 'DISAPPROVED' ? 'danger' :
                             j['Status'] === 'PENDING' ? 'warning' : 'secondary';
                         tbody.innerHTML += `<tr>
-                            <td>
-                                <a href="${j['DOB Link']}" target="_blank" 
-                                   class="fw-bold text-primary text-decoration-none"
-                                   style="font-size:0.85rem;">${j['Job #']} 🔗</a>
-                            </td>
+                            <td><a href="${j['DOB Link']}" target="_blank" class="fw-bold text-primary text-decoration-none" style="font-size:0.85rem;">${j['Job #']} 🔗</a></td>
+                            <td><span class="fw-bold">${j['Year'] || '—'}</span></td>
+                            <td><span class="badge bg-dark" style="font-size:0.7rem;">${j['Type'] || '—'}</span></td>
+                            <td><span class="badge bg-${statusColor}" style="font-size:0.7rem;">${j['Status'] || '—'}</span></td>
+                            <td style="font-size:0.82rem;">${j['Description']}</td>
+                        </tr>`;
+                    });
+                }
+
+                // Sprinkler / Standpipe Jobs table
+                if (data.sprinkler_jobs && data.sprinkler_jobs.length > 0) {
+                    document.getElementById('sprinkler-jobs-section').style.display = 'block';
+                    const stbody = document.getElementById('sprinkler-jobs-body');
+                    stbody.innerHTML = '';
+                    data.sprinkler_jobs.forEach(j => {
+                        const statusColor = 
+                            j['Status'] === 'APPROVED' ? 'success' :
+                            j['Status'] === 'DISAPPROVED' ? 'danger' :
+                            j['Status'] === 'PENDING' ? 'warning' : 'secondary';
+                        stbody.innerHTML += `<tr>
+                            <td><a href="${j['DOB Link']}" target="_blank" class="fw-bold text-primary text-decoration-none" style="font-size:0.85rem;">${j['Job #']} 🔗</a></td>
                             <td><span class="fw-bold">${j['Year'] || '—'}</span></td>
                             <td><span class="badge bg-dark" style="font-size:0.7rem;">${j['Type'] || '—'}</span></td>
                             <td><span class="badge bg-${statusColor}" style="font-size:0.7rem;">${j['Status'] || '—'}</span></td>
