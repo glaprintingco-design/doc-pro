@@ -116,17 +116,40 @@
                         <div class="col-md-6"><div class="metric-box"><div class="metric-label">X / Y Coordinates (NYC)</div><div class="metric-value" id="res_coords" style="font-size:0.85rem;">-</div></div></div>
                     </div>
 
-                    <!-- Fire Alarm Jobs Table (shown only if data exists) -->
+                    <!-- Fire Alarm Jobs Table -->
                     <div id="fa-jobs-section" style="display:none;" class="mb-4">
                         <div style="background:#FFF5F5;border-left:4px solid #E53E3E;padding:10px 15px;margin-bottom:12px;border-radius:4px;">
-                            <h6 class="fw-bold mb-0" style="color:#C53030;">🚨 Historical Fire Alarm Jobs Detected</h6>
+                            <h6 class="fw-bold mb-0" style="color:#C53030;">🚨 Related Fire Alarm / Smoke / Suppression Jobs Found in DOB</h6>
+                            <p class="mb-0 mt-1" style="font-size:0.82rem;color:#4A5568;">Jobs matching: Fire Alarm, Smoke Detector/Detection, Sprinkler, Fire Suppression, Fire Protection, ARCS</p>
                         </div>
                         <div class="table-responsive">
-                            <table class="table table-sm table-hover border rounded">
-                                <thead class="table-light"><tr><th>Job #</th><th>Status</th><th>Date</th><th>Description</th><th>Link</th></tr></thead>
+                            <table class="table table-sm table-hover border rounded mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Job #</th>
+                                        <th>Year</th>
+                                        <th>Type</th>
+                                        <th>Status</th>
+                                        <th>Description</th>
+                                    </tr>
+                                </thead>
                                 <tbody id="fa-jobs-body"></tbody>
                             </table>
                         </div>
+                    </div>
+
+                    <!-- Alt-1 Jobs / Occupancy Change Warning -->
+                    <div id="alt1-section" style="display:none;" class="mb-4">
+                        <div id="alt1-warning-banner" style="padding:10px 15px;margin-bottom:12px;border-radius:4px;"></div>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover border rounded">
+                                <thead class="table-light">
+                                    <tr><th>Job #</th><th>Date</th><th>Status</th><th>Existing Occ</th><th>Proposed Occ</th><th>Change</th><th>Link</th></tr>
+                                </thead>
+                                <tbody id="alt1-jobs-body"></tbody>
+                            </table>
+                        </div>
+                        <p class="text-muted mt-1" style="font-size:0.8rem;">* Alt-1 jobs are major alterations that may include occupancy or use changes. Always verify the current C of O before filing.</p>
                     </div>
 
                     <!-- AI Translation Notes -->
@@ -545,18 +568,66 @@
                 const x = data.x_coord || 'N/A', y = data.y_coord || 'N/A';
                 document.getElementById('res_coords').innerText = `${x} / ${y}`;
 
-                // Fire Alarm Jobs table
+                // Fire Alarm / Smoke / Suppression Jobs table
                 if (data.fire_alarm_jobs && data.fire_alarm_jobs.length > 0) {
                     document.getElementById('fa-jobs-section').style.display = 'block';
                     const tbody = document.getElementById('fa-jobs-body');
                     tbody.innerHTML = '';
                     data.fire_alarm_jobs.forEach(j => {
+                        // Status badge color
+                        const statusColor = 
+                            j['Status'] === 'APPROVED' ? 'success' :
+                            j['Status'] === 'DISAPPROVED' ? 'danger' :
+                            j['Status'] === 'PENDING' ? 'warning' : 'secondary';
                         tbody.innerHTML += `<tr>
-                            <td>${j['Job #']}</td>
-                            <td><span class="badge bg-secondary">${j['Status']}</span></td>
-                            <td>${j['Date']}</td>
+                            <td>
+                                <a href="${j['DOB Link']}" target="_blank" 
+                                   class="fw-bold text-primary text-decoration-none"
+                                   style="font-size:0.85rem;">${j['Job #']} 🔗</a>
+                            </td>
+                            <td><span class="fw-bold">${j['Year'] || '—'}</span></td>
+                            <td><span class="badge bg-dark" style="font-size:0.7rem;">${j['Type'] || '—'}</span></td>
+                            <td><span class="badge bg-${statusColor}" style="font-size:0.7rem;">${j['Status'] || '—'}</span></td>
                             <td style="font-size:0.82rem;">${j['Description']}</td>
-                            <td><a href="${j['DOB Link']}" target="_blank" class="btn btn-sm btn-outline-primary py-0">View 🔗</a></td>
+                        </tr>`;
+                    });
+                }
+
+                // Alt-1 Jobs (Major Alterations / Occupancy Changes)
+                if (data.alt1_jobs && data.alt1_jobs.length > 0) {
+                    document.getElementById('alt1-section').style.display = 'block';
+
+                    // Warning banner
+                    const banner = document.getElementById('alt1-warning-banner');
+                    const hasOccChange = data.alt1_jobs.some(j => j['⚠️ Occupancy Changed']);
+                    if (hasOccChange) {
+                        banner.style.background = '#FFF5F5';
+                        banner.style.borderLeft = '4px solid #E53E3E';
+                        banner.innerHTML = `<h6 class="fw-bold mb-0" style="color:#C53030;">⚠️ Occupancy Change Detected in Major Alteration(s)</h6>
+                            <p class="mb-0 mt-1" style="font-size:0.85rem;color:#4A5568;">One or more Alt-1 jobs show a change in occupancy classification. Verify the current C of O before selecting the occupancy group in your TM-1.</p>`;
+                    } else {
+                        banner.style.background = '#FFFAF0';
+                        banner.style.borderLeft = '4px solid #ED8936';
+                        banner.innerHTML = `<h6 class="fw-bold mb-0" style="color:#C05621;">📋 Major Alteration(s) on Record (Alt-1)</h6>
+                            <p class="mb-0 mt-1" style="font-size:0.85rem;color:#4A5568;">This building has ${data.alt1_jobs.length} major alteration filing(s). Review for potential occupancy or use changes.</p>`;
+                    }
+
+                    // Table
+                    const alt1tbody = document.getElementById('alt1-jobs-body');
+                    alt1tbody.innerHTML = '';
+                    data.alt1_jobs.forEach(j => {
+                        const occChange = j['⚠️ Occupancy Changed'];
+                        const changeBadge = occChange
+                            ? `<span class="badge bg-danger">${occChange}</span>`
+                            : `<span class="text-muted" style="font-size:0.8rem;">—</span>`;
+                        alt1tbody.innerHTML += `<tr ${occChange ? 'class="table-danger"' : ''}>
+                            <td><small>${j['Job #']}</small></td>
+                            <td><small>${j['Date'] || '—'}</small></td>
+                            <td><span class="badge bg-secondary" style="font-size:0.7rem;">${j['Status'] || '—'}</span></td>
+                            <td><small>${j['Existing Occ'] || '—'}</small></td>
+                            <td><small>${j['Proposed Occ'] || '—'}</small></td>
+                            <td>${changeBadge}</td>
+                            <td><a href="${j['DOB Link']}" target="_blank" class="btn btn-sm btn-outline-primary py-0" style="font-size:0.75rem;">View 🔗</a></td>
                         </tr>`;
                     });
                 }
@@ -566,6 +637,22 @@
                 if (aiNote && aiNote.trim()) {
                     document.getElementById('ai-notes-section').style.display = 'block';
                     document.getElementById('ai-notes-text').innerText = aiNote;
+                }
+
+                // Extra PLUTO fields — append to AI notes section if available
+                const extraLines = [];
+                if (data.zoning_dist)  extraLines.push(`Zoning: ${data.zoning_dist}`);
+                if (data.special_dist) extraLines.push(`Special District: ${data.special_dist}`);
+                if (data.hist_dist)    extraLines.push(`Historic District: ${data.hist_dist}`);
+                if (data.year_alter1 && data.year_alter1 !== '0') extraLines.push(`Last Major Alteration 1: ${data.year_alter1}`);
+                if (data.year_alter2 && data.year_alter2 !== '0') extraLines.push(`Last Major Alteration 2: ${data.year_alter2}`);
+                if (data.e_desig)      extraLines.push(`E-Designation: ${data.e_desig}`);
+                if (data.comm_dist)    extraLines.push(`Community District: ${data.comm_dist}`);
+                if (extraLines.length > 0) {
+                    document.getElementById('ai-notes-section').style.display = 'block';
+                    const existing = document.getElementById('ai-notes-text').innerText;
+                    document.getElementById('ai-notes-text').innerText =
+                        (existing ? existing + '\n\n' : '') + '📋 PLUTO Extra Data:\n' + extraLines.join(' | ');
                 }
 
                 // Smart Links
