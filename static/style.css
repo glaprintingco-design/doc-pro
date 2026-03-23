@@ -68,6 +68,20 @@ body {
     .metric-box { margin-bottom: 10px; }
 }
 
+/* Logo tamaño base - Desktop */
+.navbar-logo,
+.navbar-brand img {
+    height: 60px;
+    width: auto;
+}
+
+/* Botones del navbar - visibles en todas las pantallas */
+.navbar .container > div {
+    display: flex !important;
+    align-items: center;
+    gap: 8px;
+}
+
 /* --- INDEX PAGE STYLES --- */
 .hero-section {
     background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), 
@@ -107,19 +121,23 @@ body {
         gap: 5px; /* Reducir el gap entre logo y botones */
     }
 
-    /* 2. Ajustar los botones para que sean más compactos y estén en fila */
-    .navbar .navbar-nav {
-        flex-direction: row; /* Ponerlos uno al lado del otro */
-        gap: 10px; /* Espacio entre los botones */
+    /* 2. Botones en fila centrada en móvil */
+    .navbar .navbar-nav,
+    .navbar .container > div {
+        flex-direction: row;
+        gap: 10px;
         margin-top: 5px;
         justify-content: center;
         width: 100%;
+        flex-wrap: nowrap;
     }
     
-    .navbar .nav-link {
-        padding: 8px 15px !important; /* Reducir drásticamente el padding de los botones */
-        font-size: 0.85rem; /* Un poco más pequeña la letra para ahorrar espacio */
-        white-space: nowrap; /* Evitar que el texto se rompa en dos líneas */
+    .navbar .nav-link,
+    .btn-nav-login,
+    .btn-fire.rounded-pill {
+        padding: 8px 15px !important;
+        font-size: 0.85rem;
+        white-space: nowrap;
     }
 
     /* 3. Reparar el Hero Section (Mantenemos la base, ajustamos padding-top) */
