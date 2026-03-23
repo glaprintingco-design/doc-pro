@@ -626,6 +626,45 @@ def delete_project(project_id):
         return jsonify({"status": "success"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+        
+        
+# ==========================================
+# RUTAS DE API: PADDLE WEBHOOK (PAGOS)
+# ==========================================
+@app.route('/api/paddle-webhook', methods=['POST'])
+def paddle_webhook():
+    try:
+        # 1. Recibir los datos que manda Paddle
+        data = request.json
+        
+        event_type = data.get('event_type')
+        print(f"🔔 Webhook de Paddle recibido: {event_type}")
+
+        # 2. Si es un pago exitoso o se creó la suscripción
+        if event_type in ['transaction.completed', 'subscription.created']:
+            
+            # Navegar por el JSON de Paddle para sacar el user_id
+            event_data = data.get('data', {})
+            custom_data = event_data.get('custom_data', {})
+            user_id = custom_data.get('user_id')
+            
+            if user_id and supabase:
+                # 3. ¡Actualizar al usuario a PRO en Supabase!
+                supabase.table("user_subscriptions").upsert({
+                    "user_id": user_id,
+                    "plan_type": "pro",
+                    "updated_at": "now()"
+                }).execute()
+                
+                print(f"✅ ¡ÉXITO! Usuario {user_id} actualizado a plan PRO.")
+            else:
+                print("⚠️ No se encontró user_id en custom_data.")
+                
+        return jsonify({"status": "received"}), 200
+
+    except Exception as e:
+        print(f"❌ Error en Webhook de Paddle: {str(e)}")
+        return jsonify({"error": str(e)}), 500        
 
 # ==========================================
 # RUTA DE DIAGNÓSTICO (SOLO PARA DEBUG)
