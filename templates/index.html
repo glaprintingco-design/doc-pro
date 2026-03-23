@@ -20,8 +20,7 @@
 				<img src="/static/logo.png" alt="Fire Form Pro" class="navbar-logo">
 			</a>
             <div>
-                <button class="btn btn-outline-light me-2 btn-nav-login" data-bs-toggle="modal" data-bs-target="#authModal" onclick="showLogin()">Login</button>
-                <button class="btn btn-fire rounded-pill" data-bs-toggle="modal" data-bs-target="#authModal" onclick="showRegister()">Create Account</button>
+				<button class="btn btn-fire rounded-pill px-4 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#authModal" onclick="showLogin()">Log In / Sign Up</button>
             </div>
         </div>
     </nav>
@@ -137,58 +136,57 @@
 
     <div class="modal fade" id="authModal" tabindex="-1" aria-labelledby="authModalLabel" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="border-radius: 15px; overflow: hidden;">
-          <div class="modal-header text-white" style="background-color: #0a2540; border-bottom: 3px solid #FF6B00;">
-            <h5 class="modal-title fw-bold" id="authModalLabel">Fire Form Pro</h5>
+        <div class="modal-content shadow-lg" style="background: rgba(10, 37, 64, 0.75); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 20px; overflow: hidden; color: white;">
+          
+          <div class="modal-header border-0 pb-0 mt-2 px-4">
+            <h5 class="modal-title fw-bold" id="authModalLabel" style="color: #FF6B00;">
+                <img src="/static/logo.png" alt="Fire Form Pro" style="height: 30px; margin-right: 10px; margin-top:-5px;"> 
+            </h5>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
-          <div class="modal-body p-4">
-            
-            <ul class="nav nav-pills mb-4 justify-content-center" id="auth-tab" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="tab-login" data-bs-toggle="pill" data-bs-target="#form-login" type="button" style="border-radius: 8px;">Login</button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="tab-register" data-bs-toggle="pill" data-bs-target="#form-register" type="button" style="border-radius: 8px;">Register</button>
-                </li>
-            </ul>
-    
-            <div id="auth-alert" class="alert d-none" role="alert"></div>
-    
-            <div class="tab-content" id="auth-tabContent">
-                <div class="tab-pane fade show active" id="form-login">
+          
+          <div class="modal-body p-4 pt-2">
+                <div id="auth-alert" class="alert d-none" role="alert"></div>
+
+                <div id="form-login-container">
+                    <h4 class="fw-bold mb-4 text-center text-white">Welcome Back</h4>
                     <form id="loginForm">
                         <div class="mb-3">
-                            <label class="form-label text-muted small fw-bold">Email</label>
-                            <input type="email" id="login_email" class="form-control" required>
+                            <label class="form-label text-white-50 small fw-bold">Email</label>
+                            <input type="email" id="login_email" class="form-control text-white border-secondary" style="background: rgba(0,0,0,0.2);" required>
                         </div>
                         <div class="mb-4">
-                            <label class="form-label text-muted small fw-bold">Password</label>
-                            <input type="password" id="login_password" class="form-control" required>
+                            <label class="form-label text-white-50 small fw-bold">Password</label>
+                            <input type="password" id="login_password" class="form-control text-white border-secondary" style="background: rgba(0,0,0,0.2);" required>
                         </div>
-                        <button type="submit" class="btn w-100 fw-bold text-white" style="background-color: #FF6B00;">LOG IN</button>
+                        <button type="submit" class="btn w-100 fw-bold text-white py-2 shadow-sm" style="background: linear-gradient(135deg, #FF6B00 0%, #E65100 100%); border-radius: 50px;">LOG IN</button>
                     </form>
+                    <div class="text-center mt-4 border-top border-secondary pt-3">
+                        <span class="text-white-50 small">Don't have an account? <a href="#" class="text-decoration-none fw-bold" style="color: #FF6B00;" onclick="toggleAuthMode('register')">Create one here</a></span>
+                    </div>
                 </div>
-    
-                <div class="tab-pane fade" id="form-register">
+
+                <div id="form-register-container" class="d-none">
+                    <h4 class="fw-bold mb-4 text-center text-white">Create Account</h4>
                     <form id="registerForm">
-						<div class="mb-3">
-							<label class="form-label text-muted small fw-bold">Email</label>
-							<input type="email" id="reg_email" class="form-control" required>
-						</div>
-						<div class="mb-3">
-							<label class="form-label text-muted small fw-bold">Password</label>
-							<input type="password" id="reg_password" class="form-control" minlength="6" required>
-						</div>
-						<div class="mb-4">
-							<label class="form-label text-muted small fw-bold">Confirm Password</label>
-							<input type="password" id="reg_password_confirm" class="form-control" minlength="6" required>
-						</div>
-						<button type="submit" class="btn w-100 fw-bold text-white" style="background-color: #003884;">CREATE ACCOUNT</button>
-					</form>
+                        <div class="mb-3">
+                            <label class="form-label text-white-50 small fw-bold">Email</label>
+                            <input type="email" id="reg_email" class="form-control text-white border-secondary" style="background: rgba(0,0,0,0.2);" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-white-50 small fw-bold">Password</label>
+                            <input type="password" id="reg_password" class="form-control text-white border-secondary" style="background: rgba(0,0,0,0.2);" minlength="6" required>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label text-white-50 small fw-bold">Confirm Password</label>
+                            <input type="password" id="reg_password_confirm" class="form-control text-white border-secondary" style="background: rgba(0,0,0,0.2);" minlength="6" required>
+                        </div>
+                        <button type="submit" class="btn w-100 fw-bold text-white py-2 shadow-sm" style="background-color: #003884; border-radius: 50px;">SIGN UP</button>
+                    </form>
+                    <div class="text-center mt-4 border-top border-secondary pt-3">
+                        <span class="text-white-50 small">Already have an account? <a href="#" class="text-decoration-none fw-bold" style="color: #4da3ff;" onclick="toggleAuthMode('login')">Log in here</a></span>
+                    </div>
                 </div>
-            </div>
-    
           </div>
         </div>
       </div>
@@ -244,9 +242,25 @@
         document.getElementById('addressForm').onsubmit = (e) => handleSearch(e, 'address');
         document.getElementById('binForm').onsubmit = (e) => handleSearch(e, 'bin');
 
-        // Logica para Modal de Login/Registro
-        function showLogin() { document.getElementById('tab-login').click(); }
-        function showRegister() { document.getElementById('tab-register').click(); }
+        // --- Lógica para alternar entre Login y Registro ---
+		function toggleAuthMode(mode) {
+			const loginBox = document.getElementById('form-login-container');
+			const regBox = document.getElementById('form-register-container');
+			const alertBox = document.getElementById('auth-alert');
+			
+			alertBox.classList.add('d-none'); // Ocultar errores al cambiar de pantalla
+
+			if (mode === 'register') {
+				loginBox.classList.add('d-none');
+				regBox.classList.remove('d-none');
+			} else {
+				regBox.classList.add('d-none');
+				loginBox.classList.remove('d-none');
+			}
+		}
+
+		function showLogin() { toggleAuthMode('login'); }
+		function showRegister() { toggleAuthMode('register'); }
 
         function handleAuthResponse(data, alertBox, isRegister = false) {
             if (data.error) {
