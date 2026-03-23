@@ -12,16 +12,22 @@
 <body>
 
     <nav class="navbar navbar-expand-lg navbar-dark position-absolute w-100 mt-3">
-        <div class="container">
-            <a class="navbar-brand" href="/">
-                <img src="/static/logo.png" alt="Fire Form Pro" class="navbar-logo">
-            </a>
-            <div>
-                <a href="/" class="btn btn-outline-light me-2 btn-nav-login">Home</a>
-                <button class="btn btn-fire rounded-pill" data-bs-toggle="modal" data-bs-target="#authModal">Login</button>
-            </div>
-        </div>
-    </nav>
+		<div class="container">
+			<a class="navbar-brand" href="/">
+				<img src="/static/logo.png" alt="Fire Form Pro" class="navbar-logo">
+			</a>
+			<div class="ms-auto">
+				<a href="/" class="btn btn-outline-light me-2 btn-nav-login">Home</a>
+				
+				{% if session.get('user_id') %}
+					<a href="/dashboard" class="btn btn-fire rounded-pill px-4">Dashboard</a>
+				{% else %}
+					<button class="btn btn-fire rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#authModal">Login</button>
+				{% endif %}
+				
+			</div>
+		</div>
+	</nav>
 
     <div class="pricing-hero">
         <div class="container w-100">
@@ -40,7 +46,7 @@
                         
                         <ul class="feature-list-glass text-start mb-4">
                             <li><i class="bi bi-check2-circle text-success me-2"></i> Unlimited Property Lookups</li>
-                            <li><i class="bi bi-check2-circle text-success me-2"></i> BIN & Ownership Records</li>
+                            <li><i class="bi bi-check2-circle text-success me-2"></i> BIN & Technical Records</li>
                             <li><i class="bi bi-check2-circle text-success me-2"></i> 2 Form Generations /mo</li>
                             <li class="opacity-50"><i class="bi bi-x-circle me-2"></i> Unlimited PDF Cloud Storage</li>
                             <li class="opacity-50"><i class="bi bi-x-circle me-2"></i> Priority Tech Support</li>
@@ -65,7 +71,12 @@
                             <li><i class="bi bi-check2-all text-warning me-2"></i> Priority Support</li>
                         </ul>
                         
-                        <button class="btn btn-fire-pricing w-100 mt-auto">UPGRADE TO PRO</button>
+						{% if session.get('user_id') %}
+							<button onclick="openPaddleCheckout()" class="btn btn-fire-pricing w-100 mt-auto">UPGRADE TO PRO</button>
+						{% else %}
+							<button class="btn btn-fire-pricing w-100 mt-auto" data-bs-toggle="modal" data-bs-target="#authModal">LOGIN TO UPGRADE</button>
+						{% endif %}
+
                     </div>
                 </div>
 
@@ -85,6 +96,32 @@
             <p class="small text-secondary mb-0">© 2026 Fire Form Pro. A product by <strong>GLA Enterprise</strong>.</p>
         </div>
     </footer>
+	
+<script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
+<script>
+    // Configura el entorno (Cámbialo a "production" cuando lances oficialmente)
+    Paddle.Environment.set("sandbox"); 
+
+    Paddle.Initialize({
+        // IMPORTANTE: Pon aquí tu Client-Side Token de Paddle
+        token: "live_3cf14fb0cd17048e922392a6d21",
+    });
+
+    function openPaddleCheckout() {
+        Paddle.Checkout.open({
+            items: [
+                {
+                    priceId: 'pri_01kme2wetrsbxrnpvmhz7d4pyf', // Tu ID de $345
+                    quantity: 1
+                }
+            ],
+            customData: {
+                // Flask inyectará automáticamente el ID de Supabase aquí
+                user_id: "{{ session.get('user_id', '') }}" 
+            }
+        });
+    }
+</script>
 
 </body>
 </html>
