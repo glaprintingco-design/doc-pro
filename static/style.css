@@ -99,7 +99,7 @@ body {
 @media (max-width: 991px) {
     /* 1. Ajustar el logo (un poco más grande: de 60px a 80px) */
     .navbar-brand img {
-        height: 80px !important; 
+        height: 110px !important; 
     }
     .navbar .container {
         justify-content: center;
