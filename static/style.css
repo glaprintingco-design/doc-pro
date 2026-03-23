@@ -94,34 +94,49 @@ body {
 .btn-fire:hover { background-color: #E65100; color: white; }
 .results-card { background: white; border-radius: 15px; color: #333; margin-top: 20px; border-left: 5px solid var(--nyc-orange); }
 
-/* Responsive adjustments para móviles */
+/* Responsive adjustments para móviles - AJUSTE FINO FINAL */
 @media (max-width: 991px) {
-    /* 1. Achicar el menú superior para que no estorbe */
+    /* 1. Ajustar el logo (un poco más grande: de 60px a 80px) */
     .navbar-brand img {
-        height: 60px !important; /* Pasamos de 120px a 60px */
+        height: 80px !important; 
     }
     .navbar .container {
-        justify-content: center; /* Centra el logo y los botones */
+        justify-content: center;
         flex-direction: column;
-        gap: 10px;
+        gap: 5px; /* Reducir el gap entre logo y botones */
     }
 
-    /* 2. Reparar el Hero Section (La raíz del problema) */
+    /* 2. Ajustar los botones para que sean más compactos y estén en fila */
+    .navbar .navbar-nav {
+        flex-direction: row; /* Ponerlos uno al lado del otro */
+        gap: 10px; /* Espacio entre los botones */
+        margin-top: 5px;
+        justify-content: center;
+        width: 100%;
+    }
+    
+    .navbar .nav-link {
+        padding: 8px 15px !important; /* Reducir drásticamente el padding de los botones */
+        font-size: 0.85rem; /* Un poco más pequeña la letra para ahorrar espacio */
+        white-space: nowrap; /* Evitar que el texto se rompa en dos líneas */
+    }
+
+    /* 3. Reparar el Hero Section (Mantenemos la base, ajustamos padding-top) */
     .hero-section {
-        height: auto; /* Permite que el fondo crezca si el contenido es muy largo */
+        height: auto;
         min-height: 100vh;
-        align-items: flex-start; /* DEJA de centrar verticalmente. Esto evita que el contenido se suba */
-        padding-top: 180px; /* Empuja el contenido hacia abajo, librando el logo y botones por completo */
+        align-items: flex-start;
+        padding-top: 170px; /* Ajustado porque el logo es más grande, pero los botones están en fila */
         padding-bottom: 50px;
     }
 
-    /* 3. Ajustes de texto y espaciado */
+    /* 4. Ajustes de texto y espaciado */
     .hero-section .text-start {
         text-align: center !important;
         margin-bottom: 30px;
     }
     .hero-section h1 {
-        font-size: 2.5rem; /* Achicamos un poco el título para ahorrar espacio vertical */
+        font-size: 2.3rem; /* Ligeramente más pequeño el título */
     }
     .search-container {
         padding: 20px;
