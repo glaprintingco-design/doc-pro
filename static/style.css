@@ -96,12 +96,32 @@ body {
 
 /* Responsive adjustments para móviles */
 @media (max-width: 991px) {
-    .hero-section {
-        text-align: center;
+    /* 1. Achicar el menú superior para que no estorbe */
+    .navbar-brand img {
+        height: 60px !important; /* Pasamos de 120px a 60px */
     }
+    .navbar .container {
+        justify-content: center; /* Centra el logo y los botones */
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    /* 2. Reparar el Hero Section (La raíz del problema) */
+    .hero-section {
+        height: auto; /* Permite que el fondo crezca si el contenido es muy largo */
+        min-height: 100vh;
+        align-items: flex-start; /* DEJA de centrar verticalmente. Esto evita que el contenido se suba */
+        padding-top: 180px; /* Empuja el contenido hacia abajo, librando el logo y botones por completo */
+        padding-bottom: 50px;
+    }
+
+    /* 3. Ajustes de texto y espaciado */
     .hero-section .text-start {
         text-align: center !important;
-        margin-bottom: 40px;
+        margin-bottom: 30px;
+    }
+    .hero-section h1 {
+        font-size: 2.5rem; /* Achicamos un poco el título para ahorrar espacio vertical */
     }
     .search-container {
         padding: 20px;
