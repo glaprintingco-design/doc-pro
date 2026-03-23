@@ -34,6 +34,15 @@
             <li class="nav-item"><a class="nav-link active" onclick="switchTab('tab-lookup', this)"><i class="bi bi-search"></i> Property Lookup</a></li>
             <li class="nav-item"><a class="nav-link" onclick="switchTab('tab-builder', this)"><i class="bi bi-hammer"></i> Project Builder</a></li>
             <li class="nav-item"><a class="nav-link" onclick="switchTab('tab-profile', this)"><i class="bi bi-person-badge"></i> Profile Settings</a></li>
+            
+            {% if not is_pro %}
+            <li class="nav-item mt-4">
+                <a class="nav-link" href="/pricing" style="color: #FF6B00; font-weight: bold; background: rgba(255, 107, 0, 0.1); border-radius: 8px; margin: 0 15px;">
+                    <i class="bi bi-rocket-takeoff-fill"></i> Upgrade to Pro
+                </a>
+            </li>
+            {% endif %}
+
             <li class="nav-item mt-5"><a class="nav-link" href="/logout"><i class="bi bi-door-open"></i> Logout</a></li>
         </ul>
     </div>
