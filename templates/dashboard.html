@@ -1005,6 +1005,10 @@
                 if (!response.ok) return;
                 
                 const projects = await response.json();
+                
+                // NUEVO: Guardamos los proyectos globalmente para tener acceso a los dispositivos (A-433)
+                window.savedUserProjects = projects; 
+                
                 const historyDiv = document.querySelector('#historyCol .accordion-body');
                 
                 if (projects.length === 0) {
@@ -1018,7 +1022,7 @@
                         <div class="d-flex justify-content-between align-items-center border-bottom py-2">
                             <div><strong>${p.address}</strong> <span class="text-muted" style="font-size: 0.85rem;">(BIN: ${p.bin})</span></div>
                             <div class="btn-group">
-                                <button class="btn btn-sm btn-outline-primary" onclick="loadProjectToBuilder('${p.bin}', '${p.job_description.replace(/'/g, "\\'")}')">Load 🔄</button>
+                                <button class="btn btn-sm btn-outline-primary" onclick="loadProjectToBuilder('${p.id}')">Load 🔄</button>
                                 <button class="btn btn-sm btn-outline-danger" onclick="deleteProject('${p.id}')"><i class="bi bi-trash"></i></button>
                             </div>
                         </div>
@@ -1027,10 +1031,29 @@
             } catch (e) { console.log("Error loading projects:", e); }
         }
 
-        function loadProjectToBuilder(bin, desc) {
-            document.getElementById('builder_bin').value = bin;
-            document.getElementById('builder_desc').value = desc;
-            document.querySelector('#historyAccordion .accordion-button').click();
+        // NUEVA FUNCIÓN: Ahora lee la lista completa y llena la tabla del A-433
+        function loadProjectToBuilder(projectId) {
+            // Buscamos el proyecto exacto usando el ID
+            const project = window.savedUserProjects.find(p => p.id === projectId);
+            if (!project) return;
+
+            // 1. Llenamos los datos básicos
+            document.getElementById('builder_bin').value = project.bin || '';
+            document.getElementById('builder_desc').value = project.job_description || '';
+
+            // 2. Llenamos la tabla de dispositivos (A-433)
+            if (project.device_list && Array.isArray(project.device_list)) {
+                deviceList = project.device_list; // Cargamos la lista guardada
+            } else {
+                deviceList = []; // Si no tenía dispositivos, la dejamos vacía
+            }
+            renderTable(); // ¡Magia! Esta función dibuja las filas en pantalla automáticamente
+
+            // 3. Cerramos el acordeón de historial
+            const accBtn = document.querySelector('#historyAccordion .accordion-button');
+            if (!accBtn.classList.contains('collapsed')) {
+                accBtn.click();
+            }
         }
 
         async function deleteProject(projectId) {
