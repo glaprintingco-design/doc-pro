@@ -352,20 +352,35 @@ def login():
     data = request.json
     email = data.get('email')
     password = data.get('password')
+    # NUEVO: Obtenemos el parámetro 'next' si existe en la URL
+    next_url = request.args.get('next')
 
     if not supabase:
         return jsonify({"error": "Database not connected"}), 500
 
     try:
         response = supabase.auth.sign_in_with_password({"email": email, "password": password})
+        
+        # Guardamos en sesión
         session['user_id'] = response.user.id
         session['user_email'] = response.user.email
         session['access_token'] = response.session.access_token
         session['refresh_token'] = response.session.refresh_token
-        return jsonify({"status": "success", "user_id": response.user.id})
+        
+        # NUEVO: Preparamos la URL de redirección
+        # Si no hay next_url, vamos al dashboard
+        redirect_target = next_url if next_url else '/dashboard'
+        
+        # Devolvemos la URL a la que el JS debe redirigir
+        return jsonify({
+            "status": "success", 
+            "user_id": response.user.id,
+            "redirect_url": redirect_target # <- Clave para el JS
+        })
+        
     except Exception as e:
         return jsonify({"error": str(e)}), 401
-
+        
 @app.route('/api/auth/register', methods=['POST'])
 def register():
     data = request.json
