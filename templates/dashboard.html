@@ -48,17 +48,11 @@
             
             <div class="card-custom">
                 <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
-                    <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#search-bin" type="button">By BIN</button></li>
-                    <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#search-address" type="button">By Address</button></li>
+                    <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#search-address" type="button">By Address</button></li>
+                    <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#search-bin" type="button">By BIN</button></li>
                 </ul>
                 <div class="tab-content">
-                    <div class="tab-pane fade show active" id="search-bin">
-                        <div class="row g-2 align-items-end">
-                            <div class="col-md-9"><label class="form-label">Property BIN Number</label><input type="text" id="lookup_bin" class="form-control" placeholder="e.g. 3335982"></div>
-                            <div class="col-md-3"><button class="btn btn-primary-custom w-100" onclick="runPropertyLookup('bin')">Run Lookup</button></div>
-                        </div>
-                    </div>
-                    <div class="tab-pane fade" id="search-address">
+                    <div class="tab-pane fade show active" id="search-address">
                         <div class="row g-2 align-items-end">
                             <div class="col-md-2"><label class="form-label">House No.</label><input type="text" id="lookup_house" class="form-control" placeholder="164"></div>
                             <div class="col-md-4"><label class="form-label">Street Name</label><input type="text" id="lookup_street" class="form-control" placeholder="Atlantic Ave"></div>
@@ -69,6 +63,12 @@
                                 </select>
                             </div>
                             <div class="col-md-3"><button class="btn btn-primary-custom w-100" onclick="runPropertyLookup('address')">Run Lookup</button></div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="search-bin">
+                        <div class="row g-2 align-items-end">
+                            <div class="col-md-9"><label class="form-label">Property BIN Number</label><input type="text" id="lookup_bin" class="form-control" placeholder="e.g. 3335982"></div>
+                            <div class="col-md-3"><button class="btn btn-primary-custom w-100" onclick="runPropertyLookup('bin')">Run Lookup</button></div>
                         </div>
                     </div>
                 </div>
@@ -190,7 +190,7 @@
 
         <div id="tab-builder" class="tab-content-view">
             
-            <div class="alert alert-danger shadow-sm border-start border-danger border-4" role="alert">
+            <div id="profile-warning-alert" class="alert alert-danger shadow-sm border-start border-danger border-4" role="alert">
                 <h5 class="alert-heading fw-bold"><i class="bi bi-exclamation-triangle-fill"></i> Action Required: Complete Your Profile First</h5>
                 <p class="mb-0">Before generating your first PDF, please go to the <b>Profile Settings</b> tab to enter your company details and license numbers.</p>
             </div>
@@ -932,10 +932,18 @@
                 const data = await response.json();
                 if (Object.keys(data).length === 0) return;
 
+                let hasAnyData = false;
                 for (const [htmlId, dbName] of Object.entries(profileMap)) {
                     if (document.getElementById(htmlId) && data[dbName]) {
                         document.getElementById(htmlId).value = data[dbName];
+                        hasAnyData = true;
                     }
+                }
+
+                // Hide the "Complete Your Profile" warning if at least one field is filled
+                if (hasAnyData) {
+                    const warning = document.getElementById('profile-warning-alert');
+                    if (warning) warning.style.display = 'none';
                 }
             } catch (e) { console.log("Error loading profile:", e); }
         }
@@ -962,6 +970,8 @@
                 
                 if (response.ok) {
                     alert("✅ Profile saved successfully! Your forms will now auto-fill with this data.");
+                    const warning = document.getElementById('profile-warning-alert');
+                    if (warning) warning.style.display = 'none';
                 } else {
                     alert("❌ Error saving profile: " + (data.error || "Unknown error"));
                 }
