@@ -23,7 +23,7 @@
                 {% if session.get('user_id') %}
                     <a href="/dashboard" class="btn btn-fire rounded-pill px-4 fw-bold shadow-sm">Dashboard</a>
                 {% else %}
-                    <button class="btn btn-fire rounded-pill px-4 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#authModal" onclick="showLoginAndSetNext()">Log In / Sign Up</button>
+						<button class="btn btn-fire rounded-pill px-4 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#authModal" onclick="showLogin()">Log In / Sign Up</button>
                 {% endif %}
             </div>
         </div>
@@ -263,12 +263,6 @@
 			}
 		}
 		
-		// NUEVA FUNCIÓN: Al abrir el login, pone ?next=/pricing en la URL sin recargar
-		function showLoginAndSetNext() {
-			toggleAuthMode('login');
-			// Esto cambia la URL visible pero no recarga la página
-			window.history.pushState({}, '', '?next=/pricing');
-		}
 
 		function showLogin() { toggleAuthMode('login'); }
 		function showRegister() { toggleAuthMode('register'); }
@@ -320,7 +314,7 @@
                     alertBox.classList.remove('d-none');
                     
                     // IMPORTANTE: Redirigimos a la URL que nos diga el servidor (con el next=...)
-                    setTimeout(() => window.location.href = data.redirect_url, 1000);
+                    setTimeout(() => window.location.href = '/dashboard', 1000);
                 }
 
             } catch (err) {
