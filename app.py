@@ -376,6 +376,7 @@ def login():
         response = supabase.auth.sign_in_with_password({"email": email, "password": password})
         
         # Guardamos en sesión
+        session.permanent = True
         session['user_id'] = response.user.id
         session['user_email'] = response.user.email
         session['access_token'] = response.session.access_token
@@ -407,6 +408,7 @@ def register():
     try:
         response = supabase.auth.sign_up({"email": email, "password": password})
         if response.user:
+            session.permanent = True
             session['user_id'] = response.user.id
             session['user_email'] = response.user.email
             if response.session:
