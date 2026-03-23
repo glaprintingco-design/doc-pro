@@ -127,7 +127,7 @@ body {
         height: auto;
         min-height: 100vh;
         align-items: flex-start;
-        padding-top: 170px; /* Ajustado porque el logo es más grande, pero los botones están en fila */
+        padding-top: 220px; /* Espacio para logo 110px + botones en fila */
         padding-bottom: 50px;
     }
 
