@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -223,13 +224,19 @@
                             <button class="btn btn-primary-custom w-100" id="btn-generate" onclick="generateDocuments()">GENERATE DOCUMENTS</button>
                         </div>
 
-                        <div id="paypal-upgrade-container" style="display: none; text-align: center; margin-top: 15px;">
-                            <div class="alert alert-warning border-warning border-start border-4 text-start shadow-sm mb-3">
-                                <b><i class="bi bi-lock-fill"></i> Limit Reached</b><br>
-                                You have reached your free limit (2 forms/month). Upgrade to Pro for unlimited generation.
-                            </div>
-                            <div id="paypal-button-container-P-73L06517ME334400KNGY24TI"></div>
-                        </div>
+                        <div id="paddle-upgrade-container" style="display: none; text-align: center; margin-top: 20px;">
+							<div class="alert alert-warning border-warning border-start border-4 text-start shadow-sm mb-3" style="background-color: #FFFBEB;">
+								<h5 class="fw-bold text-dark mb-2"><i class="bi bi-lock-fill text-warning me-2"></i> Free Limit Reached</h5>
+								<p class="mb-0 text-muted" style="font-size: 0.95rem;">
+									You have successfully generated your 2 free forms for this month. 
+									Upgrade to the Professional plan to unlock <strong>unlimited FDNY filings</strong>, cloud profiles, and priority support.
+								</p>
+							</div>
+							
+							<a href="/pricing" class="btn btn-primary-custom w-100 py-3 fs-5 shadow-sm" style="background: linear-gradient(135deg, #FF6B00 0%, #E65100 100%); border-radius: 12px;">
+								<i class="bi bi-rocket-takeoff me-2"></i> VIEW PRO PLANS
+							</a>
+						</div>
 
                         <div id="generate-status" class="mt-3 text-center"></div>
                     </div>
@@ -837,13 +844,12 @@
                 const response = await fetch('/api/generate', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
                 
                 // --- LÓGICA DE SUSCRIPCIÓN (LÍMITE ALCANZADO) ---
-                if (response.status === 403) {
-                    // ... (Manten tu código actual de paypal aquí, no cambia)
-                    document.getElementById('generate-action-area').style.display = 'none';
-                    document.getElementById('paypal-upgrade-container').style.display = 'block';
-                    statusDiv.innerHTML = '';
-                    return;
-                }
+				if (response.status === 403) {
+					document.getElementById('generate-action-area').style.display = 'none';
+					document.getElementById('paddle-upgrade-container').style.display = 'block'; // <- Actualizado al nuevo ID
+					statusDiv.innerHTML = '';
+					return;
+				}
 
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.error || "Server error processing your forms.");
