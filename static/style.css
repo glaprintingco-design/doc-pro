@@ -67,3 +67,43 @@ body {
     /* En celulares, el header principal de métricas necesita espacio */
     .metric-box { margin-bottom: 10px; }
 }
+
+/* --- INDEX PAGE STYLES --- */
+.hero-section {
+    background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), 
+                url('https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?q=80&w=2070');
+    background-size: cover; 
+    background-position: center;
+    min-height: 100vh; /* Cambiado de height a min-height */
+    display: flex; 
+    align-items: center; 
+    color: white;
+    padding-top: 120px; /* Da espacio a la barra de navegación en móviles */
+    padding-bottom: 50px;
+}
+.search-container {
+    background: rgba(255, 255, 255, 0.1); 
+    backdrop-filter: blur(15px);
+    padding: 30px; 
+    border-radius: 20px; 
+    border: 1px solid rgba(255,255,255,0.2);
+}
+.nav-pills .nav-link { color: white; font-weight: 600; border-radius: 10px; }
+.nav-pills .nav-link.active { background-color: var(--nyc-orange); }
+.btn-fire { background-color: var(--nyc-orange); border: none; font-weight: 700; color: white; padding: 12px 30px; }
+.btn-fire:hover { background-color: #E65100; color: white; }
+.results-card { background: white; border-radius: 15px; color: #333; margin-top: 20px; border-left: 5px solid var(--nyc-orange); }
+
+/* Responsive adjustments para móviles */
+@media (max-width: 991px) {
+    .hero-section {
+        text-align: center;
+    }
+    .hero-section .text-start {
+        text-align: center !important;
+        margin-bottom: 40px;
+    }
+    .search-container {
+        padding: 20px;
+    }
+}
