@@ -16,10 +16,10 @@
     <nav class="navbar navbar-expand-lg navbar-dark position-absolute w-100 mt-3">
         <div class="container">
             <a class="navbar-brand" href="#">
-				<img src="/static/logo.png" alt="Fire Form Pro" height="120">
+				<img src="/static/logo.png" alt="Fire Form Pro" class="navbar-logo">
 			</a>
             <div>
-                <button class="btn btn-link text-white text-decoration-none me-3" data-bs-toggle="modal" data-bs-target="#authModal" onclick="showLogin()">Login</button>
+                <button class="btn btn-outline-light me-2 btn-nav-login" data-bs-toggle="modal" data-bs-target="#authModal" onclick="showLogin()">Login</button>
                 <button class="btn btn-fire rounded-pill" data-bs-toggle="modal" data-bs-target="#authModal" onclick="showRegister()">Create Account</button>
             </div>
         </div>
@@ -110,9 +110,9 @@
             <div class="row align-items-center">
                 
                 <div class="col-md-4 text-center text-md-start mb-3 mb-md-0">
-					<a href="templates/terms.html" class="text-white text-decoration-none me-3 small">Terms of Service</a>
+					<a href="/terms" class="text-white text-decoration-none me-3 small">Terms of Service</a>
 					<span class="text-secondary">|</span>
-					<a href="templates/privacy.html" class="text-white text-decoration-none ms-3 small">Privacy Policy</a>
+					<a href="/privacy" class="text-white text-decoration-none ms-3 small">Privacy Policy</a>
 				</div>
                 
                 <div class="col-md-5 text-center text-md-end mb-3 mb-md-0">
