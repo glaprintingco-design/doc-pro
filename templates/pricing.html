@@ -163,9 +163,6 @@
 
     <script>
         // --- 1. CONFIGURACIÓN PADDLE ---
-        // OJO: Si usas un token que empieza con "live_", Paddle te dará error si tienes el modo sandbox activado. 
-        // Si ya vas a cobrar de verdad, elimina o comenta la siguiente línea:
-        //Paddle.Environment.set("sandbox"); 
 
         Paddle.Initialize({
             token: "live_3cf14fb0cd17048e922392a6d21",
@@ -229,10 +226,32 @@
             };
 
             try {
-                const res = await fetch('/api/auth/login', {
-                    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)
+                // NUEVO: Al hacer fetch, le pasamos los parámetros de la URL actual (que incluyen el next=...)
+                const currentUrlParams = new URLSearchParams(window.location.search);
+                const fetchUrl = `/api/auth/login?${currentUrlParams.toString()}`;
+
+                const res = await fetch(fetchUrl, {
+                    method: 'POST', 
+                    headers: {'Content-Type': 'application/json'}, 
+                    body: JSON.stringify(payload)
                 });
-                handleAuthResponse(await res.json(), alertBox);
+                
+                const data = await res.json();
+
+                // NUEVA LÓGICA DE RESPUESTA
+                if (data.error) {
+                    alertBox.className = "alert alert-danger";
+                    alertBox.innerText = data.error;
+                    alertBox.classList.remove('d-none');
+                } else {
+                    alertBox.className = "alert alert-success";
+                    alertBox.innerText = "Success! loading...";
+                    alertBox.classList.remove('d-none');
+                    
+                    // IMPORTANTE: Redirigimos a la URL que nos diga el servidor (con el next=...)
+                    setTimeout(() => window.location.href = data.redirect_url, 1000);
+                }
+
             } catch (err) {
                 alertBox.className = "alert alert-danger";
                 alertBox.innerText = "Connection error.";
