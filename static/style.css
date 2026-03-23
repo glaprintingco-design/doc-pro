@@ -168,3 +168,104 @@ body {
     color: #b0bec5 !important;
     opacity: 1;
 }
+
+/* --- PRICING PAGE STYLES --- */
+.pricing-hero {
+    background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), 
+                url('https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?q=80&w=2070');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    min-height: 100vh;
+    padding-top: 140px;
+    padding-bottom: 80px;
+    display: flex;
+    align-items: center; 
+}
+
+.glass-card {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    color: white;
+    transition: all 0.3s ease;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.glass-card:hover {
+    transform: translateY(-10px);
+    background: rgba(255, 255, 255, 0.15);
+    border-color: var(--nyc-orange);
+}
+
+.price-tag {
+    font-size: 3.5rem;
+    font-weight: 800;
+    color: var(--nyc-orange);
+}
+
+.feature-list-glass {
+    list-style: none;
+    padding: 0;
+    margin-bottom: auto; /* Empuja el botón hacia abajo */
+}
+
+.feature-list-glass li {
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-fire-pricing {
+    background-color: var(--nyc-orange);
+    color: white;
+    border: none;
+    padding: 15px;
+    border-radius: 50px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 20px;
+}
+
+.btn-fire-pricing:hover {
+    background-color: #E65100;
+    color: white;
+    box-shadow: 0 0 20px rgba(255, 107, 0, 0.4);
+}
+
+.pro-label {
+    background: var(--nyc-orange);
+    color: white;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    display: inline-block;
+    margin-bottom: 15px;
+}
+
+/* Responsive adjustments para Pricing en móviles */
+@media (max-width: 991px) {
+    .pricing-hero {
+        padding-top: 220px; /* Alineado con el espaciado de tu Index */
+        align-items: flex-start; /* Para que no se aplaste el contenido */
+        height: auto;
+    }
+    
+    .pricing-hero h1.display-3 {
+        font-size: 2.5rem; /* Título principal más pequeño */
+    }
+    
+    .price-tag {
+        font-size: 2.5rem; /* Precio más pequeño */
+    }
+    
+    .glass-card {
+        padding: 20px !important; /* Menos padding lateral en móvil */
+        margin-bottom: 20px; /* Separación entre tarjetas */
+    }
+}
