@@ -115,6 +115,8 @@
 					<span class="text-secondary">|</span>
 					<a href="/privacy" class="text-white text-decoration-none mx-2 small">Privacy Policy</a>
 					<span class="text-secondary">|</span>
+					<a href="/pricing" class="text-white text-decoration-none ms-2 small">Pricing</a>
+					<span class="text-secondary">|</span>
 					<a href="/refund" class="text-white text-decoration-none ms-2 small">Refund Policy</a>
 				</div>
                 
@@ -253,7 +255,7 @@
                 alertBox.classList.remove('d-none');
             } else {
                 alertBox.className = "alert alert-success";
-                alertBox.innerText = isRegister ? "Account created! Logging in..." : "Success! Redirecting...";
+                alertBox.innerText = isRegister ? "Account created! Logging in..." : "Success! loading...";
                 alertBox.classList.remove('d-none');
                 setTimeout(() => window.location.href = '/dashboard', 1000);
             }
