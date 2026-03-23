@@ -36,7 +36,7 @@ body {
 .form-label { font-weight: 600; color: #4a5568; font-size: 0.85rem; }
 .form-control, .form-select { border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.95rem; }
 .form-control:focus, .form-select:focus { border-color: var(--nyc-orange); box-shadow: 0 0 0 0.2rem rgba(255, 107, 0, 0.25); }
-.btn-primary-custom { background: linear-gradient(135deg, var(--nyc-orange) 0%, #E65100 100%); border: none; color: white; font-weight: 600; padding: 10px 25px; border-radius: 8px; }
+.btn-primary-custom { background: linear-gradient(135deg, var(--nyc-orange) 0%, #E65100 100%) !important; border: none !important; color: white !important; font-weight: 600; padding: 10px 25px; border-radius: 8px; }
 .btn-primary-custom:hover { box-shadow: 0 4px 10px rgba(255, 107, 0, 0.3); color: white; transform: translateY(-1px); }
 .btn-secondary-custom { background-color: white; border: 1px solid #cbd5e1; color: #4a5568; font-weight: 600; border-radius: 8px; }
 
@@ -94,67 +94,58 @@ body {
 .btn-fire:hover { background-color: #E65100; color: white; }
 .results-card { background: white; border-radius: 15px; color: #333; margin-top: 20px; border-left: 5px solid var(--nyc-orange); }
 
-/* Logo base (desktop) */
-.navbar-logo {
-    height: 100px;
-}
-
-/* Login button - balanced with Create Account */
-.btn-nav-login {
-    padding: 8px 20px;
-    font-weight: 600;
-    font-size: 0.95rem;
-    border-radius: 8px;
-}
-
+/* Responsive adjustments para móviles - AJUSTE FINO FINAL */
 @media (max-width: 991px) {
-    .navbar-logo {
-        height: 70px;
+    /* 1. Ajustar el logo (un poco más grande: de 60px a 80px) */
+    .navbar-brand img {
+        height: 80px !important; 
     }
-
     .navbar .container {
         justify-content: center;
         flex-direction: column;
-        gap: 5px;
+        gap: 5px; /* Reducir el gap entre logo y botones */
     }
 
+    /* 2. Ajustar los botones para que sean más compactos y estén en fila */
     .navbar .navbar-nav {
-        flex-direction: row;
-        gap: 10px;
+        flex-direction: row; /* Ponerlos uno al lado del otro */
+        gap: 10px; /* Espacio entre los botones */
         margin-top: 5px;
         justify-content: center;
         width: 100%;
     }
     
     .navbar .nav-link {
-        padding: 8px 15px !important;
-        font-size: 0.85rem;
-        white-space: nowrap;
+        padding: 8px 15px !important; /* Reducir drásticamente el padding de los botones */
+        font-size: 0.85rem; /* Un poco más pequeña la letra para ahorrar espacio */
+        white-space: nowrap; /* Evitar que el texto se rompa en dos líneas */
     }
 
-    .btn-nav-login,
-    .btn-fire.rounded-pill {
-        padding: 9px 18px !important;
-        font-size: 0.9rem !important;
-        border-radius: 8px !important;
-    }
-
+    /* 3. Reparar el Hero Section (Mantenemos la base, ajustamos padding-top) */
     .hero-section {
         height: auto;
         min-height: 100vh;
         align-items: flex-start;
-        padding-top: 160px;
+        padding-top: 170px; /* Ajustado porque el logo es más grande, pero los botones están en fila */
         padding-bottom: 50px;
     }
 
+    /* 4. Ajustes de texto y espaciado */
     .hero-section .text-start {
         text-align: center !important;
         margin-bottom: 30px;
     }
     .hero-section h1 {
-        font-size: 2.3rem;
+        font-size: 2.3rem; /* Ligeramente más pequeño el título */
     }
     .search-container {
         padding: 20px;
     }
+}
+
+/* Placeholder text - lighter to distinguish from real input */
+.form-control::placeholder,
+.form-select::placeholder {
+    color: #b0bec5 !important;
+    opacity: 1;
 }
