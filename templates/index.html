@@ -20,7 +20,7 @@
 				<img src="/static/logo.png" alt="Fire Form Pro" class="navbar-logo">
 			</a>
             <div>
-				<button class="btn btn-fire rounded-pill px-4 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#authModal" onclick="showLogin()">Log In / Sign Up</button>
+				<button class="btn btn-fire rounded-pill px-4 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#authModal" onclick="showLoginAndSetNext()">Log In / Sign Up</button>
             </div>
         </div>
     </nav>
@@ -258,6 +258,13 @@
 				loginBox.classList.remove('d-none');
 			}
 		}
+		
+		// NUEVA FUNCIÓN: Al abrir el login, pone ?next=/pricing en la URL sin recargar
+		function showLoginAndSetNext() {
+			toggleAuthMode('login');
+			// Esto cambia la URL visible pero no recarga la página
+			window.history.pushState({}, '', '?next=/pricing');
+		}
 
 		function showLogin() { toggleAuthMode('login'); }
 		function showRegister() { toggleAuthMode('register'); }
@@ -286,10 +293,32 @@
             };
 
             try {
-                const res = await fetch('/api/auth/login', {
-                    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)
+                // NUEVO: Al hacer fetch, le pasamos los parámetros de la URL actual (que incluyen el next=...)
+                const currentUrlParams = new URLSearchParams(window.location.search);
+                const fetchUrl = `/api/auth/login?${currentUrlParams.toString()}`;
+
+                const res = await fetch(fetchUrl, {
+                    method: 'POST', 
+                    headers: {'Content-Type': 'application/json'}, 
+                    body: JSON.stringify(payload)
                 });
-                handleAuthResponse(await res.json(), alertBox);
+                
+                const data = await res.json();
+
+                // NUEVA LÓGICA DE RESPUESTA
+                if (data.error) {
+                    alertBox.className = "alert alert-danger";
+                    alertBox.innerText = data.error;
+                    alertBox.classList.remove('d-none');
+                } else {
+                    alertBox.className = "alert alert-success";
+                    alertBox.innerText = "Success! loading...";
+                    alertBox.classList.remove('d-none');
+                    
+                    // IMPORTANTE: Redirigimos a la URL que nos diga el servidor (con el next=...)
+                    setTimeout(() => window.location.href = data.redirect_url, 1000);
+                }
+
             } catch (err) {
                 alertBox.className = "alert alert-danger";
                 alertBox.innerText = "Connection error.";
