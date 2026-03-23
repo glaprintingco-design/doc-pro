@@ -226,30 +226,23 @@
             };
 
             try {
-                // NUEVO: Al hacer fetch, le pasamos los parámetros de la URL actual (que incluyen el next=...)
-                const currentUrlParams = new URLSearchParams(window.location.search);
-                const fetchUrl = `/api/auth/login?${currentUrlParams.toString()}`;
-
-                const res = await fetch(fetchUrl, {
-                    method: 'POST', 
-                    headers: {'Content-Type': 'application/json'}, 
-                    body: JSON.stringify(payload)
+                // Hacemos el login normal, sin parámetros extra
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)
                 });
-                
                 const data = await res.json();
 
-                // NUEVA LÓGICA DE RESPUESTA
                 if (data.error) {
                     alertBox.className = "alert alert-danger";
                     alertBox.innerText = data.error;
                     alertBox.classList.remove('d-none');
                 } else {
                     alertBox.className = "alert alert-success";
-                    alertBox.innerText = "Success! loading...";
+                    alertBox.innerText = "Welcome back! Loading...";
                     alertBox.classList.remove('d-none');
                     
-                    // IMPORTANTE: Redirigimos a la URL que nos diga el servidor (con el next=...)
-                    setTimeout(() => window.location.href = data.redirect_url, 1000);
+                    // ESTO ES LA CLAVE AQUÍ: Recargamos la página de pricing
+                    setTimeout(() => window.location.reload(), 1000);
                 }
 
             } catch (err) {
