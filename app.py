@@ -160,6 +160,10 @@ def privacy():
 def refund():
     return render_template('refund.html')
 
+@app.route('/pricing')
+def pricing():
+    return render_template('pricing.html')
+
 # ==========================================
 # RUTA DE DIAGNÓSTICO — /api/diagnostics
 # Visita esta URL en el browser para ver el estado de todas las APIs y keys
