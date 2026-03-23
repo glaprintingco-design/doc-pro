@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pricing | Fire Form Pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="/static/style.css" rel="stylesheet">
+    <style>
+        /* Fondo EXACTAMENTE igual al del index usando la URL de tu style.css */
+        .pricing-hero {
+            background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), 
+                        url('https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?q=80&w=2070');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            min-height: 100vh;
+            padding-top: 140px;
+            padding-bottom: 80px;
+            display: flex;
+            align-items: center; /* Centra el contenido verticalmente */
+        }
+
+        /* Efecto Glassmorphism para las tarjetas */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-10px);
+            background: rgba(255, 255, 255, 0.15);
+            border-color: #FF6B00;
+        }
+
+        .price-tag {
+            font-size: 3.5rem;
+            font-weight: 800;
+            color: #FF6B00;
+        }
+
+        .feature-list-glass {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list-glass li {
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-fire-pricing {
+            background-color: #FF6B00;
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 50px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-fire-pricing:hover {
+            background-color: #e66000;
+            color: white;
+            box-shadow: 0 0 20px rgba(255, 107, 0, 0.4);
+        }
+
+        .pro-label {
+            background: #FF6B00;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark position-absolute w-100 mt-3">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <img src="/static/logo.png" alt="Fire Form Pro" class="navbar-logo">
+            </a>
+            <div>
+                <a href="/" class="btn btn-outline-light me-2 btn-nav-login">Home</a>
+                <button class="btn btn-fire rounded-pill" data-bs-toggle="modal" data-bs-target="#authModal">Login</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="pricing-hero">
+        <div class="container w-100">
+            <div class="text-center mb-5">
+                <h1 class="display-3 fw-bold text-white">Choose Your <span style="color:#FF6B00">Plan</span></h1>
+                <p class="lead text-white-50">Professional drafting aids for NYC Fire Alarm Filings.</p>
+            </div>
+
+            <div class="row justify-content-center g-4">
+                
+                <div class="col-md-5 col-lg-4">
+                    <div class="glass-card h-100 p-4 text-center">
+                        <h3 class="fw-bold mb-3">Starter</h3>
+                        <div class="price-tag">$0<span class="fs-6 text-white-50 fw-normal">/mo</span></div>
+                        <p class="text-white-50 mb-4">Perfect for individual property lookups.</p>
+                        
+                        <ul class="feature-list-glass text-start mb-4">
+                            <li><i class="bi bi-check2-circle text-success me-2"></i> Unlimited Property Lookups</li>
+                            <li><i class="bi bi-check2-circle text-success me-2"></i> BIN & Ownership Records</li>
+                            <li><i class="bi bi-check2-circle text-success me-2"></i> 2 Form Generations /mo</li>
+                            <li class="opacity-50"><i class="bi bi-x-circle me-2"></i> Unlimited PDF Cloud Storage</li>
+                            <li class="opacity-50"><i class="bi bi-x-circle me-2"></i> Priority Tech Support</li>
+                        </ul>
+                        
+                        <button class="btn btn-outline-light w-100 rounded-pill mt-auto">GET STARTED</button>
+                    </div>
+                </div>
+
+                <div class="col-md-5 col-lg-4">
+                    <div class="glass-card h-100 p-4 text-center border-orange" style="border: 2px solid #FF6B00 !important;">
+                        <span class="pro-label">MOST POPULAR</span>
+                        <h3 class="fw-bold mb-3" style="color:#FF6B00">Pro Professional</h3>
+                        <div class="price-tag">$345<span class="fs-6 text-white-50 fw-normal">/year</span></div>
+                        <p class="text-white-50 mb-4">Full access for high-volume filings.</p>
+                        
+                        <ul class="feature-list-glass text-start mb-4">
+                            <li><i class="bi bi-check2-all text-warning me-2"></i> <strong>Unlimited</strong> Property Lookups</li>
+                            <li><i class="bi bi-check2-all text-warning me-2"></i> <strong>Unlimited</strong> Form Generations</li>
+                            <li><i class="bi bi-check2-all text-warning me-2"></i> All NYC Compliance Forms</li>
+                            <li><i class="bi bi-check2-all text-warning me-2"></i> Save Vendor & Architect Profiles</li>
+                            <li><i class="bi bi-check2-all text-warning me-2"></i> Priority Support</li>
+                        </ul>
+                        
+                        <button class="btn btn-fire-pricing w-100 mt-auto">UPGRADE TO PRO</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <footer class="py-4" style="background-color: #0a2540; border-top: 4px solid #FF6B00;">
+        <div class="container text-center">
+            <div class="mb-3">
+                <a href="/terms" class="text-white-50 text-decoration-none mx-2 small">Terms</a>
+                <span class="text-secondary">|</span>
+                <a href="/privacy" class="text-white-50 text-decoration-none mx-2 small">Privacy</a>
+                <span class="text-secondary">|</span>
+                <a href="/refund" class="text-white-50 text-decoration-none mx-2 small">Refunds</a>
+            </div>
+            <p class="small text-secondary mb-0">© 2026 Fire Form Pro. A product by <strong>GLA Enterprise</strong>.</p>
+        </div>
+    </footer>
+
+</body>
+</html>
