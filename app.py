@@ -141,7 +141,21 @@ def index():
 def dashboard():
     if 'user_id' not in session:
         return redirect('/')
-    return render_template('dashboard.html')
+        
+    # NUEVO: Consultar si el usuario es PRO
+    is_pro = False
+    user_client = get_user_supabase()
+    
+    if user_client:
+        try:
+            sub_res = user_client.table("user_subscriptions").select("plan_type").eq("user_id", session['user_id']).execute()
+            if sub_res.data and sub_res.data[0].get("plan_type") == "pro":
+                is_pro = True
+        except Exception as e:
+            print(f"Error revisando suscripción en dashboard: {e}")
+            
+    # Le pasamos la variable 'is_pro' al HTML
+    return render_template('dashboard.html', is_pro=is_pro)
 
 @app.route('/logout')
 def logout():
