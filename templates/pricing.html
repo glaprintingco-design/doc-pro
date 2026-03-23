@@ -7,27 +7,26 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <link href="/static/style.css?v=2" rel="stylesheet">
-    <link href="/static/style.css?v=2" rel="stylesheet">
 </head>
 <body>
 
     <nav class="navbar navbar-expand-lg navbar-dark position-absolute w-100 mt-3">
-		<div class="container">
-			<a class="navbar-brand" href="/">
-				<img src="/static/logo.png" alt="Fire Form Pro" class="navbar-logo">
-			</a>
-			<div class="ms-auto">
-				<a href="/" class="btn btn-outline-light me-2 btn-nav-login">Home</a>
-				
-				{% if session.get('user_id') %}
-					<a href="/dashboard" class="btn btn-fire rounded-pill px-4">Dashboard</a>
-				{% else %}
-					<button class="btn btn-fire rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#authModal">Login</button>
-				{% endif %}
-				
-			</div>
-		</div>
-	</nav>
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <img src="/static/logo.png" alt="Fire Form Pro" class="navbar-logo">
+            </a>
+            <div class="ms-auto">
+                <a href="/" class="btn btn-outline-light me-2 btn-nav-login">Home</a>
+                
+                {% if session.get('user_id') %}
+                    <a href="/dashboard" class="btn btn-fire rounded-pill px-4">Dashboard</a>
+                {% else %}
+                    <button class="btn btn-fire rounded-pill px-4 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#authModal" onclick="showLogin()">Log In / Sign Up</button>
+                {% endif %}
+                
+            </div>
+        </div>
+    </nav>
 
     <div class="pricing-hero">
         <div class="container w-100">
@@ -52,7 +51,11 @@
                             <li class="opacity-50"><i class="bi bi-x-circle me-2"></i> Priority Tech Support</li>
                         </ul>
                         
-                        <button class="btn btn-outline-light w-100 rounded-pill mt-auto">GET STARTED</button>
+                        {% if session.get('user_id') %}
+                            <a href="/dashboard" class="btn btn-outline-light w-100 rounded-pill mt-auto fw-bold py-2 text-decoration-none">GO TO DASHBOARD</a>
+                        {% else %}
+                            <button class="btn btn-outline-light w-100 rounded-pill mt-auto fw-bold py-2" data-bs-toggle="modal" data-bs-target="#authModal" onclick="showRegister()">GET STARTED</button>
+                        {% endif %}
                     </div>
                 </div>
 
@@ -71,11 +74,11 @@
                             <li><i class="bi bi-check2-all text-warning me-2"></i> Priority Support</li>
                         </ul>
                         
-						{% if session.get('user_id') %}
-							<button onclick="openPaddleCheckout()" class="btn btn-fire-pricing w-100 mt-auto">UPGRADE TO PRO</button>
-						{% else %}
-							<button class="btn btn-fire-pricing w-100 mt-auto" data-bs-toggle="modal" data-bs-target="#authModal">LOGIN TO UPGRADE</button>
-						{% endif %}
+                        {% if session.get('user_id') %}
+                            <button onclick="openPaddleCheckout()" class="btn btn-fire-pricing w-100 mt-auto">UPGRADE TO PRO</button>
+                        {% else %}
+                            <button class="btn btn-fire-pricing w-100 mt-auto" data-bs-toggle="modal" data-bs-target="#authModal" onclick="showLogin()">LOGIN TO UPGRADE</button>
+                        {% endif %}
 
                     </div>
                 </div>
@@ -96,32 +99,192 @@
             <p class="small text-secondary mb-0">© 2026 Fire Form Pro. A product by <strong>GLA Enterprise</strong>.</p>
         </div>
     </footer>
-	
-<script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
-<script>
-    // Configura el entorno (Cámbialo a "production" cuando lances oficialmente)
-    Paddle.Environment.set("sandbox"); 
+    
+    <div class="modal fade" id="authModal" tabindex="-1" aria-labelledby="authModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg" style="background: rgba(10, 37, 64, 0.75); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 20px; overflow: hidden; color: white;">
+          
+          <div class="modal-header border-0 pb-0 mt-2 px-4">
+            <h5 class="modal-title fw-bold" id="authModalLabel" style="color: #FF6B00;">
+                <img src="/static/logo.png" alt="Fire Form Pro" style="height: 30px; margin-right: 10px; margin-top:-5px;"> 
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          
+          <div class="modal-body p-4 pt-2">
+                <div id="auth-alert" class="alert d-none" role="alert"></div>
 
-    Paddle.Initialize({
-        // IMPORTANTE: Pon aquí tu Client-Side Token de Paddle
-        token: "live_3cf14fb0cd17048e922392a6d21",
-    });
+                <div id="form-login-container">
+                    <h4 class="fw-bold mb-4 text-center text-white">Welcome Back</h4>
+                    <form id="loginForm">
+                        <div class="mb-3">
+                            <label class="form-label text-white-50 small fw-bold">Email</label>
+                            <input type="email" id="login_email" class="form-control text-white border-secondary" style="background: rgba(0,0,0,0.2);" required>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label text-white-50 small fw-bold">Password</label>
+                            <input type="password" id="login_password" class="form-control text-white border-secondary" style="background: rgba(0,0,0,0.2);" required>
+                        </div>
+                        <button type="submit" class="btn w-100 fw-bold text-white py-2 shadow-sm" style="background: linear-gradient(135deg, #FF6B00 0%, #E65100 100%); border-radius: 50px;">LOG IN</button>
+                    </form>
+                    <div class="text-center mt-4 border-top border-secondary pt-3">
+                        <span class="text-white-50 small">Don't have an account? <a href="#" class="text-decoration-none fw-bold" style="color: #FF6B00;" onclick="toggleAuthMode('register')">Create one here</a></span>
+                    </div>
+                </div>
 
-    function openPaddleCheckout() {
-        Paddle.Checkout.open({
-            items: [
-                {
-                    priceId: 'pri_01kme2wetrsbxrnpvmhz7d4pyf', // Tu ID de $345
-                    quantity: 1
-                }
-            ],
-            customData: {
-                // Flask inyectará automáticamente el ID de Supabase aquí
-                user_id: "{{ session.get('user_id', '') }}" 
-            }
+                <div id="form-register-container" class="d-none">
+                    <h4 class="fw-bold mb-4 text-center text-white">Create Account</h4>
+                    <form id="registerForm">
+                        <div class="mb-3">
+                            <label class="form-label text-white-50 small fw-bold">Email</label>
+                            <input type="email" id="reg_email" class="form-control text-white border-secondary" style="background: rgba(0,0,0,0.2);" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-white-50 small fw-bold">Password</label>
+                            <input type="password" id="reg_password" class="form-control text-white border-secondary" style="background: rgba(0,0,0,0.2);" minlength="6" required>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label text-white-50 small fw-bold">Confirm Password</label>
+                            <input type="password" id="reg_password_confirm" class="form-control text-white border-secondary" style="background: rgba(0,0,0,0.2);" minlength="6" required>
+                        </div>
+                        <button type="submit" class="btn w-100 fw-bold text-white py-2 shadow-sm" style="background-color: #003884; border-radius: 50px;">SIGN UP</button>
+                    </form>
+                    <div class="text-center mt-4 border-top border-secondary pt-3">
+                        <span class="text-white-50 small">Already have an account? <a href="#" class="text-decoration-none fw-bold" style="color: #4da3ff;" onclick="toggleAuthMode('login')">Log in here</a></span>
+                    </div>
+                </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
+
+    <script>
+        // --- 1. CONFIGURACIÓN PADDLE ---
+        // OJO: Si usas un token que empieza con "live_", Paddle te dará error si tienes el modo sandbox activado. 
+        // Si ya vas a cobrar de verdad, elimina o comenta la siguiente línea:
+        //Paddle.Environment.set("sandbox"); 
+
+        Paddle.Initialize({
+            token: "live_3cf14fb0cd17048e922392a6d21",
         });
-    }
-</script>
+
+        function openPaddleCheckout() {
+            Paddle.Checkout.open({
+                items: [
+                    {
+                        priceId: 'pri_01kme2wetrsbxrnpvmhz7d4pyf', 
+                        quantity: 1
+                    }
+                ],
+                customData: {
+                    user_id: "{{ session.get('user_id', '') }}" 
+                }
+            });
+        }
+
+        // --- 2. LÓGICA DE LOGIN Y REGISTRO ---
+        function toggleAuthMode(mode) {
+            const loginBox = document.getElementById('form-login-container');
+            const regBox = document.getElementById('form-register-container');
+            const alertBox = document.getElementById('auth-alert');
+            
+            alertBox.classList.add('d-none');
+
+            if (mode === 'register') {
+                loginBox.classList.add('d-none');
+                regBox.classList.remove('d-none');
+            } else {
+                regBox.classList.add('d-none');
+                loginBox.classList.remove('d-none');
+            }
+        }
+
+        function showLogin() { toggleAuthMode('login'); }
+        function showRegister() { toggleAuthMode('register'); }
+
+        function handleAuthResponse(data, alertBox, isRegister = false) {
+            if (data.error) {
+                alertBox.className = "alert alert-danger";
+                alertBox.innerText = data.error;
+                alertBox.classList.remove('d-none');
+            } else {
+                alertBox.className = "alert alert-success";
+                alertBox.innerText = isRegister ? "Account created! Logging in..." : "Success! Redirecting...";
+                alertBox.classList.remove('d-none');
+                setTimeout(() => window.location.href = '/dashboard', 1000);
+            }
+        }
+
+        document.getElementById('loginForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const alertBox = document.getElementById('auth-alert');
+            alertBox.classList.add('d-none');
+            
+            const payload = {
+                email: document.getElementById('login_email').value,
+                password: document.getElementById('login_password').value
+            };
+
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)
+                });
+                handleAuthResponse(await res.json(), alertBox);
+            } catch (err) {
+                alertBox.className = "alert alert-danger";
+                alertBox.innerText = "Connection error.";
+                alertBox.classList.remove('d-none');
+            }
+        };
+
+        document.getElementById('registerForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const alertBox = document.getElementById('auth-alert');
+            alertBox.classList.add('d-none');
+            
+            const email = document.getElementById('reg_email').value;
+            const password = document.getElementById('reg_password').value;
+            const confirmPassword = document.getElementById('reg_password_confirm').value;
+
+            if (password !== confirmPassword) {
+                alertBox.className = "alert alert-danger";
+                alertBox.innerText = "Passwords do not match!";
+                alertBox.classList.remove('d-none');
+                return;
+            }
+
+            const payload = { email, password };
+
+            try {
+                const res = await fetch('/api/auth/register', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                
+                if (data.error) {
+                    alertBox.className = "alert alert-danger";
+                    alertBox.innerText = data.error;
+                    alertBox.classList.remove('d-none');
+                } else {
+                    alertBox.className = "alert alert-success";
+                    alertBox.innerText = "Account created! Please check your email to verify your account before logging in.";
+                    alertBox.classList.remove('d-none');
+                    
+                    document.getElementById('registerForm').reset();
+                    setTimeout(() => {
+                        showLogin();
+                    }, 3000);
+                }
+            } catch (err) {
+                alertBox.className = "alert alert-danger";
+                alertBox.innerText = "Connection error. Please try again.";
+                alertBox.classList.remove('d-none');
+            }
+        };
+    </script>
 
 </body>
 </html>
