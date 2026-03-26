@@ -153,22 +153,27 @@
                 <div id="auth-alert" class="alert d-none" role="alert"></div>
 
                 <div id="form-login-container">
-                    <h4 class="fw-bold mb-4 text-center text-white">Welcome Back</h4>
-                    <form id="loginForm">
-                        <div class="mb-3">
-                            <label class="form-label text-white-50 small fw-bold">Email</label>
-                            <input type="email" id="login_email" class="form-control text-white border-secondary" style="background: rgba(0,0,0,0.2);" required>
-                        </div>
-                        <div class="mb-4">
-                            <label class="form-label text-white-50 small fw-bold">Password</label>
-                            <input type="password" id="login_password" class="form-control text-white border-secondary" style="background: rgba(0,0,0,0.2);" required>
-                        </div>
-                        <button type="submit" class="btn w-100 fw-bold text-white py-2 shadow-sm" style="background: linear-gradient(135deg, #FF6B00 0%, #E65100 100%); border-radius: 50px;">LOG IN</button>
-                    </form>
-                    <div class="text-center mt-4 border-top border-secondary pt-3">
-                        <span class="text-white-50 small">Don't have an account? <a href="#" class="text-decoration-none fw-bold" style="color: #FF6B00;" onclick="toggleAuthMode('register')">Create one here</a></span>
-                    </div>
-                </div>
+					<h4 class="fw-bold mb-4 text-center text-white">Welcome Back</h4>
+					<form id="loginForm">
+						<div class="mb-3">
+							<label class="form-label text-white-50 small fw-bold">Email</label>
+							<input type="email" id="login_email" class="form-control text-white border-secondary" style="background: rgba(0,0,0,0.2);" required>
+						</div>
+						
+						<div class="mb-4">
+							<div class="d-flex justify-content-between">
+								<label class="form-label text-white-50 small fw-bold">Password</label>
+								<a href="#" class="text-decoration-none small text-white-50" onmouseover="this.style.color='#FF6B00'" onmouseout="this.style.color='rgba(255,255,255,0.5)'" onclick="showForgot()">Forgot password?</a>
+							</div>
+							<input type="password" id="login_password" class="form-control text-white border-secondary" style="background: rgba(0,0,0,0.2);" required>
+						</div>
+
+						<button type="submit" class="btn w-100 fw-bold text-white py-2 shadow-sm" style="background: linear-gradient(135deg, #FF6B00 0%, #E65100 100%); border-radius: 50px;">LOG IN</button>
+					</form>
+					<div class="text-center mt-4 border-top border-secondary pt-3">
+						<span class="text-white-50 small">Don't have an account? <a href="#" class="text-decoration-none fw-bold" style="color: #FF6B00;" onclick="toggleAuthMode('register')">Create one here</a></span>
+					</div>
+				</div>
 
                 <div id="form-register-container" class="d-none">
                     <h4 class="fw-bold mb-4 text-center text-white">Create Account</h4>
@@ -191,6 +196,22 @@
                         <span class="text-white-50 small">Already have an account? <a href="#" class="text-decoration-none fw-bold" style="color: #4da3ff;" onclick="toggleAuthMode('login')">Log in here</a></span>
                     </div>
                 </div>
+				<div id="form-forgot-container" class="d-none">
+					<h4 class="fw-bold mb-3 text-center text-white">Reset Password</h4>
+					<p class="text-white-50 small text-center mb-4">Enter your email and we'll send you a link to reset your password.</p>
+					<form id="forgotForm">
+						<div class="mb-4">
+							<label class="form-label text-white-50 small fw-bold">Email</label>
+							<input type="email" id="forgot_email" class="form-control text-white border-secondary" style="background: rgba(0,0,0,0.2);" required>
+						</div>
+						<button type="submit" class="btn w-100 fw-bold text-white py-2 shadow-sm" style="background: linear-gradient(135deg, #FF6B00 0%, #E65100 100%); border-radius: 50px;">SEND RESET LINK</button>
+					</form>
+					<div class="text-center mt-4 border-top border-secondary pt-3">
+						<span class="text-white-50 small">Remembered it? <a href="#" class="text-decoration-none fw-bold" style="color: #FF6B00;" onclick="toggleAuthMode('login')">Back to login</a></span>
+					</div>
+				</div>
+				
+				
           </div>
         </div>
       </div>
@@ -246,26 +267,33 @@
         document.getElementById('addressForm').onsubmit = (e) => handleSearch(e, 'address');
         document.getElementById('binForm').onsubmit = (e) => handleSearch(e, 'bin');
 
-        // --- Lógica para alternar entre Login y Registro ---
+        // --- Lógica para alternar entre Login, Registro y Recuperar Contraseña ---
 		function toggleAuthMode(mode) {
 			const loginBox = document.getElementById('form-login-container');
 			const regBox = document.getElementById('form-register-container');
+			const forgotBox = document.getElementById('form-forgot-container'); // Nueva caja
 			const alertBox = document.getElementById('auth-alert');
 			
 			alertBox.classList.add('d-none'); // Ocultar errores al cambiar de pantalla
 
+			// Escondemos todo primero
+			loginBox.classList.add('d-none');
+			regBox.classList.add('d-none');
+			forgotBox.classList.add('d-none');
+
+			// Mostramos solo el que necesitamos
 			if (mode === 'register') {
-				loginBox.classList.add('d-none');
 				regBox.classList.remove('d-none');
+			} else if (mode === 'forgot') {
+				forgotBox.classList.remove('d-none');
 			} else {
-				regBox.classList.add('d-none');
 				loginBox.classList.remove('d-none');
 			}
 		}
-		
 
 		function showLogin() { toggleAuthMode('login'); }
 		function showRegister() { toggleAuthMode('register'); }
+		function showForgot() { toggleAuthMode('forgot'); } // Nueva función
 
         function handleAuthResponse(data, alertBox, isRegister = false) {
             if (data.error) {
@@ -370,6 +398,44 @@
 				alertBox.classList.remove('d-none');
 			}
 		};
+		
+		// --- Lógica para enviar el correo de recuperación ---
+		document.getElementById('forgotForm').onsubmit = async (e) => {
+			e.preventDefault();
+			const alertBox = document.getElementById('auth-alert');
+			alertBox.classList.add('d-none');
+			
+			const email = document.getElementById('forgot_email').value;
+
+			try {
+				// Hacemos el fetch a la ruta de tu backend que maneja el reset de contraseña
+				const res = await fetch('/api/auth/reset-password', {
+					method: 'POST', 
+					headers: {'Content-Type': 'application/json'}, 
+					body: JSON.stringify({ email })
+				});
+				const data = await res.json();
+				
+				if (data.error) {
+					alertBox.className = "alert alert-danger";
+					alertBox.innerText = data.error;
+					alertBox.classList.remove('d-none');
+				} else {
+					alertBox.className = "alert alert-success";
+					alertBox.innerText = "Check your email! We've sent you a password reset link.";
+					alertBox.classList.remove('d-none');
+					
+					document.getElementById('forgotForm').reset();
+					// Regresamos al login después de 4 segundos
+					setTimeout(() => { showLogin(); }, 4000);
+				}
+			} catch (err) {
+				alertBox.className = "alert alert-danger";
+				alertBox.innerText = "Connection error. Please try again.";
+				alertBox.classList.remove('d-none');
+			}
+		};
+		
     </script>
 	
 	<script>
