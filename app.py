@@ -424,6 +424,23 @@ def register():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
+@app.route('/api/auth/reset-password', methods=['POST'])
+def reset_password():
+    data = request.json
+    email = data.get('email')
+
+    if not supabase:
+        return jsonify({"error": "Database not connected"}), 500
+
+    try:
+        # Esto le dice a Supabase que dispare la plantilla de correo que diseñamos
+        # hacia el correo ingresado por el usuario.
+        supabase.auth.reset_password_email(email)
+        return jsonify({"status": "success"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
 # ==========================================
 # RUTAS DE API: PROPERTY LOOKUP
 # ==========================================
