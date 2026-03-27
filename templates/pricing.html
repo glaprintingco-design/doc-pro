@@ -177,6 +177,10 @@
                         quantity: 1
                     }
                 ],
+                // NUEVO: Le pasamos el email para eliminar la fricción
+                customer: {
+                    email: "{{ session.get('user_email', '') }}" 
+                },
                 customData: {
                     user_id: "{{ session.get('user_id', '') }}" 
                 }
