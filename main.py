@@ -433,13 +433,29 @@ def obtener_datos_completos(bin_number):
                 job_desc_individual = str(job.get("job_description") or "").upper()
                 job_type = str(job.get("job_type") or "").upper().strip()
                 desc_total += " " + job_desc_individual
-
-                if "SPRINKLER" in job_desc_individual: info["has_sprinklers"] = "Yes"
-
-                # Elevator detection — más keywords que solo "ELEVATOR"
+  
+                # =========================================================
+                # 1. DEFINIR KEYWORDS Y EVALUAR LA "X" EN LOS CHECKBOXES
+                # =========================================================
+                FA_KEYWORDS = ["FIRE ALARM", "SMOKE DETECTOR", "SMOKE DETECTION", "FIRE SUPPRESSION", "FIRE PROTECTION", " FA ", "F.A.", "ARCS"]
+                SPRINKLER_KEYWORDS = ["SPRINKLER", "STANDPIPE", "WET PIPE", "DRY PIPE"]
                 ELEV_KEYWORDS = ["ELEVATOR", "ELEV ", "ELEVATORS", " ELV ", "HYDRAULIC LIFT", "ESCALATOR"]
-                if any(kw in job_desc_individual for kw in ELEV_KEYWORDS):
+
+                is_fa_job = any(kw in job_desc_individual for kw in FA_KEYWORDS) or str(job.get("fire_alarm", "")).upper() == "X"
+                
+                # Buscamos en palabras clave, en casilla sprinkler o en casilla standpipe
+                is_sprinkler_job = any(kw in job_desc_individual for kw in SPRINKLER_KEYWORDS) or str(job.get("sprinkler", "")).upper() == "X" or str(job.get("standpipe", "")).upper() == "X"
+                
+                is_elev_job = any(kw in job_desc_individual for kw in ELEV_KEYWORDS)
+
+                # =========================================================
+                # 2. ACTUALIZAR INDICADORES GLOBALES DEL DASHBOARD
+                # =========================================================
+                if is_sprinkler_job: 
+                    info["has_sprinklers"] = "Yes"
+                if is_elev_job: 
                     info["has_elevators"] = "Yes"
+
 
                 # --- DETECCIÓN DE ALT-1 CON CAMBIO DE OCUPANCIA ---
                 # Alt-1 = alteración mayor que puede cambiar ocupancia/uso
@@ -480,16 +496,7 @@ def obtener_datos_completos(bin_number):
                     except:
                         return str(raw)[:10]
 
-                # --- FIRE ALARM JOBS (solo sistemas de alarma, NO sprinkler) ---
-                FA_KEYWORDS = ["FIRE ALARM", "SMOKE DETECTOR", "SMOKE DETECTION",
-                               "FIRE SUPPRESSION", "FIRE PROTECTION",
-                               " FA ", "F.A.", "ARCS"]
-                # Sprinkler es sistema separado — va en su propia lista
-                SPRINKLER_KEYWORDS = ["SPRINKLER", "STANDPIPE", "WET PIPE", "DRY PIPE"]
-
-                is_fa_job = any(kw in job_desc_individual for kw in FA_KEYWORDS) or str(job.get("fire_alarm", "")).upper() == "X"
-                is_sprinkler_job = any(kw in job_desc_individual for kw in SPRINKLER_KEYWORDS)
-
+               
                 if is_fa_job:
                     job_num = job.get("job__", "")
                     if job_num and not any(j["Job #"] == job_num for j in info["fire_alarm_jobs"]):
