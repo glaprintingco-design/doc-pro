@@ -316,33 +316,33 @@ def obtener_datos_completos(bin_number):
         except Exception as e:
             print(f"   ⚠️ PAD fallback failed: {e}")
             
-        # --- NUEVO: OBTENER TODAS LAS DIRECCIONES ALTERNATIVAS (PAD COMPLETO) ---
-        try:
-            # Quitamos el límite de 1 para traer todas las direcciones de las esquinas/calles adyacentes
-            r_pad_all = requests.get("https://data.cityofnewyork.us/resource/w4v2-rv29.json",
-                                     params={"bin": bin_number, "$limit": 50},
-                                     headers=headers_socrata, timeout=10)
-            if r_pad_all.status_code == 200 and r_pad_all.json():
-                direcciones_unicas = set()
-                for record in r_pad_all.json():
-                    l_hnd = str(record.get("lhnd", "")).strip()
-                    h_hnd = str(record.get("hhnd", "")).strip()
-                    st_name = str(record.get("stname", "")).strip()
+    # --- NUEVO: OBTENER TODAS LAS DIRECCIONES ALTERNATIVAS (PAD COMPLETO) ---
+    try:
+        # Quitamos el límite de 1 para traer todas las direcciones de las esquinas/calles adyacentes
+        r_pad_all = requests.get("https://data.cityofnewyork.us/resource/w4v2-rv29.json",
+                                 params={"bin": bin_number, "$limit": 50},
+                                 headers=headers_socrata, timeout=10)
+        if r_pad_all.status_code == 200 and r_pad_all.json():
+            direcciones_unicas = set()
+            for record in r_pad_all.json():
+                l_hnd = str(record.get("lhnd", "")).strip()
+                h_hnd = str(record.get("hhnd", "")).strip()
+                st_name = str(record.get("stname", "")).strip()
 
-                    if l_hnd and st_name:
-                        # Armar el rango (ej. 100-104 7 AVENUE)
-                        if h_hnd and l_hnd != h_hnd:
-                            dir_completa = f"{l_hnd}-{h_hnd} {st_name}"
-                        else:
-                            dir_completa = f"{l_hnd} {st_name}"
-                        direcciones_unicas.add(dir_completa)
+                if l_hnd and st_name:
+                    # Armar el rango (ej. 100-104 7 AVENUE)
+                    if h_hnd and l_hnd != h_hnd:
+                        dir_completa = f"{l_hnd}-{h_hnd} {st_name}"
+                    else:
+                        dir_completa = f"{l_hnd} {st_name}"
+                    direcciones_unicas.add(dir_completa)
 
-                # Si encontró direcciones, las unimos con un separador y sobrescribimos el dcp_address
-                if direcciones_unicas:
-                    info["dcp_address"] = " | ".join(sorted(direcciones_unicas))
-                    print(f"   ✅ Full Address Range: {info['dcp_address']}")
-        except Exception as e:
-            print(f"   ⚠️ Error fetching multiple addresses: {e}")    
+            # Si encontró direcciones, las unimos con un separador y sobrescribimos el dcp_address
+            if direcciones_unicas:
+                info["dcp_address"] = " | ".join(sorted(direcciones_unicas))
+                print(f"   ✅ Full Address Range: {info['dcp_address']}")
+    except Exception as e:
+        print(f"   ⚠️ Error fetching multiple addresses: {e}")    
 
     # --- NIVEL 2: PLUTO (por BBL si disponible, también por BIN directo) ---
     pluto_data = None
