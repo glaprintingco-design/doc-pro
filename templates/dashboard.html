@@ -665,7 +665,7 @@
                             <td><span class="fw-bold">${j['Year'] || '—'}</span></td>
                             <td><span class="badge bg-dark" style="font-size:0.7rem;">${j['Type'] || '—'}</span></td>
                             <td><span class="badge bg-${statusColor}" style="font-size:0.7rem;">${j['Status'] || '—'}</span></td>
-                            <td style="font-size:0.82rem;">${j['Description']}</td>
+                            <td style="font-size:0.82rem;">${j['Description'] || '<span class="text-muted fst-italic">Description omitted by DOB dataset</span>'}</td>
                         </tr>`;
                     });
                 }
@@ -685,7 +685,7 @@
                             <td><span class="fw-bold">${j['Year'] || '—'}</span></td>
                             <td><span class="badge bg-dark" style="font-size:0.7rem;">${j['Type'] || '—'}</span></td>
                             <td><span class="badge bg-${statusColor}" style="font-size:0.7rem;">${j['Status'] || '—'}</span></td>
-                            <td style="font-size:0.82rem;">${j['Description']}</td>
+                            <td style="font-size:0.82rem;">${j['Description'] || '<span class="text-muted fst-italic">Description omitted by DOB dataset</span>'}</td>
                         </tr>`;
                     });
                 }
