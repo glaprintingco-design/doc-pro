@@ -487,7 +487,7 @@ def obtener_datos_completos(bin_number):
                 # Sprinkler es sistema separado — va en su propia lista
                 SPRINKLER_KEYWORDS = ["SPRINKLER", "STANDPIPE", "WET PIPE", "DRY PIPE"]
 
-                is_fa_job = any(kw in job_desc_individual for kw in FA_KEYWORDS)
+                is_fa_job = any(kw in job_desc_individual for kw in FA_KEYWORDS) or str(job.get("fire_alarm", "")).upper() == "X"
                 is_sprinkler_job = any(kw in job_desc_individual for kw in SPRINKLER_KEYWORDS)
 
                 if is_fa_job:
