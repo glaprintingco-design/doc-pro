@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# Bloquear rutas de la app interna para que Google no indexe errores de login
+Disallow: /dashboard/
+Disallow: /api/
+
+Sitemap: https://firepdfpro.com/sitemap.xml
