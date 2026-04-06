@@ -182,6 +182,26 @@ def pricing():
 def manhattan_forms():
     return render_template('manhattan-fdny-forms.html')
 
+@app.route('/brooklyn-fdny-forms')
+def brooklyn_forms():
+    return render_template('brooklyn-fdny-forms.html')
+
+@app.route('/queens-fdny-forms')
+def queens_forms():
+    return render_template('queens-fdny-forms.html')
+
+@app.route('/bronx-fdny-forms')
+def bronx_forms():
+    return render_template('bronx-fdny-forms.html')
+    
+@app.route('/sitemap.xml')
+def sitemap():
+    return send_from_directory(app.static_folder, 'sitemap.xml')
+
+@app.route('/robots.txt')
+def robots():
+    return send_from_directory(app.static_folder, 'robots.txt')    
+
 # ==========================================
 # RUTA DE DIAGNÓSTICO — /api/diagnostics
 # Visita esta URL en el browser para ver el estado de todas las APIs y keys
