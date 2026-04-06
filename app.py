@@ -193,10 +193,13 @@ def queens_forms():
 @app.route('/bronx-fdny-forms')
 def bronx_forms():
     return render_template('bronx-fdny-forms.html')
-    
+
+from flask import send_from_directory
+
 @app.route('/sitemap.xml')
 def sitemap():
-    return send_from_directory(app.static_folder, 'sitemap.xml')
+    # El mimetype fuerza al navegador y a Google a leerlo como XML puro
+    return send_from_directory(app.static_folder, 'sitemap.xml', mimetype='application/xml')
 
 @app.route('/robots.txt')
 def robots():
