@@ -177,6 +177,10 @@ def refund():
 @app.route('/pricing')
 def pricing():
     return render_template('pricing.html')
+    
+@app.route('/manhattan-fdny-forms')
+def manhattan-fdny-forms():
+    return render_template('manhattan-fdny-forms.html')   
 
 # ==========================================
 # RUTA DE DIAGNÓSTICO — /api/diagnostics
