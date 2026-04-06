@@ -203,7 +203,11 @@ def sitemap():
 
 @app.route('/robots.txt')
 def robots():
-    return send_from_directory(app.static_folder, 'robots.txt')    
+    return send_from_directory(app.static_folder, 'robots.txt')
+
+@app.route('/yandex_e319d71626f03e05.html')
+def yandex():
+    return render_template('yandex_e319d71626f03e05.html')
 
 # ==========================================
 # RUTA DE DIAGNÓSTICO — /api/diagnostics
