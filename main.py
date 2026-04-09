@@ -752,17 +752,12 @@ def obtener_datos_completos(bin_number):
 
 
 def rellenar_pdf_inteligente(input_pdf, output_pdf, campos):
-    """
-    Rellena un PDF con los campos dados.
-    Compatible con pypdf 3.x y versiones posteriores (usa getattr para _root_object).
-    """
     reader = PdfReader(input_pdf)
     writer = PdfWriter()
 
     for page in reader.pages:
         writer.add_page(page)
 
-    # PARCHE COMPATIBILIDAD pypdf 3.17+: root pasó a ser _root_object
     root = getattr(writer, "_root_object", getattr(writer, "root_object", None))
     if root and "/AcroForm" in root:
         root["/AcroForm"].get_object()[NameObject("/NeedAppearances")] = BooleanObject(True)
@@ -776,8 +771,6 @@ def rellenar_pdf_inteligente(input_pdf, output_pdf, campos):
                     key = obj.get("/T")
                     if key in campos:
                         val = campos[key]
-
-                        # A. CHECKBOX / RADIO BUTTON
                         is_button = obj.get("/FT") == "/Btn"
 
                         if val in ["/On", "/Off", True, False] or is_button:
@@ -801,20 +794,17 @@ def rellenar_pdf_inteligente(input_pdf, output_pdf, campos):
                                     NameObject("/V"): NameObject("/Off"),
                                     NameObject("/AS"): NameObject("/Off")
                                 })
-
-                        # B. CAMPO DE TEXTO
                         else:
-                            # BUG FIX #4: Convertir None a string vacío para evitar errores al encodear
                             texto_seguro = str(val if val is not None else "").encode('latin-1', 'ignore').decode('latin-1')
                             obj.update({NameObject("/V"): TextStringObject(texto_seguro)})
                             if "/AP" in obj:
                                 del obj["/AP"]
 
-                    # LIMPIEZA GENERAL
-                    if "/Ff" in obj:
+                    # ✅ FIX: solo limpiar flags en campos que NO son botones
+                    if "/Ff" in obj and obj.get("/FT") != "/Btn":
                         flags = obj.get("/Ff", 0)
                         if isinstance(flags, int):
-                            flags = (flags & ~0x1000000) & ~1
+                            flags = flags & ~0x1000000  # solo quitar ReadOnly global
                             obj.update({NameObject("/Ff"): NumberObject(flags)})
 
     with open(output_pdf, "wb") as f:
@@ -1048,16 +1038,17 @@ def generar_b45(datos, input_pdf, output_pdf):
     try:
         exp = EXPEDITOR
         campos = {
-            "adress": f"{datos.get('house','')} {datos.get('street','')}, {datos.get('borough','')}, NY {datos.get('zip','')}",
-            "name":     f"{exp.get('First Name','')} {exp.get('Last Name','')}".strip(),
-            "title":    "Expeditor",
-            "lic":      exp.get("Reg No", ""),
-            "company":  exp.get("Company Name", ""),
-            "caddress": f"{exp.get('Address','')}, {exp.get('City','')}, {exp.get('State','NY')} {exp.get('Zip','')}",
-            "cphone":   exp.get("Phone", ""),
-            "email":    exp.get("Email", ""),
-            "pname":    f"{exp.get('First Name','')} {exp.get('Last Name','')}".strip(),
-            "date1":    fecha_hoy
+            "PREMISES ADDRESS":   f"{datos.get('house','')} {datos.get('street','')}, {datos.get('borough','')}, NY {datos.get('zip','')}",
+            "BUSINESS/PROJECT NAME": datos.get("job_desc", ""),
+            "Name":               f"{exp.get('First Name','')} {exp.get('Last Name','')}".strip(),
+            "Title":              "Expeditor",
+            "Lic No":             exp.get("Reg No", ""),
+            "CompanyOrg name":    exp.get("Company Name", ""),
+            "Company address":    f"{exp.get('Address','')}, {exp.get('City','')}, {exp.get('State','NY')} {exp.get('Zip','')}",
+            "Primary phone":      exp.get("Phone", ""),
+            "Email":              exp.get("Email", ""),
+            "Print":              f"{exp.get('First Name','')} {exp.get('Last Name','')}".strip(),
+            "Date":               fecha_hoy,
         }
         rellenar_pdf_inteligente(input_pdf, output_pdf, campos)
         print("   ✅ B-45 Generated.")
