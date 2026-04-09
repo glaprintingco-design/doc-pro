@@ -1033,13 +1033,57 @@ def generar_a433(datos, input_pdf, output_pdf):
 # ==========================================
 # 5. GENERADOR B-45
 # ==========================================
+def rellenar_pdf_b45(input_pdf, output_pdf, campos):
+    """
+    Versión especial para PDFs con radio buttons en grupos /Kids
+    como el B-45. Usa clone_reader_document_root en lugar de add_page
+    para preservar la estructura completa del AcroForm.
+    """
+    reader = PdfReader(input_pdf)
+    writer = PdfWriter()
+    
+    # CLAVE: clonar el documento completo, no página por página
+    writer.clone_reader_document_root(reader)
+
+    root = getattr(writer, "_root_object", getattr(writer, "root_object", None))
+    if root and "/AcroForm" in root:
+        root["/AcroForm"].get_object()[NameObject("/NeedAppearances")] = BooleanObject(True)
+
+    # Llenar campos de texto iterando sobre el AcroForm directamente
+    acroform = root["/AcroForm"].get_object()
+    fields = acroform.get("/Fields", [])
+
+    def llenar_campo(field_obj):
+        name = field_obj.get("/T")
+        ft = field_obj.get("/FT")
+        # Recursivo para campos con /Kids que sean grupos de texto
+        if "/Kids" in field_obj and ft == "/Btn":
+            return  # grupos radio, no tocar
+        if "/Kids" in field_obj:
+            for kid_ref in field_obj["/Kids"]:
+                llenar_campo(kid_ref.get_object())
+            return
+        if name and name in campos and ft != "/Btn":
+            val = campos[name]
+            texto_seguro = str(val if val is not None else "").encode('latin-1', 'ignore').decode('latin-1')
+            field_obj.update({NameObject("/V"): TextStringObject(texto_seguro)})
+            if "/AP" in field_obj:
+                del field_obj["/AP"]
+
+    for field_ref in fields:
+        llenar_campo(field_ref.get_object())
+
+    with open(output_pdf, "wb") as f:
+        writer.write(f)
+
+
+
 def generar_b45(datos, input_pdf, output_pdf):
     print("📄 4. Generating B-45...")
     try:
         exp = EXPEDITOR
         campos = {
             "PREMISES ADDRESS":   f"{datos.get('house','')} {datos.get('street','')}, {datos.get('borough','')}, NY {datos.get('zip','')}",
-            "BUSINESS/PROJECT NAME": datos.get("job_desc", ""),
             "Name":               f"{exp.get('First Name','')} {exp.get('Last Name','')}".strip(),
             "Title":              "Expeditor",
             "Lic No":             exp.get("Reg No", ""),
@@ -1050,7 +1094,7 @@ def generar_b45(datos, input_pdf, output_pdf):
             "Print":              f"{exp.get('First Name','')} {exp.get('Last Name','')}".strip(),
             "Date":               fecha_hoy,
         }
-        rellenar_pdf_inteligente(input_pdf, output_pdf, campos)
+        rellenar_pdf_b45(input_pdf, output_pdf, campos)
         print("   ✅ B-45 Generated.")
     except Exception as e:
         print(f"   ❌ B-45 Error: {e}")
