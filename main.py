@@ -1034,29 +1034,22 @@ def generar_a433(datos, input_pdf, output_pdf):
 # 5. GENERADOR B-45
 # ==========================================
 def rellenar_pdf_b45(input_pdf, output_pdf, campos):
-    """
-    Versión especial para PDFs con radio buttons en grupos /Kids
-    como el B-45. Usa clone_reader_document_root en lugar de add_page
-    para preservar la estructura completa del AcroForm.
-    """
     reader = PdfReader(input_pdf)
     writer = PdfWriter()
-    
-    # CLAVE: clonar el documento completo, no página por página
     writer.clone_reader_document_root(reader)
 
     root = getattr(writer, "_root_object", getattr(writer, "root_object", None))
-    if root and "/AcroForm" in root:
-        root["/AcroForm"].get_object()[NameObject("/NeedAppearances")] = BooleanObject(True)
+    
+    # ❌ ELIMINAR ESTAS DOS LÍNEAS — NeedAppearances = True confunde a Nitro
+    # if root and "/AcroForm" in root:
+    #     root["/AcroForm"].get_object()[NameObject("/NeedAppearances")] = BooleanObject(True)
 
-    # Llenar campos de texto iterando sobre el AcroForm directamente
     acroform = root["/AcroForm"].get_object()
     fields = acroform.get("/Fields", [])
 
     def llenar_campo(field_obj):
         name = field_obj.get("/T")
         ft = field_obj.get("/FT")
-        # Recursivo para campos con /Kids que sean grupos de texto
         if "/Kids" in field_obj and ft == "/Btn":
             return  # grupos radio, no tocar
         if "/Kids" in field_obj:
