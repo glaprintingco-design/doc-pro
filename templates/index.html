@@ -305,23 +305,26 @@
                 if (data.error) {
                     results.innerHTML = `<div class="alert alert-danger mt-3">${data.error}</div>`;
                 } else {
-                    results.innerHTML = `
+                    const bldgClassLabel = data.pluto_bldgclass ? `<span title="NYC building classification code">${data.pluto_bldgclass}</span>` : '—';
+					results.innerHTML = `
 						<div class="card results-card p-3 shadow-sm">
 							<h6 class="text-uppercase fw-bold text-muted small mb-1">&#x2705; Property Found</h6>
 							<h5 class="fw-bold mb-1">${data.house || 'N/A'} ${data.street || ''}</h5>
 							<p class="mb-2 text-muted">${data.borough || 'N/A'}, NY ${data.zip || ''}</p>
-							
-							<div class="row g-2 border-top pt-2 mt-1" style="font-size:0.85rem;">
-								<div class="col-6"><b>BIN:</b> ${data.bin || 'N/A'}</div>
-								<div class="col-6 text-end"><b>Block/Lot:</b> ${data.block || 'N/A'}/${data.lot || 'N/A'}</div>
-								<div class="col-6"><b>Building Class:</b> ${data.bldgclass || '---'}</div>
-								<div class="col-6 text-end"><b>Year Built:</b> ${data.yearbuilt || '---'}</div>
-								<div class="col-6"><b>Floors:</b> ${data.numfloors || '---'}</div>
-								<div class="col-6 text-end"><b>Units:</b> ${data.unitsres || '---'}</div>
+
+							<div class="row g-1 border-top pt-2 mt-1" style="font-size:0.82rem;">
+								<div class="col-6"><b>BIN:</b> ${data.bin || '—'}</div>
+								<div class="col-6 text-end"><b>Block/Lot:</b> ${data.block || '—'}/${data.lot || '—'}</div>
+								<div class="col-6"><b>Building Class:</b> ${data.pluto_bldgclass || '—'}</div>
+								<div class="col-6 text-end"><b>Year Built:</b> ${data.year_built || '—'}</div>
+								<div class="col-6"><b>Floors:</b> ${data.pluto_stories || data.stories || '—'}</div>
+								<div class="col-6 text-end"><b>Res. Units:</b> ${data.pluto_units || '—'}</div>
+								<div class="col-6"><b>Occupancy:</b> ${data.occupancy_group || '—'}</div>
+								<div class="col-6 text-end"><b>Const. Class:</b> ${data.construction_class || '—'}</div>
 							</div>
 
-							<div class="alert alert-warning py-2 px-3 mt-3 mb-0" style="font-size: 0.85rem;">
-								&#x1F512; <b><a href="#" data-bs-toggle="modal" data-bs-target="#authModal" style="color:inherit;">Login</a></b> to unlock DOB job history, violations, TM-1 &amp; B-45 auto-fill.
+							<div class="alert alert-warning py-2 px-3 mt-3 mb-0" style="font-size: 0.82rem;">
+								&#x1F512; <b><a href="#" data-bs-toggle="modal" data-bs-target="#authModal" style="color:inherit;">Login</a></b> to unlock DOB job history, violations &amp; auto-fill TM-1, A-433, B-45.
 							</div>
 						</div>`;
                 }
