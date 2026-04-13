@@ -306,18 +306,24 @@
                     results.innerHTML = `<div class="alert alert-danger mt-3">${data.error}</div>`;
                 } else {
                     results.innerHTML = `
-                        <div class="card results-card p-3 shadow-sm">
-                            <h6 class="text-uppercase fw-bold text-muted small mb-1">Property Found</h6>
-                            <h5 class="fw-bold mb-1">${data.house || 'N/A'} ${data.street || ''}</h5>
-                            <p class="mb-2 text-muted">${data.borough || 'N/A'}, NY ${data.zip || ''}</p>
-                            <div class="d-flex justify-content-between border-top pt-2 mt-2">
-                                <span><b>BIN:</b> ${data.bin}</span>
-                                <span><b>Block/Lot:</b> ${data.block || 'N/A'}/${data.lot || 'N/A'}</span>
-                            </div>
-                            <div class="alert alert-warning py-2 px-3 mt-3 mb-0" style="font-size: 0.85rem;">
-                                馃敀 <b><a href="#" data-bs-toggle="modal" data-bs-target="#authModal" style="color:inherit;">Login</a></b> to unlock Full property details and generate PDFs forms.
-                            </div>
-                        </div>`;
+						<div class="card results-card p-3 shadow-sm">
+							<h6 class="text-uppercase fw-bold text-muted small mb-1">&#x2705; Property Found</h6>
+							<h5 class="fw-bold mb-1">${data.house || 'N/A'} ${data.street || ''}</h5>
+							<p class="mb-2 text-muted">${data.borough || 'N/A'}, NY ${data.zip || ''}</p>
+							
+							<div class="row g-2 border-top pt-2 mt-1" style="font-size:0.85rem;">
+								<div class="col-6"><b>BIN:</b> ${data.bin || 'N/A'}</div>
+								<div class="col-6 text-end"><b>Block/Lot:</b> ${data.block || 'N/A'}/${data.lot || 'N/A'}</div>
+								<div class="col-6"><b>Building Class:</b> ${data.bldgclass || '---'}</div>
+								<div class="col-6 text-end"><b>Year Built:</b> ${data.yearbuilt || '---'}</div>
+								<div class="col-6"><b>Floors:</b> ${data.numfloors || '---'}</div>
+								<div class="col-6 text-end"><b>Units:</b> ${data.unitsres || '---'}</div>
+							</div>
+
+							<div class="alert alert-warning py-2 px-3 mt-3 mb-0" style="font-size: 0.85rem;">
+								&#x1F512; <b><a href="#" data-bs-toggle="modal" data-bs-target="#authModal" style="color:inherit;">Login</a></b> to unlock DOB job history, violations, TM-1 &amp; B-45 auto-fill.
+							</div>
+						</div>`;
                 }
             } catch (err) {
                 results.innerHTML = `<div class="alert alert-danger mt-3">Connection error. Please try again.</div>`;
