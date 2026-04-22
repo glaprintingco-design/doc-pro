@@ -321,40 +321,51 @@ def obtener_datos_completos(bin_number):
     try:
         direcciones_unicas = set()
 
-        # Consulta 1: por BIN
-        r_pad_bin = requests.get("https://data.cityofnewyork.us/resource/w4v2-rv29.json",
+        # Usar Geoclient /bbl que retorna todos los frentes del lote
+        if info.get("bbl_full") and len(info["bbl_full"]) == 10:
+            bbl = info["bbl_full"]
+            boro_gc  = bbl[0]
+            block_gc = bbl[1:6].lstrip("0")
+            lot_gc   = bbl[6:].lstrip("0")
+
+            r_bbl = requests.get(
+                "https://api.nyc.gov/geoclient/v2/bbl",
+                params={"borough": boro_gc, "block": block_gc, "lot": lot_gc},
+                headers={"Ocp-Apim-Subscription-Key": API_KEY_NYC},
+                timeout=10
+            )
+            if r_bbl.status_code == 200:
+                d_bbl = r_bbl.json().get("bbl", {})
+                # Geoclient retorna hasta 5 frentes de calle (gi1 a gi5)
+                for i in range(1, 6):
+                    low  = str(d_bbl.get(f"giLowHouseNumber{i}", "")).strip()
+                    high = str(d_bbl.get(f"giHighHouseNumber{i}", "")).strip()
+                    st   = str(d_bbl.get(f"giStreetName{i}", "")).strip()
+                    if low and st:
+                        entrada = f"{low}-{high} {st}" if (high and low != high) else f"{low} {st}"
+                        direcciones_unicas.add(entrada)
+                print(f"   ✅ Geoclient BBL directions: {direcciones_unicas}")
+
+        # Fallback: PAD de Socrata si Geoclient no dio resultados
+        if not direcciones_unicas:
+            r_pad = requests.get("https://data.cityofnewyork.us/resource/w4v2-rv29.json",
                                  params={"bin": bin_number, "$limit": 50},
                                  headers=headers_socrata, timeout=10)
-        if r_pad_bin.status_code == 200:
-            for record in r_pad_bin.json():
-                l_hnd   = str(record.get("lhnd", "")).strip()
-                h_hnd   = str(record.get("hhnd", "")).strip()
-                st_name = str(record.get("stname", "")).strip()
-                if l_hnd and st_name:
-                    dir_completa = f"{l_hnd}-{h_hnd} {st_name}" if (h_hnd and l_hnd != h_hnd) else f"{l_hnd} {st_name}"
-                    direcciones_unicas.add(dir_completa)
-
-        # Consulta 2: por BBL (CLAVE para edificios de esquina)
-        # En este punto info["bbl_full"] ya fue llenado por Geoclient arriba
-        if info.get("bbl_full"):
-            r_pad_bbl = requests.get("https://data.cityofnewyork.us/resource/w4v2-rv29.json",
-                                     params={"bbl": info["bbl_full"], "$limit": 50},
-                                     headers=headers_socrata, timeout=10)
-            if r_pad_bbl.status_code == 200:
-                for record in r_pad_bbl.json():
+            if r_pad.status_code == 200:
+                for record in r_pad.json():
                     l_hnd   = str(record.get("lhnd", "")).strip()
                     h_hnd   = str(record.get("hhnd", "")).strip()
                     st_name = str(record.get("stname", "")).strip()
                     if l_hnd and st_name:
-                        dir_completa = f"{l_hnd}-{h_hnd} {st_name}" if (h_hnd and l_hnd != h_hnd) else f"{l_hnd} {st_name}"
-                        direcciones_unicas.add(dir_completa)
+                        entrada = f"{l_hnd}-{h_hnd} {st_name}" if (h_hnd and l_hnd != h_hnd) else f"{l_hnd} {st_name}"
+                        direcciones_unicas.add(entrada)
 
         if direcciones_unicas:
             info["dcp_address"] = " | ".join(sorted(direcciones_unicas))
             print(f"   ✅ Full Address Range: {info['dcp_address']}")
 
     except Exception as e:
-        print(f"   ⚠️ Error fetching multiple addresses: {e}") 
+        print(f"   ⚠️ Error fetching multiple addresses: {e}")
 
     # --- NIVEL 2: PLUTO (por BBL si disponible, también por BIN directo) ---
     pluto_data = None
