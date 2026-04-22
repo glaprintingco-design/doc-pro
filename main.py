@@ -84,7 +84,8 @@ MASTER_DEVICE_LIST = {
         "Pump Running", "Pump Power Failure", "Phase Reversal", "Generator Running",
         "Generator Failure", "Generator Low Fuel", "Generator Low Oil Pressure", "UPS Failure",
         "UPS Battery Failure", "Fire Pump", "Combination Fire Pump", "Special Service Pump",
-        "Sprinkler Booster Pump", "Automatic Standpipe Fire Pump", "Manual Standpipe Fire Pump"
+        "Sprinkler Booster Pump", "Automatic Standpipe Fire Pump", "Manual Standpipe Fire Pump",
+        "Fire Pump Running", "Fire Pump Failure", "Fire Pump Reversal"
     ],
     "Control": [
         "Fire Door Holder", "Fire Shutter Release", "FIre Damper Control", "Fire Damper",
