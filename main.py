@@ -319,31 +319,41 @@ def obtener_datos_completos(bin_number):
             
     # --- NUEVO: OBTENER TODAS LAS DIRECCIONES ALTERNATIVAS (PAD COMPLETO) ---
     try:
-        # Quitamos el límite de 1 para traer todas las direcciones de las esquinas/calles adyacentes
-        r_pad_all = requests.get("https://data.cityofnewyork.us/resource/w4v2-rv29.json",
+        direcciones_unicas = set()
+        
+        # Consulta 1: por BIN (lo que ya tenías)
+        r_pad_bin = requests.get("https://data.cityofnewyork.us/resource/w4v2-rv29.json",
                                  params={"bin": bin_number, "$limit": 50},
                                  headers=headers_socrata, timeout=10)
-        if r_pad_all.status_code == 200 and r_pad_all.json():
-            direcciones_unicas = set()
-            for record in r_pad_all.json():
-                l_hnd = str(record.get("lhnd", "")).strip()
-                h_hnd = str(record.get("hhnd", "")).strip()
+        if r_pad_bin.status_code == 200:
+            for record in r_pad_bin.json():
+                l_hnd   = str(record.get("lhnd", "")).strip()
+                h_hnd   = str(record.get("hhnd", "")).strip()
                 st_name = str(record.get("stname", "")).strip()
-
                 if l_hnd and st_name:
-                    # Armar el rango (ej. 100-104 7 AVENUE)
-                    if h_hnd and l_hnd != h_hnd:
-                        dir_completa = f"{l_hnd}-{h_hnd} {st_name}"
-                    else:
-                        dir_completa = f"{l_hnd} {st_name}"
+                    dir_completa = f"{l_hnd}-{h_hnd} {st_name}" if (h_hnd and l_hnd != h_hnd) else f"{l_hnd} {st_name}"
                     direcciones_unicas.add(dir_completa)
 
-            # Si encontró direcciones, las unimos con un separador y sobrescribimos el dcp_address
-            if direcciones_unicas:
-                info["dcp_address"] = " | ".join(sorted(direcciones_unicas))
-                print(f"   ✅ Full Address Range: {info['dcp_address']}")
+        # Consulta 2: por BBL (NUEVO — esta es la clave para edificios de esquina)
+        if info.get("bbl_full"):
+            r_pad_bbl = requests.get("https://data.cityofnewyork.us/resource/w4v2-rv29.json",
+                                     params={"bbl": info["bbl_full"], "$limit": 50},
+                                     headers=headers_socrata, timeout=10)
+            if r_pad_bbl.status_code == 200:
+                for record in r_pad_bbl.json():
+                    l_hnd   = str(record.get("lhnd", "")).strip()
+                    h_hnd   = str(record.get("hhnd", "")).strip()
+                    st_name = str(record.get("stname", "")).strip()
+                    if l_hnd and st_name:
+                        dir_completa = f"{l_hnd}-{h_hnd} {st_name}" if (h_hnd and l_hnd != h_hnd) else f"{l_hnd} {st_name}"
+                        direcciones_unicas.add(dir_completa)
+
+        if direcciones_unicas:
+            info["dcp_address"] = " | ".join(sorted(direcciones_unicas))
+            print(f"   ✅ Full Address Range: {info['dcp_address']}")
+
     except Exception as e:
-        print(f"   ⚠️ Error fetching multiple addresses: {e}")    
+        print(f"   ⚠️ Error fetching multiple addresses: {e}")   
 
     # --- NIVEL 2: PLUTO (por BBL si disponible, también por BIN directo) ---
     pluto_data = None
