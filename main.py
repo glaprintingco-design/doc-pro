@@ -320,8 +320,8 @@ def obtener_datos_completos(bin_number):
     # --- NUEVO: OBTENER TODAS LAS DIRECCIONES ALTERNATIVAS (PAD COMPLETO) ---
     try:
         direcciones_unicas = set()
-        
-        # Consulta 1: por BIN (lo que ya tenías)
+
+        # Consulta 1: por BIN
         r_pad_bin = requests.get("https://data.cityofnewyork.us/resource/w4v2-rv29.json",
                                  params={"bin": bin_number, "$limit": 50},
                                  headers=headers_socrata, timeout=10)
@@ -334,7 +334,8 @@ def obtener_datos_completos(bin_number):
                     dir_completa = f"{l_hnd}-{h_hnd} {st_name}" if (h_hnd and l_hnd != h_hnd) else f"{l_hnd} {st_name}"
                     direcciones_unicas.add(dir_completa)
 
-        # Consulta 2: por BBL (NUEVO — esta es la clave para edificios de esquina)
+        # Consulta 2: por BBL (CLAVE para edificios de esquina)
+        # En este punto info["bbl_full"] ya fue llenado por Geoclient arriba
         if info.get("bbl_full"):
             r_pad_bbl = requests.get("https://data.cityofnewyork.us/resource/w4v2-rv29.json",
                                      params={"bbl": info["bbl_full"], "$limit": 50},
@@ -353,7 +354,7 @@ def obtener_datos_completos(bin_number):
             print(f"   ✅ Full Address Range: {info['dcp_address']}")
 
     except Exception as e:
-        print(f"   ⚠️ Error fetching multiple addresses: {e}")   
+        print(f"   ⚠️ Error fetching multiple addresses: {e}") 
 
     # --- NIVEL 2: PLUTO (por BBL si disponible, también por BIN directo) ---
     pluto_data = None
