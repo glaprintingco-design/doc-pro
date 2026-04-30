@@ -42,7 +42,7 @@
         /* ── Hero banner ── */
         .blog-hero {
             background: linear-gradient(135deg, var(--dark-navy) 0%, #1a3a5c 100%);
-            padding: 170px 0 60px;
+            padding: 150px 0 60px;
             border-bottom: 4px solid var(--fire-orange);
             text-align: center;
         }
@@ -101,19 +101,31 @@
             font-weight: 700;
             font-size: 0.9rem;
         }
-        
-        /* ── Mobile fixes for Navbar and Hero ── */
+		
+		/* ── Mobile fixes for Navbar and Hero ── */
         @media (max-width: 768px) {
-            .blog-hero {
-                padding-top: 150px;
+            /* Evita que el logo y el botón se apilen en dos líneas */
+            .navbar .container {
+                flex-wrap: nowrap;
             }
+            /* Reduce ligeramente el logo en móviles para ganar espacio */
+            .navbar-logo {
+                max-width: 140px; 
+                height: auto;
+            }
+            /* Hace el botón más compacto en pantallas pequeñas */
+            .navbar .btn {
+                padding-left: 16px !important;
+                padding-right: 16px !important;
+                font-size: 0.85rem !important;
+            }
+            /* Añade espacio extra arriba para que el texto no choque con el menú */
+            .blog-hero {
+                padding-top: 190px;
+            }
+            /* Ajusta el tamaño del título en móviles */
             .blog-hero h1 {
                 font-size: 2rem;
-            }
-            .navbar .btn {
-                padding-left: 14px !important;
-                padding-right: 14px !important;
-                font-size: 0.85rem !important;
             }
         }
     </style>
@@ -121,17 +133,16 @@
 <body>
 
     <!-- ── NAVBAR ── -->
-    <!-- "navbar-expand" fuerza a que el menú no se divida en dos líneas -->
-    <nav class="navbar navbar-expand position-absolute w-100 mt-3" style="z-index: 100;">
-        <div class="container align-items-center">
+    <nav class="navbar position-absolute w-100 mt-3" style="z-index: 100;">
+        <div class="container d-flex flex-nowrap align-items-center justify-content-between">
             <a class="navbar-brand p-0 m-0" href="/">
-                <img src="/static/logo.webp" alt="Fire PDF Pro" style="height: 45px; width: auto;">
+                <img src="/static/logo.webp" alt="Fire PDF Pro" class="navbar-logo" style="max-width: 140px; height: auto;">
             </a>
-            <div class="ms-auto">
+            <div class="ms-auto ps-2">
                 {% if session.get('user_id') %}
-                    <a href="/dashboard" class="btn btn-fire rounded-pill px-3 fw-bold shadow-sm" style="white-space: nowrap;">Dashboard</a>
+                    <a href="/dashboard" class="btn btn-fire rounded-pill px-3 fw-bold shadow-sm" style="white-space: nowrap; font-size: 0.9rem;">Dashboard</a>
                 {% else %}
-                    <button class="btn btn-fire rounded-pill px-3 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#authModal" onclick="showLogin()" style="white-space: nowrap;">Log In / Sign Up</button>
+                    <button class="btn btn-fire rounded-pill px-3 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#authModal" onclick="showLogin()" style="white-space: nowrap; font-size: 0.9rem;">Log In / Sign Up</button>
                 {% endif %}
             </div>
         </div>
