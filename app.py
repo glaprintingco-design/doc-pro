@@ -194,6 +194,26 @@ def queens_forms():
 def bronx_forms():
     return render_template('bronx-fdny-forms.html')
 
+@app.route('/blog')
+def blog():
+    return render_template('blog.html')
+
+@app.route('/blog/mass-notification-risk-analysis-2025')
+def blog_mns():
+    return render_template('mass-notification-2025-blog-post.html')
+
+@app.route('/blog/bcnys-2025-ev-sprinkler-requirements')
+def blog_ev():
+    return render_template('bcnys-2025-ev-sprinkler-requirements.html')
+
+@app.route('/blog/bcnys-2025-elevator-smoke-curtain')
+def blog_elevator():
+    return render_template('bcnys-2025-elevator-smoke-curtain.html')
+
+@app.route('/blog/bcnys-2025-erces-requirements')
+def blog_erces():
+    return render_template('bcnys-2025-erces-requirements.html')
+
 from flask import send_from_directory
 
 @app.route('/sitemap.xml')
