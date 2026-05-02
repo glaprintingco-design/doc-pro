@@ -108,7 +108,16 @@
             --border-light: #e2e8f0;
         }
         body { background-color: var(--bg-light-custom); }
-        .blog-hero { background: linear-gradient(135deg, var(--dark-navy) 0%, #1a3a5c 100%); padding: 120px 0 60px; border-bottom: 4px solid var(--fire-orange); }
+        /* ── Navbar blog override ── */
+        .navbar .container { flex-direction: row !important; flex-wrap: nowrap !important; justify-content: space-between !important; align-items: center !important; }
+        .navbar-logo, .navbar-brand img { height: 80px !important; width: auto; }
+        @media (max-width: 768px) {
+            .navbar-logo, .navbar-brand img { height: 60px !important; }
+            .navbar .btn { padding-left: 14px !important; padding-right: 14px !important; font-size: 0.82rem !important; white-space: nowrap; }
+        }
+        /* ── Hero ── */
+        .blog-hero { background: linear-gradient(135deg, var(--dark-navy) 0%, #1a3a5c 100%); padding: 130px 0 60px; border-bottom: 4px solid var(--fire-orange); }
+        @media (max-width: 768px) { .blog-hero { padding-top: 110px; padding-bottom: 48px; } .blog-hero h1 { font-size: 1.7rem; } }
         .blog-hero .badge-category { background: rgba(255,107,0,0.15); color: var(--fire-orange); border: 1px solid rgba(255,107,0,0.3); font-size: 0.75rem; letter-spacing: 1.5px; }
         .blog-hero h1 { color: #fff; font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 800; line-height: 1.25; }
         .blog-hero .lead { color: rgba(255,255,255,0.72); font-size: 1.05rem; }
@@ -152,7 +161,7 @@
         .accordion-item { border: 1px solid var(--border-light); border-radius: 10px !important; margin-bottom: 10px; overflow: hidden; }
         .accordion-body { color: #374151; font-size: 0.95rem; line-height: 1.75; padding: 16px 24px 20px; }
         .disclaimer { background: var(--bg-light-custom); border: 1px solid var(--border-light); border-radius: 10px; padding: 20px 24px; margin-top: 48px; font-size: 0.83rem; color: #64748b; line-height: 1.65; }
-        .sidebar { position: sticky; top: 90px; }
+        .blog-sidebar { position: sticky; top: 90px; }
         .sidebar-card { background: #fff; border-radius: 14px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); border: 1px solid var(--border-light); margin-bottom: 20px; }
         .sidebar-card h4 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1.5px; color: #94a3b8; font-weight: 700; margin-bottom: 16px; }
         .toc-link { display: block; color: #475569; text-decoration: none; font-size: 0.87rem; padding: 6px 0; border-bottom: 1px solid #f1f5f9; transition: color 0.2s, padding-left 0.2s; }
@@ -342,7 +351,7 @@
 
             </article>
 
-            <aside class="sidebar" aria-label="Article sidebar">
+            <aside class="blog-sidebar" aria-label="Article sidebar">
                 <div class="sidebar-card">
                     <h4>In This Article</h4>
                     <nav aria-label="Table of contents">
