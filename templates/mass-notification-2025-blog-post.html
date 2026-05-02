@@ -154,12 +154,20 @@
 
         body { background-color: var(--bg-light-custom); }
 
+        /* ── Navbar blog override ── */
+        .navbar .container { flex-direction: row !important; flex-wrap: nowrap !important; justify-content: space-between !important; align-items: center !important; }
+        .navbar-logo, .navbar-brand img { height: 80px !important; width: auto; }
+        @media (max-width: 768px) {
+            .navbar-logo, .navbar-brand img { height: 60px !important; }
+            .navbar .btn { padding-left: 14px !important; padding-right: 14px !important; font-size: 0.82rem !important; white-space: nowrap; }
+        }
         /* ── Hero banner ── */
         .blog-hero {
             background: linear-gradient(135deg, var(--dark-navy) 0%, #1a3a5c 100%);
-            padding: 120px 0 60px;
+            padding: 130px 0 60px;
             border-bottom: 4px solid var(--fire-orange);
         }
+        @media (max-width: 768px) { .blog-hero { padding-top: 110px; padding-bottom: 48px; } .blog-hero h1 { font-size: 1.7rem; } }
         .blog-hero .badge-category {
             background: rgba(255,107,0,0.15);
             color: var(--fire-orange);
@@ -298,7 +306,7 @@
         }
 
         /* ── Sidebar ── */
-        .sidebar { position: sticky; top: 90px; }
+        .blog-sidebar { position: sticky; top: 90px; }
         .sidebar-card {
             background: #fff;
             border-radius: 14px;
@@ -570,7 +578,7 @@
                 </article>
 
                 <!-- ── SIDEBAR ── -->
-                <aside class="sidebar" aria-label="Article sidebar">
+                <aside class="blog-sidebar" aria-label="Article sidebar">
 
                     <!-- Table of Contents -->
                     <div class="sidebar-card">
