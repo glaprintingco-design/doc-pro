@@ -193,6 +193,10 @@ def queens_forms():
 @app.route('/bronx-fdny-forms')
 def bronx_forms():
     return render_template('bronx-fdny-forms.html')
+    
+@app.route('/staten-island-fdny-forms')
+def staten_island_forms():
+    return render_template('staten-island-fdny-forms.html')    
 
 @app.route('/blog')
 def blog():
@@ -927,6 +931,10 @@ def test_apis():
     results["_test_address"] = "54 CROSBY STREET, MANHATTAN"
 
     return jsonify(results), 200
+    
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html'), 404    
 
 # ==========================================
 # INICIO
