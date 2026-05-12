@@ -55,6 +55,95 @@
     <meta name="twitter:description" content="Generate TM-1, A-433, and B-45 FDNY forms in seconds. BIN & DOB property lookup for NYC contractors.">
     <meta name="twitter:image" content="https://firepdfpro.com/static/logotab.webp">
 	
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "https://firepdfpro.com/#website",
+      "name": "Fire PDF Pro",
+      "url": "https://firepdfpro.com",
+      "description": "Auto-fill FDNY forms TM-1, A-433 and B-45 with instant BIN and DOB property lookup for NYC fire alarm contractors.",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://firepdfpro.com/?q={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://firepdfpro.com/#app",
+      "name": "Fire PDF Pro",
+      "url": "https://firepdfpro.com",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Web",
+      "description": "Generate FDNY forms TM-1, A-433, and B-45 in seconds. Instant BIN and DOB property lookup for NYC fire alarm contractors and expeditors.",
+      "featureList": [
+        "Auto-fill TM-1 FDNY form",
+        "Auto-fill A-433 device schedule",
+        "Auto-fill B-45 certification form",
+        "NYC BIN and DOB property lookup",
+        "Cloud-saved vendor and architect profiles",
+        "Project history and re-generation"
+      ],
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD",
+        "description": "Free to start. Pro plan available."
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "GLA Enterprise",
+        "url": "https://firepdfpro.com"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What FDNY forms does Fire PDF Pro auto-fill?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Fire PDF Pro auto-fills three FDNY forms: the TM-1 (Technical Manual Form 1 for fire alarm installations), the A-433 (device schedule per floor), and the B-45 (contractor certification). All forms are populated using live data from the NYC Department of Buildings."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does the BIN and DOB property lookup work?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Enter a NYC address or 7-digit BIN number and the tool queries the NYC Geoclient API and DOB open data in real time, returning building class, construction type, occupancy group, stories, year built, and more — all pre-filled into your FDNY forms."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Which NYC boroughs does Fire PDF Pro cover?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Fire PDF Pro covers all five NYC boroughs: Manhattan, Brooklyn, Queens, The Bronx, and Staten Island. Any address or BIN in the NYC DOB database can be looked up instantly."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is Fire PDF Pro free to use?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The property lookup and BIN search features are free for all registered users. FDNY form PDF generation is available on the Pro plan. No credit card is required to start."
+          }
+        }
+      ]
+    }
+  ]
+}
+</script>
+
+
 </head>
 <body>
 
@@ -167,6 +256,9 @@
 						<a href="/queens-fdny-forms" class="text-white text-decoration-none small" onmouseover="this.style.color='#FF6B00'" onmouseout="this.style.color='white'" style="transition: color 0.2s;">Queens</a>
 						<span class="text-secondary">|</span>
 						<a href="/bronx-fdny-forms" class="text-white text-decoration-none small" onmouseover="this.style.color='#FF6B00'" onmouseout="this.style.color='white'" style="transition: color 0.2s;">The Bronx</a>
+						<span class="text-secondary">|</span>
+						<a href="/staten-island-fdny-forms" class="text-white text-decoration-none small" onmouseover="this.style.color='#FF6B00'" onmouseout="this.style.color='white'" style="transition: color 0.2s;">Staten Island</a>
+					
 					</div>
 				</div>
 			</div>
