@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page Not Found | Fire PDF Pro</title>
+    <meta name="robots" content="noindex, nofollow">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="/static/style.css" rel="stylesheet">
+    <link rel="icon" type="image/png" href="/static/app_icon.png">
+
+    <style>
+        body {
+            background-color: #0a2540;
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .error-section {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 100px 20px 60px;
+        }
+        .error-code {
+            font-size: clamp(6rem, 20vw, 10rem);
+            font-weight: 900;
+            line-height: 1;
+            background: linear-gradient(135deg, #FF6B00, #E65100);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .divider-fire {
+            width: 60px;
+            height: 4px;
+            background: linear-gradient(135deg, #FF6B00, #E65100);
+            border-radius: 2px;
+            margin: 1.5rem auto;
+        }
+        .btn-fire {
+            background: linear-gradient(135deg, #FF6B00 0%, #E65100 100%);
+            color: white;
+            border: none;
+            transition: opacity 0.2s, transform 0.2s;
+        }
+        .btn-fire:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+            color: white;
+        }
+        .btn-outline-fire {
+            border: 2px solid #FF6B00;
+            color: #FF6B00;
+            background: transparent;
+            transition: all 0.2s;
+        }
+        .btn-outline-fire:hover {
+            background: #FF6B00;
+            color: white;
+        }
+        .suggestion-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            text-decoration: none;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: all 0.2s;
+        }
+        .suggestion-card:hover {
+            background: rgba(255, 107, 0, 0.15);
+            border-color: #FF6B00;
+            color: white;
+            transform: translateX(4px);
+        }
+        .suggestion-card i {
+            color: #FF6B00;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark position-absolute w-100 mt-3">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <img src="/static/logo.webp" alt="Fire PDF Pro" class="navbar-logo">
+            </a>
+            <div class="ms-auto d-flex align-items-center">
+                {% if session.get('user_id') %}
+                    <a href="/dashboard" class="btn btn-fire rounded-pill px-4 fw-bold shadow-sm">Dashboard</a>
+                {% else %}
+                    <a href="/" class="btn btn-fire rounded-pill px-4 fw-bold shadow-sm">Go Home</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Error Section -->
+    <section class="error-section">
+        <div class="container text-center">
+            <div class="error-code">404</div>
+            <div class="divider-fire"></div>
+
+            <h1 class="fw-bold mb-2" style="font-size: 1.75rem;">Page Not Found</h1>
+            <p class="text-white-50 mb-4" style="max-width: 440px; margin: 0 auto 2rem;">
+                This URL doesn't exist — it may have been moved, deleted, or you might have a typo. Let's get you back on track.
+            </p>
+
+            <div class="d-flex flex-wrap justify-content-center gap-3 mb-5">
+                <a href="/" class="btn btn-fire rounded-pill px-4 fw-bold py-2">
+                    <i class="bi bi-house-fill me-2"></i>Back to Home
+                </a>
+                <a href="/dashboard" class="btn btn-outline-fire rounded-pill px-4 fw-bold py-2">
+                    <i class="bi bi-speedometer2 me-2"></i>Go to Dashboard
+                </a>
+            </div>
+
+            <!-- Quick Links -->
+            <p class="text-white-50 small text-uppercase fw-bold mb-3" style="letter-spacing: 1px;">Or jump to</p>
+            <div class="row g-2 justify-content-center" style="max-width: 560px; margin: 0 auto;">
+                <div class="col-sm-6">
+                    <a href="/blog" class="suggestion-card">
+                        <i class="bi bi-journal-text"></i>
+                        <div class="text-start">
+                            <div class="fw-bold small">Blog</div>
+                            <div class="text-white-50" style="font-size:0.75rem;">FDNY & fire code articles</div>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-sm-6">
+                    <a href="/pricing" class="suggestion-card">
+                        <i class="bi bi-tag-fill"></i>
+                        <div class="text-start">
+                            <div class="fw-bold small">Pricing</div>
+                            <div class="text-white-50" style="font-size:0.75rem;">Plans & features</div>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-sm-6">
+                    <a href="/manhattan-fdny-forms" class="suggestion-card">
+                        <i class="bi bi-building"></i>
+                        <div class="text-start">
+                            <div class="fw-bold small">Manhattan FDNY Forms</div>
+                            <div class="text-white-50" style="font-size:0.75rem;">TM-1, A-433, B-45</div>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-sm-6">
+                    <a href="/brooklyn-fdny-forms" class="suggestion-card">
+                        <i class="bi bi-building"></i>
+                        <div class="text-start">
+                            <div class="fw-bold small">Brooklyn FDNY Forms</div>
+                            <div class="text-white-50" style="font-size:0.75rem;">TM-1, A-433, B-45</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-4" style="background-color: #061a2e; border-top: 1px solid rgba(255,255,255,0.05);">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8 text-center text-md-start mb-3 mb-md-0">
+                    <a href="/terms" class="text-white text-decoration-none me-2 small">Terms of Service</a>
+                    <span class="text-secondary">|</span>
+                    <a href="/privacy" class="text-white text-decoration-none mx-2 small">Privacy Policy</a>
+                    <span class="text-secondary">|</span>
+                    <a href="/pricing" class="text-white text-decoration-none mx-2 small">Pricing</a>
+                    <span class="text-secondary">|</span>
+                    <a href="/blog" class="text-white text-decoration-none ms-2 small">Blog</a>
+                </div>
+                <div class="col-md-4 text-center text-md-end">
+                    <p class="small mb-0 text-secondary">&copy; 2026 Fire PDF Pro. All Rights Reserved.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
