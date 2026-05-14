@@ -8,7 +8,6 @@
 	  window.dataLayer = window.dataLayer || [];
 	  function gtag(){dataLayer.push(arguments);}
 	  gtag('js', new Date());
-
 	  gtag('config', 'G-SJ2SXQYPP3');
 	</script>
 
@@ -20,6 +19,69 @@
     <link href="/static/style.css?v=2" rel="stylesheet">
 	<link rel="icon" type="image/png" href="/static/app_icon.png">
 	<link rel="preload" href="/static/hero-bg.webp" as="image">
+
+    <style>
+        /* Solo lo nuevo: toggle y trust strip */
+        .billing-toggle-wrap {
+            display: inline-flex;
+            align-items: center;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 50px;
+            padding: 5px;
+            gap: 4px;
+        }
+        .billing-toggle-wrap button {
+            border: none;
+            border-radius: 50px;
+            padding: 8px 26px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.22s ease;
+            background: transparent;
+            color: rgba(255,255,255,0.45);
+        }
+        .billing-toggle-wrap button.active {
+            background: #FF6B00;
+            color: #fff;
+            box-shadow: 0 2px 14px rgba(255,107,0,0.45);
+        }
+        .save-badge {
+            background: linear-gradient(135deg, #00c853, #00897b);
+            color: #fff;
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 50px;
+            letter-spacing: 0.05em;
+            margin-left: 6px;
+            vertical-align: middle;
+        }
+        .annual-note {
+            font-size: 0.75rem;
+            color: #00c853;
+            font-weight: 600;
+            min-height: 20px;
+            margin-top: 4px;
+            margin-bottom: 12px;
+        }
+        .trust-strip {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 28px;
+            margin-top: 40px;
+        }
+        .trust-strip span {
+            color: rgba(255,255,255,0.35);
+            font-size: 0.78rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .trust-strip span i { color: #FF6B00; }
+    </style>
 </head>
 <body>
 
@@ -30,76 +92,147 @@
             </a>
             <div class="ms-auto">
                 <a href="/" class="btn btn-outline-light me-2 btn-nav-login">Home</a>
-                
                 {% if session.get('user_id') %}
                     <a href="/dashboard" class="btn btn-fire rounded-pill px-4">Dashboard</a>
                 {% else %}
                     <button class="btn btn-fire rounded-pill px-4 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#authModal" onclick="showLogin()">Log In / Sign Up</button>
                 {% endif %}
-                
             </div>
         </div>
     </nav>
 
     <div class="pricing-hero">
         <div class="container w-100">
+
+            <!-- HEADER -->
             <div class="text-center mb-5">
                 <h1 class="display-3 fw-bold text-white">Choose Your <span style="color:#FF6B00">Plan</span></h1>
                 <p class="lead text-white-50">Professional drafting aids for NYC Fire Alarm Filings.</p>
+
+                <!-- BILLING TOGGLE -->
+                <div class="mt-4 mb-1">
+                    <div class="billing-toggle-wrap">
+                        <button id="btn-monthly" onclick="setBilling('monthly')">Monthly</button>
+                        <button id="btn-annual" class="active" onclick="setBilling('annual')">
+                            Annual <span class="save-badge">SAVE 32%</span>
+                        </button>
+                    </div>
+                </div>
+                <p class="text-white-50 mt-2" style="font-size:0.78rem;">Annual plans billed once per year &nbsp;·&nbsp; Cancel anytime</p>
             </div>
 
+            <!-- CARDS ROW -->
             <div class="row justify-content-center g-4">
-                
-                <div class="col-md-5 col-lg-4">
+
+                <!-- STARTER -->
+                <div class="col-md-4 col-lg-3">
                     <div class="glass-card h-100 p-4 text-center">
                         <h3 class="fw-bold mb-3">Starter</h3>
                         <div class="price-tag">$0<span class="fs-6 text-white-50 fw-normal">/mo</span></div>
-                        <p class="text-white-50 mb-4">Perfect for individual property lookups.</p>
-                        
+                        <div class="annual-note">&nbsp;</div>
+                        <p class="text-white-50 mb-4">Perfect for exploring the tool before committing.</p>
+
                         <ul class="feature-list-glass text-start mb-4">
                             <li><i class="bi bi-check2-circle text-success me-2"></i> Unlimited Property Lookups</li>
-                            <li><i class="bi bi-check2-circle text-success me-2"></i> BIN & Technical Records</li>
-                            <li><i class="bi bi-check2-circle text-success me-2"></i> 2 Form Generations /mo</li>
-                            <li class="opacity-50"><i class="bi bi-x-circle me-2"></i> Unlimited PDF Cloud Storage</li>
-                            <li class="opacity-50"><i class="bi bi-x-circle me-2"></i> Priority Tech Support</li>
+                            <li><i class="bi bi-check2-circle text-success me-2"></i> BIN & DOB Technical Records</li>
+                            <li><i class="bi bi-check2-circle text-success me-2"></i> 1 Form Generation / month</li>
+                            <li class="opacity-50"><i class="bi bi-x-circle me-2"></i> Unlimited PDF Generation</li>
+                            <li class="opacity-50"><i class="bi bi-x-circle me-2"></i> Saved Vendor Profiles</li>
+                            <li class="opacity-50"><i class="bi bi-x-circle me-2"></i> Project History</li>
+                            <li class="opacity-50"><i class="bi bi-x-circle me-2"></i> Priority Support</li>
                         </ul>
-                        
+
                         {% if session.get('user_id') %}
                             <a href="/dashboard" class="btn btn-outline-light w-100 rounded-pill mt-auto fw-bold py-2 text-decoration-none">GO TO DASHBOARD</a>
                         {% else %}
-                            <button class="btn btn-outline-light w-100 rounded-pill mt-auto fw-bold py-2" data-bs-toggle="modal" data-bs-target="#authModal" onclick="showRegister()">GET STARTED</button>
+                            <button class="btn btn-outline-light w-100 rounded-pill mt-auto fw-bold py-2" data-bs-toggle="modal" data-bs-target="#authModal" onclick="showRegister()">GET STARTED FREE</button>
                         {% endif %}
                     </div>
                 </div>
 
-                <div class="col-md-5 col-lg-4">
+                <!-- PROFESSIONAL (FEATURED) -->
+                <div class="col-md-4 col-lg-3">
                     <div class="glass-card h-100 p-4 text-center border-orange" style="border: 2px solid #FF6B00 !important;">
                         <span class="pro-label">MOST POPULAR</span>
                         <h3 class="fw-bold mb-3" style="color:#FF6B00">Professional</h3>
-                        <div class="price-tag">$345<span class="fs-6 text-white-50 fw-normal">/year</span></div>
-                        <p class="text-white-50 mb-4">Full access for high-volume filings.</p>
-                        
+
+                        <div id="pro-monthly-block">
+                            <div class="price-tag">$49<span class="fs-6 text-white-50 fw-normal">/mo</span></div>
+                            <div class="annual-note">&nbsp;</div>
+                        </div>
+                        <div id="pro-annual-block">
+                            <div class="price-tag">$399<span class="fs-6 text-white-50 fw-normal">/yr</span></div>
+                            <div class="annual-note">✓ You save $189 vs monthly</div>
+                        </div>
+
+                        <p class="text-white-50 mb-4">Full access for high-volume filings. One user, unlimited output.</p>
+
                         <ul class="feature-list-glass text-start mb-4">
                             <li><i class="bi bi-check2-all text-warning me-2"></i> <strong>Unlimited</strong> Property Lookups</li>
                             <li><i class="bi bi-check2-all text-warning me-2"></i> <strong>Unlimited</strong> Form Generations</li>
-                            <li><i class="bi bi-check2-all text-warning me-2"></i> All NYC Compliance Forms</li>
+                            <li><i class="bi bi-check2-all text-warning me-2"></i> TM-1, A-433 & B-45 Forms</li>
                             <li><i class="bi bi-check2-all text-warning me-2"></i> Save Vendor & Architect Profiles</li>
-                            <li><i class="bi bi-check2-all text-warning me-2"></i> Priority Support</li>
+                            <li><i class="bi bi-check2-all text-warning me-2"></i> Project History & Re-generation</li>
+                            <li><i class="bi bi-check2-all text-warning me-2"></i> PDF Cloud Storage</li>
+                            <li><i class="bi bi-check2-all text-warning me-2"></i> Email Support</li>
                         </ul>
-                        
+
                         {% if session.get('user_id') %}
-                            <button onclick="openPaddleCheckout()" class="btn btn-fire-pricing w-100 mt-auto">UPGRADE TO PRO</button>
+                            <button onclick="openCheckout('pro')" class="btn btn-fire-pricing w-100 mt-auto">UPGRADE TO PRO</button>
                         {% else %}
                             <button class="btn btn-fire-pricing w-100 mt-auto" data-bs-toggle="modal" data-bs-target="#authModal" onclick="showLogin()">LOGIN TO UPGRADE</button>
                         {% endif %}
-
                     </div>
                 </div>
 
+                <!-- AGENCY -->
+                <div class="col-md-4 col-lg-3">
+                    <div class="glass-card h-100 p-4 text-center" style="border: 1px solid rgba(167,139,250,0.4) !important;">
+                        <h3 class="fw-bold mb-3" style="color:#a78bfa">Agency</h3>
+
+                        <div id="agency-monthly-block">
+                            <div class="price-tag">$129<span class="fs-6 text-white-50 fw-normal">/mo</span></div>
+                            <div class="annual-note">&nbsp;</div>
+                        </div>
+                        <div id="agency-annual-block">
+                            <div class="price-tag">$990<span class="fs-6 text-white-50 fw-normal">/yr</span></div>
+                            <div class="annual-note">✓ You save $558 vs monthly</div>
+                        </div>
+
+                        <p class="text-white-50 mb-4">For firms with multiple filers. Shared profiles and team access.</p>
+
+                        <ul class="feature-list-glass text-start mb-4">
+                            <li><i class="bi bi-check2-all me-2" style="color:#a78bfa"></i> Everything in Professional</li>
+                            <li><i class="bi bi-check2-all me-2" style="color:#a78bfa"></i> Up to <strong>5 User Seats</strong></li>
+                            <li><i class="bi bi-check2-all me-2" style="color:#a78bfa"></i> Shared Vendor Profile Library</li>
+                            <li><i class="bi bi-check2-all me-2" style="color:#a78bfa"></i> Shared Project History</li>
+                            <li><i class="bi bi-check2-all me-2" style="color:#a78bfa"></i> Priority Support (&lt;24h)</li>
+                            <li><i class="bi bi-check2-all me-2" style="color:#a78bfa"></i> Early Access to New Forms</li>
+                            <li class="opacity-50"><i class="bi bi-x-circle me-2"></i>&nbsp;</li>
+                        </ul>
+
+                        {% if session.get('user_id') %}
+                            <button onclick="openCheckout('agency')" class="btn btn-outline-light w-100 rounded-pill fw-bold py-2">UPGRADE TO AGENCY</button>
+                        {% else %}
+                            <button class="btn btn-outline-light w-100 rounded-pill fw-bold py-2" data-bs-toggle="modal" data-bs-target="#authModal" onclick="showLogin()">LOGIN TO UPGRADE</button>
+                        {% endif %}
+                    </div>
+                </div>
+
+            </div><!-- /row -->
+
+            <!-- TRUST STRIP -->
+            <div class="trust-strip">
+                <span><i class="bi bi-shield-check"></i> No credit card for free plan</span>
+                <span><i class="bi bi-arrow-counterclockwise"></i> Cancel anytime</span>
+                <span><i class="bi bi-building"></i> Built for NYC professionals</span>
+                <span><i class="bi bi-lock"></i> Secure payments via Paddle</span>
             </div>
+
         </div>
     </div>
 
+    <!-- FOOTER -->
     <footer class="py-4" style="background-color: #0a2540; border-top: 4px solid #FF6B00;">
         <div class="container text-center">
             <div class="mb-3">
@@ -112,21 +245,19 @@
             <p class="small text-secondary mb-0">© 2026 Fire PDF Pro. A product by <strong>GLA Enterprise</strong>.</p>
         </div>
     </footer>
-    
+
+    <!-- AUTH MODAL (idéntico al original) -->
     <div class="modal fade" id="authModal" tabindex="-1" aria-labelledby="authModalLabel" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content shadow-lg" style="background: rgba(10, 37, 64, 0.75); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 20px; overflow: hidden; color: white;">
-          
           <div class="modal-header border-0 pb-0 mt-2 px-4">
             <h5 class="modal-title fw-bold" id="authModalLabel" style="color: #FF6B00;">
-                <img src="/static/logo.webp" alt="Fire PDF Pro" style="height: 30px; margin-right: 10px; margin-top:-5px;"> 
+                <img src="/static/logo.webp" alt="Fire PDF Pro" style="height: 30px; margin-right: 10px; margin-top:-5px;">
             </h5>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
-          
           <div class="modal-body p-4 pt-2">
                 <div id="auth-alert" class="alert d-none" role="alert"></div>
-
                 <div id="form-login-container">
                     <h4 class="fw-bold mb-4 text-center text-white">Welcome Back</h4>
                     <form id="loginForm">
@@ -144,7 +275,6 @@
                         <span class="text-white-50 small">Don't have an account? <a href="#" class="text-decoration-none fw-bold" style="color: #FF6B00;" onclick="toggleAuthMode('register')">Create one here</a></span>
                     </div>
                 </div>
-
                 <div id="form-register-container" class="d-none">
                     <h4 class="fw-bold mb-4 text-center text-white">Create Account</h4>
                     <form id="registerForm">
@@ -175,143 +305,85 @@
     <script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
 
     <script>
-        // --- 1. CONFIGURACIÓN PADDLE ---
+        // ── PADDLE ──
+        Paddle.Initialize({ token: "live_3cf14fb0cd17048e922392a6d21" });
 
-        Paddle.Initialize({
-            token: "live_3cf14fb0cd17048e922392a6d21",
-        });
+        const PRICES = {
+            pro:    { monthly: 'pri_01krkjw70mrds44wgs1gc60f5g', annual: 'pri_01kme2wetrsbxrnpvmhz7d4pyf' },
+            agency: { monthly: 'pri_01krkk59f7e829d1325darafe6', annual: 'pri_01krkk6qh480gt85kjnncqh1nf' }
+        };
 
-        function openPaddleCheckout() {
+        let currentBilling = 'annual';
+
+        function setBilling(mode) {
+            currentBilling = mode;
+            document.getElementById('btn-monthly').classList.toggle('active', mode === 'monthly');
+            document.getElementById('btn-annual').classList.toggle('active',  mode === 'annual');
+            document.getElementById('pro-monthly-block').style.display     = mode === 'monthly' ? 'block' : 'none';
+            document.getElementById('pro-annual-block').style.display      = mode === 'annual'  ? 'block' : 'none';
+            document.getElementById('agency-monthly-block').style.display  = mode === 'monthly' ? 'block' : 'none';
+            document.getElementById('agency-annual-block').style.display   = mode === 'annual'  ? 'block' : 'none';
+        }
+        setBilling('annual');
+
+        function openCheckout(plan) {
             Paddle.Checkout.open({
-                items: [
-                    {
-                        priceId: 'pri_01kme2wetrsbxrnpvmhz7d4pyf', 
-                        quantity: 1
-                    }
-                ],
-                // NUEVO: Le pasamos el email para eliminar la fricción
-                customer: {
-                    email: "{{ session.get('user_email', '') }}" 
-                },
-                customData: {
-                    user_id: "{{ session.get('user_id', '') }}" 
-                }
+                items: [{ priceId: PRICES[plan][currentBilling], quantity: 1 }],
+                customer:   { email: "{{ session.get('user_email', '') }}" },
+                customData: { user_id: "{{ session.get('user_id', '') }}" }
             });
         }
 
-        // --- 2. LÓGICA DE LOGIN Y REGISTRO ---
+        // ── AUTH ──
         function toggleAuthMode(mode) {
-            const loginBox = document.getElementById('form-login-container');
-            const regBox = document.getElementById('form-register-container');
-            const alertBox = document.getElementById('auth-alert');
-            
-            alertBox.classList.add('d-none');
-
-            if (mode === 'register') {
-                loginBox.classList.add('d-none');
-                regBox.classList.remove('d-none');
-            } else {
-                regBox.classList.add('d-none');
-                loginBox.classList.remove('d-none');
-            }
+            document.getElementById('auth-alert').classList.add('d-none');
+            document.getElementById('form-login-container').classList.toggle('d-none', mode !== 'login');
+            document.getElementById('form-register-container').classList.toggle('d-none', mode !== 'register');
         }
-
-        function showLogin() { toggleAuthMode('login'); }
+        function showLogin()    { toggleAuthMode('login'); }
         function showRegister() { toggleAuthMode('register'); }
-
-        function handleAuthResponse(data, alertBox, isRegister = false) {
-            if (data.error) {
-                alertBox.className = "alert alert-danger";
-                alertBox.innerText = data.error;
-                alertBox.classList.remove('d-none');
-            } else {
-                alertBox.className = "alert alert-success";
-                alertBox.innerText = isRegister ? "Account created! Logging in..." : "Success! Redirecting...";
-                alertBox.classList.remove('d-none');
-                setTimeout(() => window.location.href = '/dashboard', 1000);
-            }
-        }
 
         document.getElementById('loginForm').onsubmit = async (e) => {
             e.preventDefault();
             const alertBox = document.getElementById('auth-alert');
             alertBox.classList.add('d-none');
-            
-            const payload = {
-                email: document.getElementById('login_email').value,
-                password: document.getElementById('login_password').value
-            };
-
             try {
-                // Hacemos el login normal, sin parámetros extra
-                const res = await fetch('/api/auth/login', {
-                    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)
+                const res  = await fetch('/api/auth/login', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ email: document.getElementById('login_email').value, password: document.getElementById('login_password').value })
                 });
                 const data = await res.json();
-
                 if (data.error) {
-                    alertBox.className = "alert alert-danger";
-                    alertBox.innerText = data.error;
-                    alertBox.classList.remove('d-none');
+                    alertBox.className = "alert alert-danger"; alertBox.innerText = data.error; alertBox.classList.remove('d-none');
                 } else {
-                    alertBox.className = "alert alert-success";
-                    alertBox.innerText = "Welcome back! Loading...";
-                    alertBox.classList.remove('d-none');
-                    
-                    // ESTO ES LA CLAVE AQUÍ: Recargamos la página de pricing
+                    alertBox.className = "alert alert-success"; alertBox.innerText = "Welcome back! Loading..."; alertBox.classList.remove('d-none');
                     setTimeout(() => window.location.reload(), 1000);
                 }
-
-            } catch (err) {
-                alertBox.className = "alert alert-danger";
-                alertBox.innerText = "Connection error.";
-                alertBox.classList.remove('d-none');
-            }
+            } catch { alertBox.className = "alert alert-danger"; alertBox.innerText = "Connection error."; alertBox.classList.remove('d-none'); }
         };
 
         document.getElementById('registerForm').onsubmit = async (e) => {
             e.preventDefault();
             const alertBox = document.getElementById('auth-alert');
             alertBox.classList.add('d-none');
-            
-            const email = document.getElementById('reg_email').value;
             const password = document.getElementById('reg_password').value;
-            const confirmPassword = document.getElementById('reg_password_confirm').value;
-
-            if (password !== confirmPassword) {
-                alertBox.className = "alert alert-danger";
-                alertBox.innerText = "Passwords do not match!";
-                alertBox.classList.remove('d-none');
-                return;
+            if (password !== document.getElementById('reg_password_confirm').value) {
+                alertBox.className = "alert alert-danger"; alertBox.innerText = "Passwords do not match!"; alertBox.classList.remove('d-none'); return;
             }
-
-            const payload = { email, password };
-
             try {
-                const res = await fetch('/api/auth/register', {
-                    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)
+                const res  = await fetch('/api/auth/register', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ email: document.getElementById('reg_email').value, password })
                 });
                 const data = await res.json();
-                
                 if (data.error) {
-                    alertBox.className = "alert alert-danger";
-                    alertBox.innerText = data.error;
-                    alertBox.classList.remove('d-none');
+                    alertBox.className = "alert alert-danger"; alertBox.innerText = data.error; alertBox.classList.remove('d-none');
                 } else {
-                    alertBox.className = "alert alert-success";
-                    alertBox.innerText = "Account created! Please check your email to verify your account before logging in.";
-                    alertBox.classList.remove('d-none');
-                    
+                    alertBox.className = "alert alert-success"; alertBox.innerText = "Account created! Please check your email to verify your account before logging in."; alertBox.classList.remove('d-none');
                     document.getElementById('registerForm').reset();
-                    setTimeout(() => {
-                        showLogin();
-                    }, 3000);
+                    setTimeout(() => showLogin(), 3000);
                 }
-            } catch (err) {
-                alertBox.className = "alert alert-danger";
-                alertBox.innerText = "Connection error. Please try again.";
-                alertBox.classList.remove('d-none');
-            }
+            } catch { alertBox.className = "alert alert-danger"; alertBox.innerText = "Connection error. Please try again."; alertBox.classList.remove('d-none'); }
         };
     </script>
 
