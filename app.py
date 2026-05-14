@@ -149,7 +149,7 @@ def dashboard():
     if user_client:
         try:
             sub_res = user_client.table("user_subscriptions").select("plan_type").eq("user_id", session['user_id']).execute()
-            if sub_res.data and sub_res.data[0].get("plan_type") == "pro":
+            if sub_res.data and sub_res.data[0].get("plan_type") in ("professional", "agency"):
                 is_pro = True
         except Exception as e:
             print(f"Error revisando suscripción en dashboard: {e}")
@@ -559,17 +559,17 @@ def generate_pdfs():
         if user_client:
             try:
                 sub_res = user_client.table("user_subscriptions").select("*").eq("user_id", user_id).execute()
-                sub_data = sub_res.data[0] if sub_res.data else {"plan_type": "free", "forms_generated_this_month": 0}
-                is_pro = sub_data.get("plan_type") == "pro"
+                sub_data = sub_res.data[0] if sub_res.data else {"plan_type": "starter", "forms_generated_this_month": 0}
+                is_pro = sub_data.get("plan_type") in ("professional", "agency")
                 usos_mes = sub_data.get("forms_generated_this_month", 0)
 
-                if not is_pro and usos_mes >= 2:
-                    return jsonify({"error": "You have reached your free limit (2 forms/month). Please upgrade to Pro."}), 403
+                if not is_pro and usos_mes >= 1:
+                    return jsonify({"error": "You have reached your free limit (1 form/month). Please upgrade to Professional."}), 403
 
                 if not is_pro:
                     user_client.table("user_subscriptions").upsert({
                         "user_id": user_id,
-                        "plan_type": "free",
+                        "plan_type": "starter",
                         "forms_generated_this_month": usos_mes + 1,
                         "last_reset_date": "now()"
                     }).execute()
