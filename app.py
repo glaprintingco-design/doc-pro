@@ -736,39 +736,91 @@ def delete_project(project_id):
 # ==========================================
 @app.route('/api/paddle-webhook', methods=['POST'])
 def paddle_webhook():
-    try:
-        # 1. Recibir los datos que manda Paddle
-        data = request.json
-        
-        event_type = data.get('event_type')
-        print(f"🔔 Webhook de Paddle recibido: {event_type}")
+    import hmac, hashlib
 
-        # 2. Si es un pago exitoso o se creó la suscripción
-        if event_type in ['transaction.completed', 'subscription.created']:
-            
-            # Navegar por el JSON de Paddle para sacar el user_id
-            event_data = data.get('data', {})
-            custom_data = event_data.get('custom_data', {})
-            user_id = custom_data.get('user_id')
-            
+    # 1. Verificar firma de Paddle
+    paddle_signature = request.headers.get("Paddle-Signature", "")
+    webhook_secret = os.environ.get("PADDLE_WEBHOOK_SECRET", "")
+    raw_body = request.get_data(as_text=True)
+
+    ts, h1 = "", ""
+    for part in paddle_signature.split(";"):
+        if part.startswith("ts="):
+            ts = part[3:]
+        elif part.startswith("h1="):
+            h1 = part[3:]
+
+    signed_payload = f"{ts}:{raw_body}"
+    expected = hmac.new(
+        webhook_secret.encode(),
+        signed_payload.encode(),
+        hashlib.sha256
+    ).hexdigest()
+
+    if webhook_secret and not hmac.compare_digest(expected, h1):
+        print("❌ Webhook: firma inválida")
+        return jsonify({"error": "Invalid signature"}), 401
+
+    # 2. Parsear evento
+    data = request.json
+    event_type = data.get("event_type")
+    event_data = data.get("data", {})
+    print(f"🔔 Paddle webhook: {event_type}")
+
+    # Mapa de price_id → (plan_type, plan_interval)
+    PRICE_MAP = {
+        os.environ.get("PADDLE_PRICE_PRO_MONTHLY"):     ("professional", "monthly"),
+        os.environ.get("PADDLE_PRICE_PRO_ANNUAL"):      ("professional", "annual"),
+        os.environ.get("PADDLE_PRICE_AGENCY_MONTHLY"):  ("agency", "monthly"),
+        os.environ.get("PADDLE_PRICE_AGENCY_ANNUAL"):   ("agency", "annual"),
+    }
+
+    try:
+        # 3. Suscripción creada o actualizada → activar plan
+        if event_type in ["subscription.created", "subscription.updated", "transaction.completed"]:
+            custom_data = event_data.get("custom_data") or {}
+            user_id = custom_data.get("user_id")
+
+            # Detectar price_id desde items
+            items = event_data.get("items", [])
+            price_id = None
+            if items:
+                price_id = items[0].get("price", {}).get("id")
+
+            plan_type, plan_interval = PRICE_MAP.get(price_id, ("professional", "monthly"))
+            paddle_sub_id = event_data.get("id", "")
+            paddle_customer_id = event_data.get("customer_id", "")
+
             if user_id and supabase:
-                # 3. ¡Actualizar al usuario a PRO en Supabase!
                 supabase.table("user_subscriptions").upsert({
                     "user_id": user_id,
-                    "plan_type": "pro",
-                    "updated_at": "now()"
+                    "plan_type": plan_type,
+                    "plan_interval": plan_interval,
+                    "paddle_sub_id": paddle_sub_id,
+                    "paddle_customer_id": paddle_customer_id,
+                    "status": "active",
                 }).execute()
-                
-                print(f"✅ ¡ÉXITO! Usuario {user_id} actualizado a plan PRO.")
+                print(f"✅ Usuario {user_id} → {plan_type} ({plan_interval})")
             else:
-                print("⚠️ No se encontró user_id en custom_data.")
-                
+                print("⚠️ No se encontró user_id en custom_data")
+
+        # 4. Cancelación → bajar a starter
+        elif event_type == "subscription.canceled":
+            paddle_sub_id = event_data.get("id", "")
+            if paddle_sub_id and supabase:
+                supabase.table("user_subscriptions").update({
+                    "plan_type": "starter",
+                    "plan_interval": None,
+                    "status": "canceled",
+                }).eq("paddle_sub_id", paddle_sub_id).execute()
+                print(f"🔴 Suscripción {paddle_sub_id} cancelada → starter")
+
         return jsonify({"status": "received"}), 200
 
     except Exception as e:
-        print(f"❌ Error en Webhook de Paddle: {str(e)}")
-        return jsonify({"error": str(e)}), 500        
-
+        print(f"❌ Error en webhook: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+        
 # ==========================================
 # RUTA DE DIAGNÓSTICO (SOLO PARA DEBUG)
 # ==========================================
