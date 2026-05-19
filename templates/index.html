@@ -156,7 +156,8 @@
                 {% if session.get('user_id') %}
                     <a href="/dashboard" class="btn btn-fire rounded-pill px-4 fw-bold shadow-sm">Dashboard</a>
                 {% else %}
-						<button class="btn btn-fire rounded-pill px-4 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#authModal" onclick="showLogin()">Log In / Sign Up</button>
+					<!-- GA4: cta_navbar_click se dispara al abrir el modal desde el navbar -->
+					<button class="btn btn-fire rounded-pill px-4 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#authModal" onclick="showLogin(); gtag('event', 'cta_navbar_click', { trigger: 'navbar_login_signup' });">Log In / Sign Up</button>
                 {% endif %}
             </div>
         </div>
@@ -174,10 +175,11 @@
                     <div class="search-container">
                         <ul class="nav nav-pills mb-4 justify-content-center" id="pills-tab" role="tablist">
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link active" id="address-tab" data-bs-toggle="pill" data-bs-target="#pills-address" type="button">By Address</button>
+                                <!-- GA4: search_tab_switch trackea qué tab usa más la gente -->
+                                <button class="nav-link active" id="address-tab" data-bs-toggle="pill" data-bs-target="#pills-address" type="button" onclick="gtag('event', 'search_tab_switch', { tab: 'by_address' });">By Address</button>
                             </li>
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="bin-tab" data-bs-toggle="pill" data-bs-target="#pills-bin" type="button">By BIN</button>
+                                <button class="nav-link" id="bin-tab" data-bs-toggle="pill" data-bs-target="#pills-bin" type="button" onclick="gtag('event', 'search_tab_switch', { tab: 'by_bin' });">By BIN</button>
                             </li>
                         </ul>
 
@@ -325,7 +327,8 @@
 						<button type="submit" class="btn w-100 fw-bold text-white py-2 shadow-sm" style="background: linear-gradient(135deg, #FF6B00 0%, #E65100 100%); border-radius: 50px;">LOG IN</button>
 					</form>
 					<div class="text-center mt-4 border-top border-secondary pt-3">
-						<span class="text-white-50 small">Don't have an account? <a href="#" class="text-decoration-none fw-bold" style="color: #FF6B00;" onclick="toggleAuthMode('register')">Create one here</a></span>
+						<!-- GA4: modal_switch_to_register trackea cuánta gente que llega al login cambia a registro -->
+						<span class="text-white-50 small">Don't have an account? <a href="#" class="text-decoration-none fw-bold" style="color: #FF6B00;" onclick="toggleAuthMode('register'); gtag('event', 'modal_switch_to_register', { source: 'login_form' });">Create one here</a></span>
 					</div>
 				</div>
 
@@ -372,7 +375,19 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Logica para Property Lookup
+
+        // =============================================
+        // GA4 HELPER — centraliza todos los eventos
+        // =============================================
+        function trackEvent(eventName, params) {
+            if (typeof gtag !== 'undefined') {
+                gtag('event', eventName, params || {});
+            }
+        }
+
+        // =============================================
+        // PROPERTY LOOKUP
+        // =============================================
         async function handleSearch(e, type) {
             e.preventDefault();
             const results = document.getElementById('results');
@@ -383,8 +398,19 @@
                 payload.house = document.getElementById('house').value;
                 payload.street = document.getElementById('street').value;
                 payload.borough = document.getElementById('borough').value;
+
+                // GA4: property_scan_address — búsqueda por dirección, incluye borough
+                trackEvent('property_scan', {
+                    search_type: 'address',
+                    borough: payload.borough
+                });
             } else {
                 payload.bin = document.getElementById('bin_number').value;
+
+                // GA4: property_scan_bin — búsqueda por BIN
+                trackEvent('property_scan', {
+                    search_type: 'bin'
+                });
             }
 
             try {
@@ -398,6 +424,12 @@
                 
                 if (data.error) {
                     results.innerHTML = `<div class="alert alert-danger mt-3">${data.error}</div>`;
+
+                    // GA4: property_scan_failed — búsqueda sin resultado
+                    trackEvent('property_scan_failed', {
+                        search_type: type,
+                        error: data.error
+                    });
                 } else {
                     const bldgClassLabel = data.pluto_bldgclass ? `<span title="NYC building classification code">${data.pluto_bldgclass}</span>` : '—';
 					results.innerHTML = `
@@ -418,9 +450,15 @@
 							</div>
 
 							<div class="alert alert-warning py-2 px-3 mt-3 mb-0" style="font-size: 0.82rem;">
-								&#x1F512; <b><a href="#" data-bs-toggle="modal" data-bs-target="#authModal" style="color:inherit;">Login</a></b> to unlock DOB job history, violations &amp; auto-fill TM-1, A-433, B-45.
+								&#x1F512; <b><a href="#" data-bs-toggle="modal" data-bs-target="#authModal" style="color:inherit;" onclick="showLogin(); trackEvent('cta_results_login_prompt', { trigger: 'property_results_lock' });">Login</a></b> to unlock DOB job history, violations &amp; auto-fill TM-1, A-433, B-45.
 							</div>
 						</div>`;
+
+                    // GA4: property_scan_success — propiedad encontrada con borough
+                    trackEvent('property_scan_success', {
+                        search_type: type,
+                        borough: data.borough || 'unknown'
+                    });
                 }
             } catch (err) {
                 results.innerHTML = `<div class="alert alert-danger mt-3">Connection error. Please try again.</div>`;
@@ -430,33 +468,39 @@
         document.getElementById('addressForm').onsubmit = (e) => handleSearch(e, 'address');
         document.getElementById('binForm').onsubmit = (e) => handleSearch(e, 'bin');
 
-        // --- L贸gica para alternar entre Login, Registro y Recuperar Contrase帽a ---
+        // =============================================
+        // AUTH MODAL — toggle entre Login / Register / Forgot
+        // =============================================
 		function toggleAuthMode(mode) {
 			const loginBox = document.getElementById('form-login-container');
 			const regBox = document.getElementById('form-register-container');
-			const forgotBox = document.getElementById('form-forgot-container'); // Nueva caja
+			const forgotBox = document.getElementById('form-forgot-container');
 			const alertBox = document.getElementById('auth-alert');
 			
-			alertBox.classList.add('d-none'); // Ocultar errores al cambiar de pantalla
+			alertBox.classList.add('d-none');
 
-			// Escondemos todo primero
 			loginBox.classList.add('d-none');
 			regBox.classList.add('d-none');
 			forgotBox.classList.add('d-none');
 
-			// Mostramos solo el que necesitamos
 			if (mode === 'register') {
 				regBox.classList.remove('d-none');
+                // GA4: auth_modal_view — usuario ve el form de registro
+                trackEvent('auth_modal_view', { form: 'register' });
 			} else if (mode === 'forgot') {
 				forgotBox.classList.remove('d-none');
+                // GA4: auth_modal_view — usuario ve el form de reset
+                trackEvent('auth_modal_view', { form: 'forgot_password' });
 			} else {
 				loginBox.classList.remove('d-none');
+                // GA4: auth_modal_view — usuario ve el form de login
+                trackEvent('auth_modal_view', { form: 'login' });
 			}
 		}
 
 		function showLogin() { toggleAuthMode('login'); }
 		function showRegister() { toggleAuthMode('register'); }
-		function showForgot() { toggleAuthMode('forgot'); } // Nueva funci贸n
+		function showForgot() { toggleAuthMode('forgot'); }
 
         function handleAuthResponse(data, alertBox, isRegister = false) {
             if (data.error) {
@@ -471,6 +515,9 @@
             }
         }
 
+        // =============================================
+        // LOGIN FORM
+        // =============================================
         document.getElementById('loginForm').onsubmit = async (e) => {
             e.preventDefault();
             const alertBox = document.getElementById('auth-alert');
@@ -482,7 +529,6 @@
             };
 
             try {
-                // NUEVO: Al hacer fetch, le pasamos los par谩metros de la URL actual (que incluyen el next=...)
                 const currentUrlParams = new URLSearchParams(window.location.search);
                 const fetchUrl = `/api/auth/login?${currentUrlParams.toString()}`;
 
@@ -494,17 +540,21 @@
                 
                 const data = await res.json();
 
-                // NUEVA L脫GICA DE RESPUESTA
                 if (data.error) {
                     alertBox.className = "alert alert-danger";
                     alertBox.innerText = data.error;
                     alertBox.classList.remove('d-none');
+
+                    // GA4: login_failed — intento fallido
+                    trackEvent('login_failed', { method: 'email' });
                 } else {
                     alertBox.className = "alert alert-success";
                     alertBox.innerText = "Success! loading...";
                     alertBox.classList.remove('d-none');
+
+                    // GA4: login — login exitoso (evento estándar de GA4)
+                    trackEvent('login', { method: 'email' });
                     
-                    // IMPORTANTE: Redirigimos a la URL que nos diga el servidor (con el next=...)
                     setTimeout(() => window.location.href = '/dashboard', 1000);
                 }
 
@@ -515,6 +565,9 @@
             }
         };
 
+        // =============================================
+        // REGISTER FORM
+        // =============================================
         document.getElementById('registerForm').onsubmit = async (e) => {
 			e.preventDefault();
 			const alertBox = document.getElementById('auth-alert');
@@ -524,11 +577,13 @@
 			const password = document.getElementById('reg_password').value;
 			const confirmPassword = document.getElementById('reg_password_confirm').value;
 
-			// Validaci贸n de contrase帽as
 			if (password !== confirmPassword) {
 				alertBox.className = "alert alert-danger";
 				alertBox.innerText = "Passwords do not match!";
 				alertBox.classList.remove('d-none');
+
+                // GA4: register_password_mismatch — error de validación
+                trackEvent('register_password_mismatch');
 				return;
 			}
 
@@ -544,15 +599,20 @@
 					alertBox.className = "alert alert-danger";
 					alertBox.innerText = data.error;
 					alertBox.classList.remove('d-none');
+
+                    // GA4: sign_up_failed — registro fallido (email duplicado, etc.)
+                    trackEvent('sign_up_failed', { method: 'email', error: data.error });
 				} else {
-					// 脡xito: Pedir confirmaci贸n de email y cambiar a Login
 					alertBox.className = "alert alert-success";
 					alertBox.innerText = "Account created! Please check your email to verify your account before logging in.";
 					alertBox.classList.remove('d-none');
+
+                    // GA4: sign_up — registro exitoso (evento estándar de GA4)
+                    trackEvent('sign_up', { method: 'email' });
 					
 					document.getElementById('registerForm').reset();
 					setTimeout(() => {
-						showLogin(); // Mueve al usuario al tab de login
+						showLogin();
 					}, 3000);
 				}
 			} catch (err) {
@@ -562,7 +622,9 @@
 			}
 		};
 		
-		// --- L贸gica para enviar el correo de recuperaci贸n ---
+        // =============================================
+        // FORGOT PASSWORD FORM
+        // =============================================
 		document.getElementById('forgotForm').onsubmit = async (e) => {
 			e.preventDefault();
 			const alertBox = document.getElementById('auth-alert');
@@ -571,7 +633,6 @@
 			const email = document.getElementById('forgot_email').value;
 
 			try {
-				// Hacemos el fetch a la ruta de tu backend que maneja el reset de contrase帽a
 				const res = await fetch('/api/auth/reset-password', {
 					method: 'POST', 
 					headers: {'Content-Type': 'application/json'}, 
@@ -587,9 +648,11 @@
 					alertBox.className = "alert alert-success";
 					alertBox.innerText = "Check your email! We've sent you a password reset link.";
 					alertBox.classList.remove('d-none');
+
+                    // GA4: password_reset_requested — usuario solicitó reset
+                    trackEvent('password_reset_requested', { method: 'email' });
 					
 					document.getElementById('forgotForm').reset();
-					// Regresamos al login despu茅s de 4 segundos
 					setTimeout(() => { showLogin(); }, 4000);
 				}
 			} catch (err) {
