@@ -95,7 +95,8 @@
                 {% if session.get('user_id') %}
                     <a href="/dashboard" class="btn btn-fire rounded-pill px-4">Dashboard</a>
                 {% else %}
-                    <button class="btn btn-fire rounded-pill px-4 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#authModal" onclick="showLogin()">Log In / Sign Up</button>
+                    <!-- GA4: cta_navbar_click desde pricing -->
+                    <button class="btn btn-fire rounded-pill px-4 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#authModal" onclick="showLogin(); trackEvent('cta_navbar_click', { trigger: 'navbar_login_signup', page: 'pricing' });">Log In / Sign Up</button>
                 {% endif %}
             </div>
         </div>
@@ -112,6 +113,7 @@
                 <!-- BILLING TOGGLE -->
                 <div class="mt-4 mb-1">
                     <div class="billing-toggle-wrap">
+                        <!-- GA4: billing_toggle se dispara dentro de setBilling() -->
                         <button id="btn-monthly" onclick="setBilling('monthly')">Monthly</button>
                         <button id="btn-annual" class="active" onclick="setBilling('annual')">
                             Annual <span class="save-badge">SAVE 32%</span>
@@ -145,7 +147,13 @@
                         {% if session.get('user_id') %}
                             <a href="/dashboard" class="btn btn-outline-light w-100 rounded-pill mt-auto fw-bold py-2 text-decoration-none">GO TO DASHBOARD</a>
                         {% else %}
-                            <button class="btn btn-outline-light w-100 rounded-pill mt-auto fw-bold py-2" data-bs-toggle="modal" data-bs-target="#authModal" onclick="showRegister()">GET STARTED FREE</button>
+                            <!-- GA4: cta_starter_free — click en Get Started Free -->
+                            <button class="btn btn-outline-light w-100 rounded-pill mt-auto fw-bold py-2"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#authModal"
+                                    onclick="showRegister(); trackEvent('cta_plan_click', { plan: 'starter', billing: currentBilling, action: 'get_started_free' });">
+                                GET STARTED FREE
+                            </button>
                         {% endif %}
                     </div>
                 </div>
@@ -178,9 +186,16 @@
                         </ul>
 
                         {% if session.get('user_id') %}
+                            <!-- GA4: checkout_start se dispara dentro de openCheckout() -->
                             <button onclick="openCheckout('pro')" class="btn btn-fire-pricing w-100 mt-auto">UPGRADE TO PRO</button>
                         {% else %}
-                            <button class="btn btn-fire-pricing w-100 mt-auto" data-bs-toggle="modal" data-bs-target="#authModal" onclick="showLogin()">LOGIN TO UPGRADE</button>
+                            <!-- GA4: cta_login_to_upgrade — usuario no logueado intenta hacer upgrade -->
+                            <button class="btn btn-fire-pricing w-100 mt-auto"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#authModal"
+                                    onclick="showLogin(); trackEvent('cta_plan_click', { plan: 'pro', billing: currentBilling, action: 'login_to_upgrade' });">
+                                LOGIN TO UPGRADE
+                            </button>
                         {% endif %}
                     </div>
                 </div>
@@ -212,9 +227,16 @@
                         </ul>
 
                         {% if session.get('user_id') %}
+                            <!-- GA4: checkout_start se dispara dentro de openCheckout() -->
                             <button onclick="openCheckout('agency')" class="btn btn-outline-light w-100 rounded-pill fw-bold py-2">UPGRADE TO AGENCY</button>
                         {% else %}
-                            <button class="btn btn-outline-light w-100 rounded-pill fw-bold py-2" data-bs-toggle="modal" data-bs-target="#authModal" onclick="showLogin()">LOGIN TO UPGRADE</button>
+                            <!-- GA4: cta_login_to_upgrade agency — usuario no logueado -->
+                            <button class="btn btn-outline-light w-100 rounded-pill fw-bold py-2"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#authModal"
+                                    onclick="showLogin(); trackEvent('cta_plan_click', { plan: 'agency', billing: currentBilling, action: 'login_to_upgrade' });">
+                                LOGIN TO UPGRADE
+                            </button>
                         {% endif %}
                     </div>
                 </div>
@@ -246,7 +268,7 @@
         </div>
     </footer>
 
-    <!-- AUTH MODAL (idéntico al original) -->
+    <!-- AUTH MODAL -->
     <div class="modal fade" id="authModal" tabindex="-1" aria-labelledby="authModalLabel" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content shadow-lg" style="background: rgba(10, 37, 64, 0.75); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 20px; overflow: hidden; color: white;">
@@ -272,7 +294,8 @@
                         <button type="submit" class="btn w-100 fw-bold text-white py-2 shadow-sm" style="background: linear-gradient(135deg, #FF6B00 0%, #E65100 100%); border-radius: 50px;">LOG IN</button>
                     </form>
                     <div class="text-center mt-4 border-top border-secondary pt-3">
-                        <span class="text-white-50 small">Don't have an account? <a href="#" class="text-decoration-none fw-bold" style="color: #FF6B00;" onclick="toggleAuthMode('register')">Create one here</a></span>
+                        <!-- GA4: modal_switch_to_register desde pricing -->
+                        <span class="text-white-50 small">Don't have an account? <a href="#" class="text-decoration-none fw-bold" style="color: #FF6B00;" onclick="toggleAuthMode('register'); trackEvent('modal_switch_to_register', { source: 'login_form', page: 'pricing' });">Create one here</a></span>
                     </div>
                 </div>
                 <div id="form-register-container" class="d-none">
@@ -305,6 +328,19 @@
     <script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
 
     <script>
+
+        // =============================================
+        // GA4 HELPER — mismo patrón que index.html
+        // =============================================
+        function trackEvent(eventName, params) {
+            if (typeof gtag !== 'undefined') {
+                gtag('event', eventName, params || {});
+            }
+        }
+
+        // GA4: pricing_page_view — con billing mode inicial registrado
+        trackEvent('pricing_page_view', { default_billing: 'annual' });
+
         // ── PADDLE ──
         Paddle.Initialize({ token: "live_3cf14fb0cd17048e922392a6d21" });
 
@@ -323,10 +359,24 @@
             document.getElementById('pro-annual-block').style.display      = mode === 'annual'  ? 'block' : 'none';
             document.getElementById('agency-monthly-block').style.display  = mode === 'monthly' ? 'block' : 'none';
             document.getElementById('agency-annual-block').style.display   = mode === 'annual'  ? 'block' : 'none';
+
+            // GA4: billing_toggle — cuánta gente cambia a monthly vs annual
+            trackEvent('billing_toggle', { billing_type: mode });
         }
         setBilling('annual');
 
         function openCheckout(plan) {
+            // GA4: checkout_start — el evento más importante de esta página
+            // Incluye plan (pro/agency) y billing (monthly/annual) para segmentar revenue
+            trackEvent('checkout_start', {
+                plan_name: plan,
+                billing_type: currentBilling,
+                currency: 'USD',
+                value: plan === 'pro'
+                    ? (currentBilling === 'annual' ? 399 : 49)
+                    : (currentBilling === 'annual' ? 990 : 129)
+            });
+
             Paddle.Checkout.open({
                 items: [{ priceId: PRICES[plan][currentBilling], quantity: 1 }],
                 customer:   { email: "{{ session.get('user_email', '') }}" },
@@ -339,10 +389,14 @@
             document.getElementById('auth-alert').classList.add('d-none');
             document.getElementById('form-login-container').classList.toggle('d-none', mode !== 'login');
             document.getElementById('form-register-container').classList.toggle('d-none', mode !== 'register');
+
+            // GA4: auth_modal_view — mismo patrón que index.html
+            trackEvent('auth_modal_view', { form: mode, page: 'pricing' });
         }
         function showLogin()    { toggleAuthMode('login'); }
         function showRegister() { toggleAuthMode('register'); }
 
+        // ── LOGIN FORM ──
         document.getElementById('loginForm').onsubmit = async (e) => {
             e.preventDefault();
             const alertBox = document.getElementById('auth-alert');
@@ -350,41 +404,87 @@
             try {
                 const res  = await fetch('/api/auth/login', {
                     method: 'POST', headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ email: document.getElementById('login_email').value, password: document.getElementById('login_password').value })
+                    body: JSON.stringify({
+                        email: document.getElementById('login_email').value,
+                        password: document.getElementById('login_password').value
+                    })
                 });
                 const data = await res.json();
                 if (data.error) {
-                    alertBox.className = "alert alert-danger"; alertBox.innerText = data.error; alertBox.classList.remove('d-none');
+                    alertBox.className = "alert alert-danger";
+                    alertBox.innerText = data.error;
+                    alertBox.classList.remove('d-none');
+
+                    // GA4: login_failed desde pricing
+                    trackEvent('login_failed', { method: 'email', page: 'pricing' });
                 } else {
-                    alertBox.className = "alert alert-success"; alertBox.innerText = "Welcome back! Loading..."; alertBox.classList.remove('d-none');
+                    alertBox.className = "alert alert-success";
+                    alertBox.innerText = "Welcome back! Loading...";
+                    alertBox.classList.remove('d-none');
+
+                    // GA4: login exitoso — evento estándar GA4
+                    trackEvent('login', { method: 'email', page: 'pricing' });
+
                     setTimeout(() => window.location.reload(), 1000);
                 }
-            } catch { alertBox.className = "alert alert-danger"; alertBox.innerText = "Connection error."; alertBox.classList.remove('d-none'); }
+            } catch {
+                alertBox.className = "alert alert-danger";
+                alertBox.innerText = "Connection error.";
+                alertBox.classList.remove('d-none');
+            }
         };
 
+        // ── REGISTER FORM ──
         document.getElementById('registerForm').onsubmit = async (e) => {
             e.preventDefault();
             const alertBox = document.getElementById('auth-alert');
             alertBox.classList.add('d-none');
             const password = document.getElementById('reg_password').value;
+
             if (password !== document.getElementById('reg_password_confirm').value) {
-                alertBox.className = "alert alert-danger"; alertBox.innerText = "Passwords do not match!"; alertBox.classList.remove('d-none'); return;
+                alertBox.className = "alert alert-danger";
+                alertBox.innerText = "Passwords do not match!";
+                alertBox.classList.remove('d-none');
+
+                // GA4: register_password_mismatch desde pricing
+                trackEvent('register_password_mismatch', { page: 'pricing' });
+                return;
             }
+
             try {
                 const res  = await fetch('/api/auth/register', {
                     method: 'POST', headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ email: document.getElementById('reg_email').value, password })
+                    body: JSON.stringify({
+                        email: document.getElementById('reg_email').value,
+                        password
+                    })
                 });
                 const data = await res.json();
                 if (data.error) {
-                    alertBox.className = "alert alert-danger"; alertBox.innerText = data.error; alertBox.classList.remove('d-none');
+                    alertBox.className = "alert alert-danger";
+                    alertBox.innerText = data.error;
+                    alertBox.classList.remove('d-none');
+
+                    // GA4: sign_up_failed desde pricing
+                    trackEvent('sign_up_failed', { method: 'email', page: 'pricing', error: data.error });
                 } else {
-                    alertBox.className = "alert alert-success"; alertBox.innerText = "Account created! Please check your email to verify your account before logging in."; alertBox.classList.remove('d-none');
+                    alertBox.className = "alert alert-success";
+                    alertBox.innerText = "Account created! Please check your email to verify your account before logging in.";
+                    alertBox.classList.remove('d-none');
+
+                    // GA4: sign_up exitoso — evento estándar GA4, desde pricing = alta intención
+                    trackEvent('sign_up', { method: 'email', page: 'pricing' });
+
                     document.getElementById('registerForm').reset();
                     setTimeout(() => showLogin(), 3000);
                 }
-            } catch { alertBox.className = "alert alert-danger"; alertBox.innerText = "Connection error. Please try again."; alertBox.classList.remove('d-none'); }
+            } catch {
+                alertBox.className = "alert alert-danger";
+                alertBox.innerText = "Connection error. Please try again.";
+                alertBox.classList.remove('d-none');
+            }
         };
+
     </script>
 
 </body>
