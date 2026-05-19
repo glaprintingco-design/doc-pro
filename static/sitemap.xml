@@ -7,35 +7,36 @@
       <changefreq>weekly</changefreq>
       <priority>1.0</priority>
    </url>
-
    <url>
       <loc>https://firepdfpro.com/manhattan-fdny-forms</loc>
       <lastmod>2026-04-06</lastmod>
       <changefreq>weekly</changefreq>
       <priority>0.9</priority>
    </url>
-
    <url>
       <loc>https://firepdfpro.com/brooklyn-fdny-forms</loc>
       <lastmod>2026-04-06</lastmod>
       <changefreq>weekly</changefreq>
       <priority>0.9</priority>
    </url>
-
    <url>
       <loc>https://firepdfpro.com/queens-fdny-forms</loc>
       <lastmod>2026-04-06</lastmod>
       <changefreq>weekly</changefreq>
       <priority>0.9</priority>
    </url>
-
    <url>
       <loc>https://firepdfpro.com/bronx-fdny-forms</loc>
       <lastmod>2026-04-06</lastmod>
       <changefreq>weekly</changefreq>
       <priority>0.9</priority>
    </url>
-
+   <url>
+      <loc>https://firepdfpro.com/staten-island-fdny-forms</loc>
+      <lastmod>2026-04-06</lastmod>
+      <changefreq>monthly</changefreq>
+      <priority>0.8</priority>
+   </url>
    <url>
       <loc>https://firepdfpro.com/pricing</loc>
       <lastmod>2026-04-06</lastmod>
@@ -43,20 +44,27 @@
       <priority>0.8</priority>
    </url>
 
+   <!-- Tactical pages -->
+   <url>
+      <loc>https://firepdfpro.com/dob-bis-down</loc>
+      <lastmod>2026-05-19</lastmod>
+      <changefreq>monthly</changefreq>
+      <priority>0.7</priority>
+   </url>
+
+   <!-- Legal -->
    <url>
       <loc>https://firepdfpro.com/terms</loc>
       <lastmod>2026-04-06</lastmod>
       <changefreq>yearly</changefreq>
       <priority>0.5</priority>
    </url>
-
    <url>
       <loc>https://firepdfpro.com/privacy</loc>
       <lastmod>2026-04-06</lastmod>
       <changefreq>yearly</changefreq>
       <priority>0.5</priority>
    </url>
-
    <url>
       <loc>https://firepdfpro.com/refund</loc>
       <lastmod>2026-04-06</lastmod>
@@ -64,42 +72,31 @@
       <priority>0.5</priority>
    </url>
 
-   <url>
-     <loc>https://firepdfpro.com/staten-island-fdny-forms</loc>
-     <changefreq>monthly</changefreq>
-     <priority>0.7</priority>
-   </url>
-
-   <!-- BLOG -->
-
+   <!-- Blog -->
    <url>
       <loc>https://firepdfpro.com/blog</loc>
       <lastmod>2026-04-30</lastmod>
       <changefreq>weekly</changefreq>
       <priority>0.7</priority>
    </url>
-
    <url>
       <loc>https://firepdfpro.com/blog/mass-notification-risk-analysis-2025</loc>
       <lastmod>2026-04-30</lastmod>
       <changefreq>monthly</changefreq>
       <priority>0.6</priority>
    </url>
-
    <url>
       <loc>https://firepdfpro.com/blog/bcnys-2025-ev-sprinkler-requirements</loc>
       <lastmod>2026-04-30</lastmod>
       <changefreq>monthly</changefreq>
       <priority>0.6</priority>
    </url>
-
    <url>
       <loc>https://firepdfpro.com/blog/bcnys-2025-elevator-smoke-curtain</loc>
       <lastmod>2026-04-30</lastmod>
       <changefreq>monthly</changefreq>
       <priority>0.6</priority>
    </url>
-
    <url>
       <loc>https://firepdfpro.com/blog/bcnys-2025-erces-requirements</loc>
       <lastmod>2026-04-30</lastmod>
