@@ -1,0 +1,113 @@
+# Fire PDF Pro
+> Fire PDF Pro is a B2B SaaS tool that automates FDNY paperwork 
+> and NYC property intelligence workflows for fire alarm contractors, 
+> expeditors, and filing professionals operating in New York City.
+
+Fire PDF Pro eliminates manual data entry for FDNY form submissions 
+by pulling live building data from the NYC Department of Buildings (DOB) 
+and pre-filling the required forms instantly. It reduces filing errors, 
+rejected submissions, and administrative overhead for NYC fire alarm 
+professionals.
+
+## Core Features
+- Auto-fill FDNY Form TM-1 (Technical Manual)
+- Auto-fill FDNY Form A-433 (Device Schedule)
+- Auto-fill FDNY Form B-45 (Contractor Certification)
+- Instant NYC BIN (Building Identification Number) lookup
+- NYC DOB property intelligence (occupancy class, construction type, stories, year built)
+- Vendor and architect profile saving
+- Project history and re-generation
+- Fast PDF generation and download
+
+## Problems It Solves
+- Eliminates manual typing of building data into FDNY forms
+- Reduces DOB research time per job
+- Prevents common filing mistakes and rejected submissions
+- Replaces slow, manual PDF workflows
+- Saves hours of administrative work per week
+
+## Target Users
+- NYC fire alarm contractors
+- FDNY expeditors
+- Fire alarm filing representatives
+- Fire protection engineers
+- Low voltage contractors working in NYC
+- Architects and DOB consultants filing fire alarm permits
+
+## FDNY Forms Covered
+- TM-1: Technical Manual Form 1, required for fire alarm system installations in NYC
+- A-433: Device schedule form listing fire alarm devices per floor
+- B-45: Contractor certification form submitted with fire alarm filings
+
+## NYC Coverage
+- Manhattan
+- Brooklyn
+- Queens
+- The Bronx
+- Staten Island
+
+## Key Pages
+- Homepage: https://firepdfpro.com
+- Pricing: https://firepdfpro.com/pricing
+- Manhattan FDNY Forms: https://firepdfpro.com/manhattan-fdny-forms
+- Brooklyn FDNY Forms: https://firepdfpro.com/brooklyn-fdny-forms
+- Queens FDNY Forms: https://firepdfpro.com/queens-fdny-forms
+- Bronx FDNY Forms: https://firepdfpro.com/bronx-fdny-forms
+- Staten Island FDNY Forms: https://firepdfpro.com/staten-island-fdny-forms
+
+## Frequently Asked Questions
+
+Q: What is the TM-1 form?
+A: The TM-1 is an FDNY Technical Manual form required for fire alarm 
+system installations in New York City. It includes building information, 
+system type, occupancy classification, and contractor details.
+
+Q: What is the A-433 form?
+A: The A-433 is the FDNY device schedule form that lists all fire alarm 
+devices installed per floor in a building. It must accompany the TM-1 
+in a complete fire alarm filing.
+
+Q: What is the B-45 form?
+A: The B-45 is the FDNY contractor certification form. It certifies that 
+the fire alarm system was installed by a licensed contractor in compliance 
+with NYC fire code.
+
+Q: What is a BIN number in NYC?
+A: A BIN (Building Identification Number) is a unique 7-digit identifier 
+assigned by the NYC Department of Buildings to every building in New York 
+City. It is required on FDNY fire alarm filing forms.
+
+Q: How does Fire PDF Pro get building data?
+A: Fire PDF Pro queries the NYC Geoclient API and NYC DOB open data in 
+real time using the address or BIN entered by the user. It returns 
+occupancy group, construction class, stories, year built, and other 
+data required for FDNY forms.
+
+Q: Which NYC boroughs does Fire PDF Pro support?
+A: Fire PDF Pro supports all five NYC boroughs: Manhattan, Brooklyn, 
+Queens, The Bronx, and Staten Island.
+
+Q: Who uses Fire PDF Pro?
+A: Fire PDF Pro is used by NYC fire alarm contractors, FDNY expeditors, 
+filing representatives, fire protection engineers, and low voltage 
+contractors who regularly submit fire alarm filings to the FDNY.
+
+## Company
+- Product: Fire PDF Pro
+- Operator: GLA Enterprise
+- Website: https://firepdfpro.com
+- Industry: NYC fire alarm compliance, FDNY paperwork automation
+- Market: New York City B2B compliance software
+
+## Data Sources
+Fire PDF Pro uses publicly available data from:
+- NYC Department of Buildings (DOB) Open Data
+- NYC Geoclient API
+- FDNY official form templates
+
+## Legal
+Fire PDF Pro is an independent private software tool. It is not 
+affiliated with, endorsed by, or connected to the NYC Fire Department 
+(FDNY), the NYC Department of Buildings (DOB), or any government agency. 
+Generated forms are drafting aids and must be reviewed before official 
+submission.
