@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-SJ2SXQYPP3"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-SJ2SXQYPP3');
+    </script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard | Fire PDF Pro</title>
@@ -46,7 +55,8 @@
             
             {% if not is_pro %}
             <li class="nav-item mt-4">
-                <a class="nav-link" href="/pricing" style="color: #FF6B00; font-weight: bold; background: rgba(255, 107, 0, 0.1); border-radius: 8px; margin: 0 15px;">
+                <!-- GA4: upgrade_sidebar_click — usuario free ve y clickea el upgrade en sidebar -->
+                <a class="nav-link" href="/pricing" onclick="trackEvent('upgrade_sidebar_click', { source: 'dashboard_sidebar' });" style="color: #FF6B00; font-weight: bold; background: rgba(255, 107, 0, 0.1); border-radius: 8px; margin: 0 15px;">
                     <i class="bi bi-rocket-takeoff-fill"></i> Upgrade to Pro
                 </a>
             </li>
@@ -251,9 +261,10 @@
 								</p>
 							</div>
 							
-							<a href="/pricing" class="btn btn-primary-custom w-100 py-3 fs-5 shadow-sm" style="background: linear-gradient(135deg, #FF6B00 0%, #E65100 100%); border-radius: 12px;">
-								<i class="bi bi-rocket-takeoff me-2"></i> VIEW PRO PLANS
-							</a>
+							<!-- GA4: upgrade_wall_cta_click — el click más crítico del funnel de conversión -->
+						<a href="/pricing" class="btn btn-primary-custom w-100 py-3 fs-5 shadow-sm" style="background: linear-gradient(135deg, #FF6B00 0%, #E65100 100%); border-radius: 12px;" onclick="trackEvent('upgrade_wall_cta_click', { source: 'generate_limit_wall', page: 'dashboard' });">
+							<i class="bi bi-rocket-takeoff me-2"></i> VIEW PRO PLANS
+						</a>
 						</div>
 
                         <div id="generate-status" class="mt-3 text-center"></div>
@@ -545,6 +556,21 @@
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
 	<script>
+        // =============================================
+        // GA4 HELPER — mismo patrón que index y pricing
+        // =============================================
+        function trackEvent(eventName, params) {
+            if (typeof gtag !== 'undefined') {
+                gtag('event', eventName, params || {});
+            }
+        }
+
+        // GA4: dashboard_session_start — sesión en el dashboard
+        // Usamos DOMContentLoaded para asegurar que gtag ya cargó
+        document.addEventListener('DOMContentLoaded', () => {
+            trackEvent('dashboard_session_start');
+        });
+
         // --- 1. NAVEGACIÓN Y MOBILE ---
         function switchTab(tabId, element) {
             document.querySelectorAll('.tab-content-view').forEach(t => t.classList.remove('active'));
@@ -552,7 +578,12 @@
             document.querySelectorAll('.sidebar .nav-link').forEach(l => l.classList.remove('active'));
             element.classList.add('active');
             document.getElementById('page-title').innerText = element.innerText;
-            if(window.innerWidth <= 768) toggleSidebar(); // Ocultar sidebar en móvil tras hacer clic
+
+            // GA4: dashboard_tab_switch — qué tab usa más la gente (lookup, builder, profile)
+            const tabName = tabId.replace('tab-', '');
+            trackEvent('dashboard_tab_switch', { tab: tabName });
+
+            if(window.innerWidth <= 768) toggleSidebar();
         }
         function toggleSidebar() {
             document.querySelector('.sidebar').classList.toggle('show');
@@ -564,6 +595,12 @@
             let payload = { type: type };
             if(type === 'bin') { payload.bin = document.getElementById('lookup_bin').value; } 
             else { payload.house = document.getElementById('lookup_house').value; payload.street = document.getElementById('lookup_street').value; payload.borough = document.getElementById('lookup_boro').value; }
+
+            // GA4: property_lookup_run — búsqueda iniciada desde el dashboard (usuario autenticado)
+            trackEvent('property_lookup_run', {
+                search_type: type,
+                borough: type === 'address' ? document.getElementById('lookup_boro').value : 'bin_search'
+            });
 
             document.getElementById('lookup-results').style.display = 'block';
             document.getElementById('res_address').innerHTML = '<div class="spinner-border spinner-border-sm"></div> Scanning databases...';
@@ -774,8 +811,23 @@
                 // Auto-fill BIN in builder
                 document.getElementById('builder_bin').value = data.bin;
 
+                // GA4: property_lookup_success — propiedad encontrada con datos clave
+                trackEvent('property_lookup_success', {
+                    search_type: type,
+                    borough: data.borough || 'unknown',
+                    has_fa_jobs: (data.fire_alarm_jobs && data.fire_alarm_jobs.length > 0),
+                    has_alt1: (data.alt1_jobs && data.alt1_jobs.length > 0),
+                    has_digital_co: !!data.has_digital_co
+                });
+
             } catch (err) {
                 document.getElementById('res_address').innerHTML = `<span class="text-danger">❌ ${err.message}</span>`;
+
+                // GA4: property_lookup_failed — error de búsqueda en dashboard
+                trackEvent('property_lookup_failed', {
+                    search_type: type,
+                    error: err.message
+                });
             }
         }
 
@@ -789,13 +841,19 @@
             
             if (!floor || !type || !qty) return;
             
-            // Verificamos si el dispositivo ya existe en ese piso para sumar la cantidad en lugar de crear otra fila
             const existingIndex = deviceList.findIndex(d => d.floor === floor && d.device === type);
             if (existingIndex >= 0) {
                 deviceList[existingIndex].qty += parseInt(qty);
             } else {
                 deviceList.push({ floor, device: type, qty: parseInt(qty) }); 
             }
+
+            // GA4: device_added — dispositivo añadido al A-433 schedule
+            trackEvent('device_added', {
+                device_type: type,
+                floor: floor,
+                total_devices: deviceList.length
+            });
             
             renderTable();
         }
@@ -839,7 +897,7 @@
             });
         }
 
-        // --- 4. GENERATE DOCUMENTS & PAYPAL LOGIC ---
+        // --- 4. GENERATE DOCUMENTS LOGIC ---
         let isPaypalRendered = false; 
         
         async function generateDocuments() {
@@ -854,6 +912,14 @@
             if (document.getElementById('chk_b45').checked) forms.push('B-45');
             if (document.getElementById('chk_report').checked) forms.push('REPORT');
 
+            // GA4: document_generate_start — intento de generación con formularios seleccionados
+            trackEvent('document_generate_start', {
+                forms_selected: forms.join(','),
+                forms_count: forms.length,
+                has_devices: deviceList.length > 0,
+                device_count: deviceList.length
+            });
+
             const payload = { bin: bin, job_desc: document.getElementById('builder_desc').value, devices: deviceList, forms: forms };
             
             btnGen.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Generating...';
@@ -862,27 +928,38 @@
             try {
                 const response = await fetch('/api/generate', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
                 
-                // --- LÓGICA DE SUSCRIPCIÓN (LÍMITE ALCANZADO) ---
+                // --- LÍMITE ALCANZADO — UPGRADE WALL ---
 				if (response.status === 403) {
 					document.getElementById('generate-action-area').style.display = 'none';
-					document.getElementById('paddle-upgrade-container').style.display = 'block'; // <- Actualizado al nuevo ID
+					document.getElementById('paddle-upgrade-container').style.display = 'block';
 					statusDiv.innerHTML = '';
+
+                    // GA4: upgrade_wall_shown — el evento más importante para entender churn / conversión
+                    trackEvent('upgrade_wall_shown', {
+                        trigger: 'generate_limit_403',
+                        forms_attempted: forms.join(',')
+                    });
 					return;
 				}
 
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.error || "Server error processing your forms.");
                 
-                // Guardamos los datos globalmente para los botones
                 window.generatedFilesData = data;
                 
+                // GA4: document_generate_success — formularios generados exitosamente
+                trackEvent('document_generate_success', {
+                    forms_generated: forms.join(','),
+                    forms_count: forms.length,
+                    device_count: deviceList.length
+                });
+
                 // Dibujar Botones de Descarga
                 let html = `<div class="alert alert-success mt-3 mb-2 p-2 shadow-sm border-0"><i class="bi bi-check-circle-fill"></i> Documents ready!</div>`;
                 
-                // Botón ZIP
+                // Botón ZIP — GA4: document_download_zip
                 html += `<button class="btn btn-primary-custom w-100 mb-3" onclick="downloadZipFile('${bin}')"><i class="bi bi-file-earmark-zip"></i> Download All as ZIP</button>`;
                 
-                // Botones Individuales
                 html += `<p class="text-muted text-center mb-2" style="font-size:0.9rem;">Or download individually:</p>`;
                 html += `<div class="row g-2">`;
                 data.files.forEach((f, index) => {
@@ -896,7 +973,13 @@
                 loadProjects(); 
                 
             } catch (error) { 
-                statusDiv.innerHTML = `<div class="alert alert-danger shadow-sm border-start border-danger border-4 text-start mt-3"><b>❌ Error:</b> ${error.message}</div>`; 
+                statusDiv.innerHTML = `<div class="alert alert-danger shadow-sm border-start border-danger border-4 text-start mt-3"><b>❌ Error:</b> ${error.message}</div>`;
+
+                // GA4: document_generate_failed — error en generación
+                trackEvent('document_generate_failed', {
+                    forms_attempted: forms.join(','),
+                    error: error.message
+                });
             } finally {
                 btnGen.innerHTML = 'GENERATE DOCUMENTS';
                 btnGen.disabled = false;
@@ -910,6 +993,9 @@
             downloadLink.href = linkSource;
             downloadLink.download = `FDNY_Forms_${bin}.zip`;
             downloadLink.click();
+
+            // GA4: document_download_zip — descargó el ZIP con todos los formularios
+            trackEvent('document_download_zip', { bin: bin });
         };
 
         window.downloadIndividualFile = function(index) {
@@ -919,6 +1005,11 @@
             downloadLink.href = linkSource;
             downloadLink.download = f.filename;
             downloadLink.click();
+
+            // GA4: document_download_individual — descargó un formulario individual
+            trackEvent('document_download_individual', {
+                filename: f.filename.split(' - ')[0]
+            });
         };
 
         // --- 5. CARGAR Y GUARDAR PERFIL ---
@@ -997,8 +1088,14 @@
                     alert("✅ Profile saved successfully! Your forms will now auto-fill with this data.");
                     const warning = document.getElementById('profile-warning-alert');
                     if (warning) warning.style.display = 'none';
+
+                    // GA4: profile_saved — perfil completado (señal de activación del producto)
+                    trackEvent('profile_saved', { method: 'manual_save' });
                 } else {
                     alert("❌ Error saving profile: " + (data.error || "Unknown error"));
+
+                    // GA4: profile_save_failed
+                    trackEvent('profile_save_failed', { error: data.error || 'unknown' });
                 }
             } catch (error) {
                 alert("❌ Connection error. Please check your internet and try again.");
@@ -1041,25 +1138,25 @@
             } catch (e) { console.log("Error loading projects:", e); }
         }
 
-        // NUEVA FUNCIÓN: Ahora lee la lista completa y llena la tabla del A-433
         function loadProjectToBuilder(projectId) {
-            // Buscamos el proyecto exacto usando el ID
             const project = window.savedUserProjects.find(p => p.id === projectId);
             if (!project) return;
 
-            // 1. Llenamos los datos básicos
             document.getElementById('builder_bin').value = project.bin || '';
             document.getElementById('builder_desc').value = project.job_description || '';
 
-            // 2. Llenamos la tabla de dispositivos (A-433)
             if (project.device_list && Array.isArray(project.device_list)) {
-                deviceList = project.device_list; // Cargamos la lista guardada
+                deviceList = project.device_list;
             } else {
-                deviceList = []; // Si no tenía dispositivos, la dejamos vacía
+                deviceList = [];
             }
-            renderTable(); // ¡Magia! Esta función dibuja las filas en pantalla automáticamente
+            renderTable();
 
-            // 3. Cerramos el acordeón de historial
+            // GA4: project_loaded_from_history — usuario reutilizó un proyecto guardado
+            trackEvent('project_loaded_from_history', {
+                device_count: deviceList.length
+            });
+
             const accBtn = document.querySelector('#historyAccordion .accordion-button');
             if (!accBtn.classList.contains('collapsed')) {
                 accBtn.click();
@@ -1071,7 +1168,10 @@
             try {
                 const res = await fetch(`/api/projects/${projectId}`, { method: 'DELETE' });
                 if(res.ok) {
-                    loadProjects(); // Recargar la lista automáticamente
+                    loadProjects();
+
+                    // GA4: project_deleted — usuario borró un proyecto
+                    trackEvent('project_deleted');
                 } else {
                     alert("Failed to delete project.");
                 }
@@ -1082,17 +1182,20 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadProfile(); 
             loadProjects();
+
+            // GA4: dashboard_session_start ya se dispara arriba, aquí track del estado inicial
+            trackEvent('dashboard_session_start');
             
             // --- ACTIVAR BUSCADOR EN LOS DROPDOWNS (TOM SELECT) ---
             new TomSelect("#dev_floor", {
                 create: false,
-                sortField: { field: "$order" }, // Mantiene el orden oficial de NYC
+                sortField: { field: "$order" },
                 placeholder: "Search floor..."
             });
 
             new TomSelect("#dev_type", {
                 create: false,
-                sortField: { field: "$order" }, // Mantiene tus categorías
+                sortField: { field: "$order" },
                 placeholder: "Search device..."
             });
         });
