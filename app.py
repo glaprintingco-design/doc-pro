@@ -233,6 +233,10 @@ def robots():
 def yandex():
     return render_template('yandex_e319d71626f03e05.html')
 
+@app.route('/llms.txt')
+def llms_txt():
+    return app.send_static_file('llms.txt')
+
 # ==========================================
 # RUTA DE DIAGNÓSTICO — /api/diagnostics
 # Visita esta URL en el browser para ver el estado de todas las APIs y keys
