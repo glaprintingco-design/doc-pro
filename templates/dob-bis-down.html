@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-SJ2SXQYPP3"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-SJ2SXQYPP3');
+    </script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NYC DOB BIS Down or Not Working? | What To Do | Fire PDF Pro</title>
+
+    <meta name="description" content="NYC DOB BIS not loading or down right now? Here's what NYC fire alarm contractors and expeditors do when BIS is unavailable. Alternative tools and workarounds.">
+    <meta name="keywords" content="DOB BIS down, NYC BIS not working, DOB BIS unavailable, DOB NOW not loading, NYC building information system down, BIS alternative NYC, DOB outage NYC">
+    <meta name="author" content="GLA Enterprise">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://firepdfpro.com/dob-bis-down">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="NYC DOB BIS Down? What To Do Right Now | Fire PDF Pro">
+    <meta property="og:description" content="When NYC DOB BIS goes down, here's exactly what fire alarm contractors and expeditors do to keep working. Alternative tools included.">
+    <meta property="og:image" content="https://firepdfpro.com/static/logotab.webp">
+    <meta property="og:url" content="https://firepdfpro.com/dob-bis-down">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Fire PDF Pro">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="NYC DOB BIS Down? What To Do | Fire PDF Pro">
+    <meta name="twitter:description" content="When NYC DOB BIS goes down, here's what fire alarm contractors and expeditors do to keep working.">
+    <meta name="twitter:image" content="https://firepdfpro.com/static/logotab.webp">
+
+    <!-- JSON-LD -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Is NYC DOB BIS down right now?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "NYC DOB BIS (Building Information System) experiences periodic outages and slow performance, especially during peak hours. If BIS is not loading, try DOB NOW as an alternative, or use Fire PDF Pro which caches building data and lets you continue generating FDNY forms even when BIS is unavailable."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "What is DOB BIS?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "DOB BIS (Building Information System) is the NYC Department of Buildings legacy database used to look up building profiles, BIN numbers, violations, and permit history. It is the predecessor to DOB NOW and is still used by many fire alarm contractors and expeditors to retrieve building data for FDNY filings."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "What can I do when DOB BIS is down?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "When DOB BIS is unavailable, fire alarm contractors and expeditors can use DOB NOW Build, NYC Open Data, or Fire PDF Pro to retrieve BIN numbers, occupancy groups, and building data needed for FDNY form filings."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "What is the difference between DOB BIS and DOB NOW?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "DOB BIS is the NYC DOB legacy system used mainly for viewing historical building records, violations, and job filings. DOB NOW is the newer portal used to submit new filings electronically. Both are operated by the NYC Department of Buildings but serve different functions in the fire alarm filing workflow."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "How do I find a BIN number when DOB BIS is not working?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "You can find a NYC Building Identification Number (BIN) through DOB NOW, NYC Open Data, the NYC GeoSearch API, or Fire PDF Pro, which performs an instant BIN lookup by address without depending on DOB BIS availability."
+              }
+            }
+          ]
+        },
+        {
+          "@type": "WebPage",
+          "name": "NYC DOB BIS Down or Not Working",
+          "url": "https://firepdfpro.com/dob-bis-down",
+          "description": "What NYC fire alarm contractors and expeditors do when DOB BIS is unavailable or not working. Alternative tools and workarounds.",
+          "publisher": {
+            "@type": "Organization",
+            "name": "Fire PDF Pro",
+            "url": "https://firepdfpro.com"
+          }
+        }
+      ]
+    }
+    </script>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="/static/style.css" rel="stylesheet">
+    <link rel="icon" type="image/png" href="/static/app_icon.png">
+
+    <style>
+        :root {
+            --nyc-blue: #003884;
+            --nyc-orange: #FF6B00;
+            --red-alert: #e53e3e;
+        }
+
+        .status-hero {
+            background: linear-gradient(135deg, #0a1628 0%, #0a2540 60%, #1a0a0a 100%);
+            padding: 100px 0 60px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .status-hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 40px,
+                rgba(229,62,62,0.03) 40px,
+                rgba(229,62,62,0.03) 80px
+            );
+        }
+
+        .alert-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(229,62,62,0.15);
+            border: 1px solid rgba(229,62,62,0.4);
+            color: #fc8181;
+            padding: 8px 18px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            margin-bottom: 24px;
+        }
+
+        .pulse-dot {
+            width: 8px; height: 8px;
+            background: #fc8181;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.8); }
+        }
+
+        .status-card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            padding: 28px;
+            transition: border-color 0.2s;
+        }
+
+        .status-card:hover {
+            border-color: rgba(255,107,0,0.3);
+        }
+
+        .status-icon {
+            width: 48px; height: 48px;
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.3rem;
+            margin-bottom: 16px;
+        }
+
+        .icon-red { background: rgba(229,62,62,0.15); color: #fc8181; }
+        .icon-yellow { background: rgba(236,201,75,0.15); color: #f6e05e; }
+        .icon-green { background: rgba(72,187,120,0.15); color: #68d391; }
+        .icon-blue { background: rgba(66,153,225,0.15); color: #63b3ed; }
+        .icon-orange { background: rgba(255,107,0,0.15); color: #FF6B00; }
+
+        .section-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--nyc-orange);
+            margin-bottom: 12px;
+        }
+
+        .workaround-section {
+            background: #f8fafc;
+            padding: 80px 0;
+        }
+
+        .workaround-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 32px;
+            height: 100%;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .workaround-card:hover {
+            border-color: var(--nyc-orange);
+            box-shadow: 0 8px 30px rgba(255,107,0,0.08);
+            transform: translateY(-3px);
+        }
+
+        .step-num {
+            position: absolute;
+            top: -16px; left: 28px;
+            background: var(--nyc-orange);
+            color: white;
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800;
+            font-size: 0.85rem;
+        }
+
+        .tool-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            padding: 20px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .tool-row:last-child { border-bottom: none; }
+
+        .tool-icon {
+            width: 42px; height: 42px;
+            background: #f1f5f9;
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        .cta-section {
+            background: linear-gradient(135deg, #0a2540 0%, #003884 100%);
+            padding: 80px 0;
+        }
+
+        .cta-card {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 20px;
+            padding: 48px;
+        }
+
+        .faq-item {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            overflow: hidden;
+        }
+
+        .faq-question {
+            padding: 20px 24px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            color: #1a202c;
+            background: white;
+            transition: background 0.2s;
+        }
+
+        .faq-question:hover { background: #f8fafc; }
+
+        .faq-answer {
+            padding: 0 24px;
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            background: #f8fafc;
+            color: #4a5568;
+            line-height: 1.7;
+        }
+
+        .faq-answer.open {
+            max-height: 300px;
+            padding: 20px 24px;
+        }
+
+        .faq-arrow {
+            transition: transform 0.3s;
+            color: var(--nyc-orange);
+        }
+
+        .faq-arrow.rotated { transform: rotate(180deg); }
+
+        .content-section {
+            padding: 80px 0;
+        }
+
+        .inline-link {
+            color: var(--nyc-blue);
+            text-decoration: none;
+            font-weight: 600;
+            border-bottom: 1px solid rgba(0,56,132,0.2);
+        }
+
+        .inline-link:hover {
+            color: var(--nyc-orange);
+            border-color: var(--nyc-orange);
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(255,107,0,0.06) 0%, rgba(0,56,132,0.06) 100%);
+            border-left: 4px solid var(--nyc-orange);
+            border-radius: 0 12px 12px 0;
+            padding: 20px 24px;
+            margin: 24px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- NAV -->
+    <nav class="navbar navbar-expand-lg navbar-dark position-absolute w-100 mt-3" style="z-index:100;">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <img src="/static/logo.webp" alt="Fire PDF Pro" class="navbar-logo" style="max-height:45px;">
+            </a>
+            <div class="ms-auto d-flex align-items-center">
+                {% if session.get('user_id') %}
+                    <a href="/dashboard" class="btn btn-fire rounded-pill px-4 fw-bold shadow-sm">Dashboard</a>
+                {% else %}
+                    <button class="btn btn-fire rounded-pill px-4 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#authModal" onclick="showLogin()">Log In / Sign Up</button>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- HERO -->
+    <section class="status-hero">
+        <div class="container position-relative">
+            <div class="row justify-content-center text-center">
+                <div class="col-lg-8">
+                    <div class="alert-badge">
+                        <div class="pulse-dot"></div>
+                        DOB BIS · Known Outage Source
+                    </div>
+                    <h1 class="display-4 fw-bold text-white mb-4">
+                        NYC DOB BIS Is Down.<br>
+                        <span style="color:#FF6B00;">Here's What To Do.</span>
+                    </h1>
+                    <p class="lead mb-5" style="color:rgba(255,255,255,0.7); max-width:600px; margin:0 auto 40px;">
+                        DOB BIS goes down regularly. If you're a fire alarm contractor or expeditor trying to pull building data right now, here are your real alternatives.
+                    </p>
+
+                    <!-- QUICK STATUS CARDS -->
+                    <div class="row g-3 text-start">
+                        <div class="col-md-4">
+                            <div class="status-card">
+                                <div class="status-icon icon-red"><i class="bi bi-x-circle-fill"></i></div>
+                                <div class="fw-bold text-white mb-1">DOB BIS</div>
+                                <div style="font-size:0.85rem; color:rgba(255,255,255,0.5);">Legacy system. Frequent outages. No ETA on fixes.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="status-card">
+                                <div class="status-icon icon-yellow"><i class="bi bi-exclamation-triangle-fill"></i></div>
+                                <div class="fw-bold text-white mb-1">DOB NOW</div>
+                                <div style="font-size:0.85rem; color:rgba(255,255,255,0.5);">Usually available. Slower during peak hours.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="status-card">
+                                <div class="status-icon icon-green"><i class="bi bi-check-circle-fill"></i></div>
+                                <div class="fw-bold text-white mb-1">Fire PDF Pro</div>
+                                <div style="font-size:0.85rem; color:rgba(255,255,255,0.5);">Independent data layer. Works when BIS is down.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- WORKAROUNDS -->
+    <section class="workaround-section">
+        <div class="container">
+            <div class="row justify-content-center mb-5">
+                <div class="col-lg-7 text-center">
+                    <div class="section-label">Workarounds</div>
+                    <h2 class="fw-bold" style="color:#1a202c; font-size:2rem;">What NYC Contractors Do When BIS Goes Down</h2>
+                    <p class="text-muted mt-3">These are the actual alternatives used by fire alarm expeditors and contractors in NYC when the Building Information System is unavailable.</p>
+                </div>
+            </div>
+
+            <div class="row g-4">
+
+                <div class="col-lg-4">
+                    <div class="workaround-card">
+                        <div class="step-num">1</div>
+                        <div class="status-icon icon-blue mt-2"><i class="bi bi-building"></i></div>
+                        <h5 class="fw-bold mb-2" style="color:#1a202c;">Try DOB NOW Build</h5>
+                        <p class="text-muted mb-3" style="font-size:0.9rem;">DOB NOW is the newer portal and runs on separate infrastructure from BIS. When BIS is down, DOB NOW is often still operational. Use it to look up job filings and BIN numbers.</p>
+                        <a href="https://a810-dobnow.nyc.gov/publish/" target="_blank" rel="noopener" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                            Go to DOB NOW <i class="bi bi-arrow-up-right ms-1"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="workaround-card">
+                        <div class="step-num">2</div>
+                        <div class="status-icon icon-blue mt-2"><i class="bi bi-search"></i></div>
+                        <h5 class="fw-bold mb-2" style="color:#1a202c;">Use NYC GeoSearch</h5>
+                        <p class="text-muted mb-3" style="font-size:0.9rem;">The NYC GeoSearch API is maintained separately and returns BIN, BBL, borough, and address data by street address. It's fast, reliable, and often up when BIS is not.</p>
+                        <a href="https://geosearch.planninglabs.nyc/" target="_blank" rel="noopener" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                            NYC GeoSearch <i class="bi bi-arrow-up-right ms-1"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="workaround-card">
+                        <div class="step-num">3</div>
+                        <div class="status-icon icon-orange mt-2"><i class="bi bi-lightning-fill"></i></div>
+                        <h5 class="fw-bold mb-2" style="color:#1a202c;">Use Fire PDF Pro</h5>
+                        <p class="text-muted mb-3" style="font-size:0.9rem;">Fire PDF Pro queries the NYC DOB open data layer directly, independent of the BIS interface. Enter an address or BIN and get occupancy group, construction class, and form-ready data instantly.</p>
+                        <a href="/" class="btn btn-sm rounded-pill px-3 fw-bold text-white" style="background: var(--nyc-orange);">
+                            Try Free <i class="bi bi-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- EXPLANATION CONTENT -->
+    <section class="content-section" style="background:white;">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+
+                    <div class="section-label">Background</div>
+                    <h2 class="fw-bold mb-4" style="color:#1a202c;">Why Does DOB BIS Keep Going Down?</h2>
+
+                    <p class="text-muted lh-lg">NYC DOB BIS (Building Information System) is a legacy platform that has been in operation for decades. It was not designed to handle the volume of concurrent users that access it today. Fire alarm contractors, expeditors, architects, and engineers all depend on it daily to pull BIN numbers, check occupancy classifications, and review permit history.</p>
+
+                    <p class="text-muted lh-lg">The system experiences outages most frequently during morning peak hours — typically between 8am and 10am — when the majority of NYC filing professionals are starting their workday and running property lookups simultaneously. Scheduled maintenance windows also occur, often without advance notice to users.</p>
+
+                    <div class="highlight-box">
+                        <strong style="color:#1a202c;">The practical problem for fire alarm contractors:</strong>
+                        <p class="mb-0 mt-2 text-muted">A BIS outage during a busy filing day means you cannot pull the building data required to populate your TM-1, A-433, or B-45 forms. That means delayed submissions, missed deadlines, and jobs that sit idle while you wait for the system to come back online.</p>
+                    </div>
+
+                    <h3 class="fw-bold mt-5 mb-4" style="color:#1a202c;">The Data DOB BIS Provides That You Need for FDNY Filings</h3>
+
+                    <div class="tool-row">
+                        <div class="tool-icon"><i class="bi bi-hash text-primary"></i></div>
+                        <div>
+                            <div class="fw-bold" style="color:#1a202c;">BIN Number</div>
+                            <div class="text-muted" style="font-size:0.9rem;">The 7-digit Building Identification Number required on every FDNY form. Assigned to every building in NYC by the Department of Buildings.</div>
+                        </div>
+                    </div>
+
+                    <div class="tool-row">
+                        <div class="tool-icon"><i class="bi bi-people text-success"></i></div>
+                        <div>
+                            <div class="fw-bold" style="color:#1a202c;">Occupancy Group</div>
+                            <div class="text-muted" style="font-size:0.9rem;">The occupancy classification of the building (R-2, B, A-2, etc.) required for fire alarm system design and TM-1 form completion.</div>
+                        </div>
+                    </div>
+
+                    <div class="tool-row">
+                        <div class="tool-icon"><i class="bi bi-bricks text-warning"></i></div>
+                        <div>
+                            <div class="fw-bold" style="color:#1a202c;">Construction Class</div>
+                            <div class="text-muted" style="font-size:0.9rem;">The construction type classification (I-A through V-B) that determines fire protection requirements and must appear on FDNY filings.</div>
+                        </div>
+                    </div>
+
+                    <div class="tool-row">
+                        <div class="tool-icon"><i class="bi bi-layers text-info"></i></div>
+                        <div>
+                            <div class="fw-bold" style="color:#1a202c;">Number of Stories</div>
+                            <div class="text-muted" style="font-size:0.9rem;">Building height in stories, used for device scheduling on the A-433 form and for determining high-rise fire alarm requirements.</div>
+                        </div>
+                    </div>
+
+                    <div class="tool-row">
+                        <div class="tool-icon"><i class="bi bi-geo-alt text-danger"></i></div>
+                        <div>
+                            <div class="fw-bold" style="color:#1a202c;">Borough, Block & Lot (BBL)</div>
+                            <div class="text-muted" style="font-size:0.9rem;">The tax lot identifier used across DOB, FDNY, and NYC Finance systems to uniquely identify a property.</div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ -->
+    <section style="background:#f8fafc; padding:80px 0;">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="section-label text-center">FAQ</div>
+                    <h2 class="fw-bold text-center mb-5" style="color:#1a202c;">Common Questions When BIS Is Down</h2>
+
+                    <div class="faq-item">
+                        <div class="faq-question" onclick="toggleFaq(this)">
+                            Is NYC DOB BIS down right now?
+                            <i class="bi bi-chevron-down faq-arrow"></i>
+                        </div>
+                        <div class="faq-answer">
+                            DOB BIS experiences outages regularly, particularly during peak morning hours (8–10am) and during NYC DOB scheduled maintenance windows. This page does not track live uptime, but the workarounds above work regardless of BIS status.
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <div class="faq-question" onclick="toggleFaq(this)">
+                            What is the difference between DOB BIS and DOB NOW?
+                            <i class="bi bi-chevron-down faq-arrow"></i>
+                        </div>
+                        <div class="faq-answer">
+                            DOB BIS is the legacy Building Information System used to view historical records, violations, and building profiles. DOB NOW is the newer electronic filing portal used to submit new permit applications. They run on separate infrastructure. When BIS is down, DOB NOW may still be operational, and vice versa.
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <div class="faq-question" onclick="toggleFaq(this)">
+                            How do I find a BIN number when DOB BIS is not working?
+                            <i class="bi bi-chevron-down faq-arrow"></i>
+                        </div>
+                        <div class="faq-answer">
+                            Three reliable alternatives: (1) NYC GeoSearch at geosearch.planninglabs.nyc — enter the address and it returns the BIN instantly. (2) DOB NOW — search by address under the property lookup. (3) Fire PDF Pro — enter the address and the tool pulls BIN and full building data from the NYC DOB open data layer, independent of BIS availability.
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <div class="faq-question" onclick="toggleFaq(this)">
+                            Can I still generate FDNY forms when DOB BIS is down?
+                            <i class="bi bi-chevron-down faq-arrow"></i>
+                        </div>
+                        <div class="faq-answer">
+                            Yes, if you use Fire PDF Pro. The tool does not depend on DOB BIS. It queries the NYC DOB open data API and Geoclient API directly, which operate independently. You can pull building data and generate your TM-1, A-433, and B-45 forms without BIS being available.
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <div class="faq-question" onclick="toggleFaq(this)">
+                            Does NYC DOB notify contractors when BIS is down?
+                            <i class="bi bi-chevron-down faq-arrow"></i>
+                        </div>
+                        <div class="faq-answer">
+                            Not consistently. Planned maintenance is sometimes announced on the NYC DOB website or through the DOB NOW portal, but unplanned outages typically have no advance notification. Most contractors find out only when they try to access the system and it fails to load.
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-section">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="cta-card text-center">
+                        <div class="status-icon icon-orange mx-auto mb-4"><i class="bi bi-lightning-fill"></i></div>
+                        <h2 class="fw-bold text-white mb-3">Stop Depending on DOB BIS</h2>
+                        <p style="color:rgba(255,255,255,0.7); max-width:480px; margin:0 auto 32px; line-height:1.7;">
+                            Fire PDF Pro pulls BIN, occupancy group, construction class, and building data directly — no BIS required. Generate your TM-1, A-433, and B-45 forms in seconds, even when BIS is down.
+                        </p>
+                        <div class="d-flex gap-3 justify-content-center flex-wrap">
+                            <a href="/" class="btn btn-lg rounded-pill fw-bold px-5 text-white" style="background: var(--nyc-orange);">
+                                Try Free — No Credit Card
+                            </a>
+                            <a href="/pricing" class="btn btn-lg btn-outline-light rounded-pill fw-bold px-5">
+                                See Pricing
+                            </a>
+                        </div>
+                        <p class="mt-4" style="color:rgba(255,255,255,0.4); font-size:0.85rem;">Used by NYC fire alarm contractors and expeditors daily.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="py-4" style="background-color: #0a2540; border-top: 4px solid #FF6B00;">
+        <div class="container text-center">
+            <div class="mb-3">
+                <a href="/" class="text-white-50 text-decoration-none mx-2 small">Home</a>
+                <span class="text-secondary">|</span>
+                <a href="/pricing" class="text-white-50 text-decoration-none mx-2 small">Pricing</a>
+                <span class="text-secondary">|</span>
+                <a href="/manhattan-fdny-forms" class="text-white-50 text-decoration-none mx-2 small">Manhattan</a>
+                <span class="text-secondary">|</span>
+                <a href="/brooklyn-fdny-forms" class="text-white-50 text-decoration-none mx-2 small">Brooklyn</a>
+                <span class="text-secondary">|</span>
+                <a href="/terms" class="text-white-50 text-decoration-none mx-2 small">Terms</a>
+                <span class="text-secondary">|</span>
+                <a href="/privacy" class="text-white-50 text-decoration-none mx-2 small">Privacy</a>
+            </div>
+            <p class="small text-secondary mb-0">© 2026 Fire PDF Pro. All Rights Reserved. Not affiliated with NYC FDNY or DOB.</p>
+        </div>
+    </footer>
+
+    <!-- AUTH MODAL (idéntico al resto del sitio) -->
+    <div class="modal fade" id="authModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg" style="background: rgba(10,37,64,0.95); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.2); border-radius: 20px; color: white;">
+          <div class="modal-header border-0 pb-0 mt-2 px-4">
+            <h5 class="modal-title fw-bold" style="color:#FF6B00;">
+                <img src="/static/logo.webp" alt="Fire PDF Pro" style="height:30px; margin-right:10px; margin-top:-5px;">
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body p-4 pt-2">
+            <div id="auth-alert" class="alert d-none"></div>
+            <div id="form-login-container">
+                <h4 class="fw-bold mb-4 text-center text-white">Welcome Back</h4>
+                <form id="loginForm">
+                    <div class="mb-3">
+                        <label class="form-label text-white-50 small fw-bold">Email</label>
+                        <input type="email" id="login_email" class="form-control text-white border-secondary" style="background:rgba(0,0,0,0.2);" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label text-white-50 small fw-bold">Password</label>
+                        <input type="password" id="login_password" class="form-control text-white border-secondary" style="background:rgba(0,0,0,0.2);" required>
+                    </div>
+                    <button type="submit" class="btn w-100 fw-bold text-white py-2" style="background:linear-gradient(135deg,#FF6B00,#E65100); border-radius:50px;">LOG IN</button>
+                </form>
+                <div class="text-center mt-4 border-top border-secondary pt-3">
+                    <span class="text-white-50 small">No account? <a href="#" class="fw-bold text-decoration-none" style="color:#FF6B00;" onclick="toggleAuthMode('register')">Create one here</a></span>
+                </div>
+            </div>
+            <div id="form-register-container" class="d-none">
+                <h4 class="fw-bold mb-4 text-center text-white">Create Account</h4>
+                <form id="registerForm">
+                    <div class="mb-3"><input type="email" id="reg_email" class="form-control text-white border-secondary" style="background:rgba(0,0,0,0.2);" required placeholder="Email"></div>
+                    <div class="mb-3"><input type="password" id="reg_password" class="form-control text-white border-secondary" style="background:rgba(0,0,0,0.2);" minlength="6" required placeholder="Password"></div>
+                    <div class="mb-4"><input type="password" id="reg_password_confirm" class="form-control text-white border-secondary" style="background:rgba(0,0,0,0.2);" minlength="6" required placeholder="Confirm Password"></div>
+                    <button type="submit" class="btn w-100 fw-bold text-white py-2" style="background:#003884; border-radius:50px;">SIGN UP</button>
+                </form>
+                <div class="text-center mt-4 border-top border-secondary pt-3">
+                    <span class="text-white-50 small">Have an account? <a href="#" class="fw-bold text-decoration-none" style="color:#4da3ff;" onclick="toggleAuthMode('login')">Log in here</a></span>
+                </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function toggleFaq(el) {
+            const answer = el.nextElementSibling;
+            const arrow = el.querySelector('.faq-arrow');
+            answer.classList.toggle('open');
+            arrow.classList.toggle('rotated');
+        }
+
+        function toggleAuthMode(mode) {
+            document.getElementById('form-login-container').classList.add('d-none');
+            document.getElementById('form-register-container').classList.add('d-none');
+            document.getElementById('auth-alert').classList.add('d-none');
+            if (mode === 'register') {
+                document.getElementById('form-register-container').classList.remove('d-none');
+            } else {
+                document.getElementById('form-login-container').classList.remove('d-none');
+            }
+        }
+
+        function showLogin() { toggleAuthMode('login'); }
+
+        document.getElementById('loginForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const alertBox = document.getElementById('auth-alert');
+            alertBox.classList.add('d-none');
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        email: document.getElementById('login_email').value,
+                        password: document.getElementById('login_password').value
+                    })
+                });
+                const data = await res.json();
+                if (data.error) {
+                    alertBox.className = "alert alert-danger"; alertBox.innerText = data.error; alertBox.classList.remove('d-none');
+                } else {
+                    alertBox.className = "alert alert-success"; alertBox.innerText = "Success! Loading..."; alertBox.classList.remove('d-none');
+                    setTimeout(() => window.location.href = '/dashboard', 1000);
+                }
+            } catch {
+                alertBox.className = "alert alert-danger"; alertBox.innerText = "Connection error."; alertBox.classList.remove('d-none');
+            }
+        };
+    </script>
+</body>
+</html>
